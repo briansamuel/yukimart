@@ -1,0 +1,278 @@
+/* Product Details Expansion Tabs Styles */
+.product-details-expansion {
+    margin: 0;
+    padding: 0;
+}
+
+/* Make table rows clickable */
+#kt_table_products tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#kt_table_products tbody tr:hover {
+    background-color: var(--bs-table-active-bg);
+}
+
+#kt_table_products tbody tr.shown {
+    background-color: var(--bs-table-active-bg);
+}
+
+/* Prevent cursor pointer on action column */
+#kt_table_products tbody tr td:last-child {
+    cursor: default;
+}
+
+#kt_table_products tbody tr td:last-child * {
+    cursor: pointer;
+}
+
+#kt_table_products .product-details-expansion .card {
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+#kt_table_products .product-details-expansion .card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+/* Tab Navigation Styles */
+.nav-line-tabs-2x .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #7e8299;
+    font-weight: 600;
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+    border-radius: 8px 8px 0 0;
+}
+
+.nav-line-tabs-2x .nav-link:hover {
+    color: #3f4254;
+    background-color: #f8f9fa;
+}
+
+.nav-line-tabs-2x .nav-link.active {
+    color: #009ef7;
+    border-bottom-color: #009ef7;
+    background-color: #f1f8ff;
+}
+
+.nav-line-tabs-2x .nav-link i {
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+/* Tab Content Styles */
+#kt_table_products .tab-content {
+    background: #ffffff;
+    border-radius: 0 0 12px 12px;
+    padding: 20px;
+    min-height: 400px;
+}
+
+#kt_table_products .tab-pane {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Card Styles for Different Categories */
+.card.bg-light-primary {
+    background: linear-gradient(135deg, #e1f5fe 0%, #f1f8ff 100%);
+    border: 1px solid #e3f2fd;
+}
+
+.card.bg-light-success {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f1f8f1 100%);
+    border: 1px solid #e8f5e8;
+}
+
+.card.bg-light-warning {
+    background: linear-gradient(135deg, #fff8e1 0%, #fffbf0 100%);
+    border: 1px solid #fff3c4;
+}
+
+.card.bg-light-info {
+    background: linear-gradient(135deg, #e0f2f1 0%, #f0f9f9 100%);
+    border: 1px solid #e0f2f1;
+}
+
+/* Platform Link Styles */
+.platform-link-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.platform-link-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.platform-link-card .symbol img {
+    border-radius: 8px;
+}
+
+/* Stock Status Badges */
+.stock-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 6px;
+}
+
+.stock-status-in-stock {
+    background: #e8f5e8;
+    color: #1bc5bd;
+    border: 1px solid #c9f7f5;
+}
+
+.stock-status-low-stock {
+    background: #fff8e1;
+    color: #ffa800;
+    border: 1px solid #fff3c4;
+}
+
+.stock-status-out-of-stock {
+    background: #ffeaea;
+    color: #f64e60;
+    border: 1px solid #fdd8db;
+}
+
+/* Action Buttons */
+.btn-light-primary {
+    background: #f1f8ff;
+    border: 1px solid #e3f2fd;
+    color: #009ef7;
+}
+
+.btn-light-primary:hover {
+    background: #009ef7;
+    border-color: #009ef7;
+    color: #ffffff;
+}
+
+.btn-light-success {
+    background: #e8f5e8;
+    border: 1px solid #c9f7f5;
+    color: #1bc5bd;
+}
+
+.btn-light-success:hover {
+    background: #1bc5bd;
+    border-color: #1bc5bd;
+    color: #ffffff;
+}
+
+.btn-light-warning {
+    background: #fff8e1;
+    border: 1px solid #fff3c4;
+    color: #ffa800;
+}
+
+.btn-light-warning:hover {
+    background: #ffa800;
+    border-color: #ffa800;
+    color: #ffffff;
+}
+
+.btn-light-info {
+    background: #e0f2f1;
+    border: 1px solid #b2dfdb;
+    color: #00acc1;
+}
+
+.btn-light-info:hover {
+    background: #00acc1;
+    border-color: #00acc1;
+    color: #ffffff;
+}
+
+.btn-light-danger {
+    background: #ffeaea;
+    border: 1px solid #fdd8db;
+    color: #f64e60;
+}
+
+.btn-light-danger:hover {
+    background: #f64e60;
+    border-color: #f64e60;
+    color: #ffffff;
+}
+
+/* Statistics Display */
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stats-label {
+    font-size: 0.875rem;
+    color: #7e8299;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-line-tabs-2x .nav-link {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .tab-content {
+        padding: 15px;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+    }
+}
+
+/* Loading Animation */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Marketplace Platform Colors */
+.platform-shopee {
+    color: #ee4d2d;
+}
+
+.platform-lazada {
+    color: #ff6600;
+}
+
+.platform-tiki {
+    color: #0073e6;
+}
+
+.platform-sendo {
+    color: #ed3757;
+}

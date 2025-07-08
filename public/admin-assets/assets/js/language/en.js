@@ -1,0 +1,33 @@
+const lang = {
+    sorry_looks_like: "Sorry, looks like there are some errors detected, please try again.",
+    ok_got_it: "Ok, got it!",
+    are_you_sure_close: "Are you sure you would like to close?",
+    yes_close_it: "Yes, close it!",
+    are_you_sure_cancel: "Are you sure you would like to cancel?",
+    yes_cancel_it: "Yes, cancel it!",
+    are_you_sure_delete: "Are you sure you would like to delete ",
+    yes_delete_it: "Yes, delete it!",
+    you_have_deleted: "You have deleted ",
+    was_not_deleted: " was not deleted.",
+    no_return: "No, return",
+    no_cancel: "No, cancel",
+    your_form_cancelled: "Your form has not been cancelled!.",
+    form_sucess_submit: "Form has been successfully submitted!",
+    role_name_is_required: "Role name is required",
+    role_description_is_required: "Role description is required",
+    edit: "Edit",
+    delete: "Delete",
+    // Pages
+    are_you_sure_detele_selected_pages: "Are you sure you want to delete selected pages?",
+    selected_pages_deleted: "Selected pages was not deleted.",
+    page_title_required: "Page title cannot empty",
+    page_description_required: "Page description cannot empty",
+    page_content_required: "Page content cannot empty",
+    // Categories
+    category_name_required: "Category name cannot empty",
+    category_description_required: "Category description cannot least 5 chars",
+    // Projects
+    project_name_required: "Project name cannot empty",
+    project_description_required: "Project description cannot least 5 chars",
+    project_category_required: "Project category cannot empty",
+};

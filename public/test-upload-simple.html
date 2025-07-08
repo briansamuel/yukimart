@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Upload Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 600px; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .progress { width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #007bff; border-radius: 10px; width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Simple Upload Test</h1>
+        <p>Test upload without Laravel to isolate server issues.</p>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div>
+                <label for="fileInput">Select file (any size):</label><br>
+                <input type="file" id="fileInput" name="test_file" accept=".xlsx,.xls,.csv,.txt">
+            </div>
+            <br>
+            <button type="submit">Upload Test</button>
+        </form>
+        
+        <div class="progress" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div class="info">
+            <h3>📋 What this test does:</h3>
+            <ul>
+                <li>Tests direct file upload to server</li>
+                <li>Bypasses Laravel validation</li>
+                <li>Shows raw server response</li>
+                <li>Identifies if issue is server-level</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const resultDiv = document.getElementById('result');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            if (!file) {
+                resultDiv.innerHTML = '<div class="error">❌ Please select a file first!</div>';
+                return;
+            }
+            
+            // Show file info
+            resultDiv.innerHTML = `
+                <div class="info">
+                    📁 <strong>File Info:</strong><br>
+                    Name: ${file.name}<br>
+                    Size: ${formatFileSize(file.size)}<br>
+                    Type: ${file.type}<br>
+                    <br>
+                    🚀 Uploading...
+                </div>
+            `;
+            
+            // Show progress bar
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('test_file', file);
+            
+            // Create XMLHttpRequest for progress tracking
+            const xhr = new XMLHttpRequest();
+            
+            // Progress handler
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                }
+            });
+            
+            // Success handler
+            xhr.addEventListener('load', function() {
+                progressContainer.style.display = 'none';
+                
+                if (xhr.status === 200) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ <strong>Upload Successful!</strong><br>
+                            Status: ${xhr.status}<br>
+                            Response: ${xhr.responseText.substring(0, 200)}...
+                        </div>
+                    `;
+                } else if (xhr.status === 413) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ❌ <strong>413 Request Entity Too Large</strong><br>
+                            This confirms the issue is at web server level!<br>
+                            <br>
+                            <strong>Solutions:</strong><br>
+                            • Apache: Check .htaccess and restart Apache<br>
+                            • Nginx: Add client_max_body_size to nginx.conf<br>
+                            • IIS: Check web.config maxRequestLength
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ❌ <strong>Upload Failed</strong><br>
+                            Status: ${xhr.status}<br>
+                            Response: ${xhr.responseText}
+                        </div>
+                    `;
+                }
+            });
+            
+            // Error handler
+            xhr.addEventListener('error', function() {
+                progressContainer.style.display = 'none';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ <strong>Network Error</strong><br>
+                        Could not connect to server or request was blocked.
+                    </div>
+                `;
+            });
+            
+            // Timeout handler
+            xhr.addEventListener('timeout', function() {
+                progressContainer.style.display = 'none';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ⏰ <strong>Upload Timeout</strong><br>
+                        Upload took too long. Try a smaller file or increase server timeout.
+                    </div>
+                `;
+            });
+            
+            // Configure and send request
+            xhr.timeout = 300000; // 5 minutes
+            xhr.open('POST', 'test-upload-handler.php');
+            xhr.send(formData);
+        });
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

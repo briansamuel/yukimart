@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fixed Action Dropdown</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Action Dropdown Styles */
+        .action-dropdown-menu {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            min-width: 200px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0;
+            transition: all 0.2s ease;
+        }
+        
+        .action-dropdown-btn {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .action-dropdown-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .action-dropdown-btn.active {
+            background-color: #3699ff !important;
+            color: white !important;
+            border-color: #3699ff !important;
+        }
+        
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+        
+        .action-dropdown-menu .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #5e6278;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 0.875rem;
+        }
+        
+        .action-dropdown-menu .dropdown-item:hover {
+            background-color: rgba(54, 147, 255, 0.1);
+            color: #3699ff;
+            text-decoration: none;
+        }
+        
+        .action-dropdown-menu .dropdown-item.text-danger:hover {
+            background-color: rgba(241, 65, 108, 0.1);
+            color: #f1416c;
+        }
+        
+        .action-dropdown-menu .dropdown-item i {
+            width: 16px;
+            text-align: center;
+            margin-right: 0.75rem;
+        }
+        
+        .action-dropdown-menu .dropdown-header {
+            padding: 0.5rem 1rem 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .action-dropdown-menu .dropdown-header small {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #a1a5b7;
+        }
+        
+        .action-dropdown-menu .dropdown-divider {
+            height: 1px;
+            background-color: rgba(0, 0, 0, 0.05);
+            margin: 0.5rem 0;
+            border: none;
+        }
+        
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .demo-table th,
+        .demo-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e4e6ef;
+        }
+        
+        .demo-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #5e6278;
+        }
+        
+        .demo-table tbody tr:hover {
+            background-color: rgba(54, 147, 255, 0.05);
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-publish {
+            background-color: rgba(80, 205, 137, 0.1);
+            color: #50cd89;
+        }
+        
+        .status-draft {
+            background-color: rgba(124, 58, 237, 0.1);
+            color: #7c3aed;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-check-circle me-3"></i>Fixed Action Dropdown</h1>
+            <p class="mb-0">Testing the fixed action dropdown functionality</p>
+        </div>
+        
+        <div class="test-section">
+            <h3 class="mb-4"><i class="fas fa-cog me-2 text-success"></i>Working Action Dropdowns</h3>
+            
+            <table class="demo-table">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Status</th>
+                        <th width="120px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="https://via.placeholder.com/40x40/007bff/ffffff?text=IP" 
+                                     alt="iPhone" class="rounded me-2">
+                                <div>
+                                    <div class="fw-bold">iPhone 15 Pro Max</div>
+                                    <small class="text-muted">IPH15PM-256</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="status-badge status-publish">Published</span></td>
+                        <td>
+                            <div class="dropdown position-relative">
+                                <button class="btn btn-light btn-sm action-dropdown-btn" 
+                                        type="button" 
+                                        data-product-id="1"
+                                        data-product-status="publish">
+                                    Actions
+                                    <i class="fas fa-chevron-down ms-2 fs-7 dropdown-arrow"></i>
+                                </button>
+                                <div class="action-dropdown-menu">
+                                    <div class="dropdown-header">
+                                        <small>Product Actions</small>
+                                    </div>
+                                    <a class="dropdown-item" href="#" onclick="testAction('edit', 1); return false;">
+                                        <i class="fas fa-edit text-primary"></i>
+                                        Edit Product
+                                    </a>
+                                    <a class="dropdown-item" href="#" onclick="testAction('duplicate', 1); return false;">
+                                        <i class="fas fa-copy text-info"></i>
+                                        Duplicate
+                                    </a>
+                                    <a class="dropdown-item" href="#" onclick="testAction('stock', 1); return false;">
+                                        <i class="fas fa-boxes text-warning"></i>
+                                        Manage Stock
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-header">
+                                        <small>Status Actions</small>
+                                    </div>
+                                    <a class="dropdown-item" href="#" onclick="testAction('status', 1, 'draft'); return false;">
+                                        <i class="fas fa-pause text-warning"></i>
+                                        Set to Draft
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-header">
+                                        <small>Danger Zone</small>
+                                    </div>
+                                    <a class="dropdown-item text-danger" href="#" onclick="testAction('delete', 1); return false;">
+                                        <i class="fas fa-trash text-danger"></i>
+                                        Delete Product
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="https://via.placeholder.com/40x40/28a745/ffffff?text=SG" 
+                                     alt="Samsung" class="rounded me-2">
+                                <div>
+                                    <div class="fw-bold">Samsung Galaxy S24</div>
+                                    <small class="text-muted">SGS24-512</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="status-badge status-draft">Draft</span></td>
+                        <td>
+                            <div class="dropdown position-relative">
+                                <button class="btn btn-light btn-sm action-dropdown-btn" 
+                                        type="button" 
+                                        data-product-id="2"
+                                        data-product-status="draft">
+                                    Actions
+                                    <i class="fas fa-chevron-down ms-2 fs-7 dropdown-arrow"></i>
+                                </button>
+                                <div class="action-dropdown-menu">
+                                    <div class="dropdown-header">
+                                        <small>Product Actions</small>
+                                    </div>
+                                    <a class="dropdown-item" href="#" onclick="testAction('edit', 2); return false;">
+                                        <i class="fas fa-edit text-primary"></i>
+                                        Edit Product
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-header">
+                                        <small>Status Actions</small>
+                                    </div>
+                                    <a class="dropdown-item" href="#" onclick="testAction('status', 2, 'publish'); return false;">
+                                        <i class="fas fa-play text-success"></i>
+                                        Publish
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-header">
+                                        <small>Danger Zone</small>
+                                    </div>
+                                    <a class="dropdown-item text-danger" href="#" onclick="testAction('delete', 2); return false;">
+                                        <i class="fas fa-trash text-danger"></i>
+                                        Delete Product
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="test-section">
+            <h3 class="mb-4"><i class="fas fa-info-circle me-2 text-info"></i>Test Results</h3>
+            <div id="test-results">
+                <p class="text-muted">Click on action buttons to test functionality...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test action function
+        function testAction(action, productId, status = null) {
+            const resultsDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let message = '';
+            switch(action) {
+                case 'edit':
+                    message = `✅ Edit action triggered for product ${productId}`;
+                    break;
+                case 'duplicate':
+                    message = `✅ Duplicate action triggered for product ${productId}`;
+                    break;
+                case 'stock':
+                    message = `✅ Stock management triggered for product ${productId}`;
+                    break;
+                case 'status':
+                    message = `✅ Status change to "${status}" triggered for product ${productId}`;
+                    break;
+                case 'delete':
+                    message = `✅ Delete action triggered for product ${productId}`;
+                    break;
+                default:
+                    message = `✅ Unknown action "${action}" triggered for product ${productId}`;
+            }
+            
+            resultsDiv.innerHTML += `<div class="alert alert-success alert-sm mb-2">[${timestamp}] ${message}</div>`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Initialize dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            initActionMenus();
+        });
+
+        function initActionMenus() {
+            const actionButtons = document.querySelectorAll('.action-dropdown-btn');
+            
+            actionButtons.forEach(function(button) {
+                button.addEventListener('click', handleActionDropdownClick);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown')) {
+                    closeAllActionDropdowns();
+                }
+            });
+        }
+
+        function handleActionDropdownClick(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.currentTarget;
+            const dropdown = button.closest('.dropdown');
+            const menu = dropdown.querySelector('.action-dropdown-menu');
+            const arrow = button.querySelector('.dropdown-arrow');
+            
+            closeAllActionDropdowns();
+            
+            const isVisible = menu.style.display === 'block';
+            
+            if (!isVisible) {
+                menu.style.display = 'block';
+                button.classList.add('active');
+                arrow.style.transform = 'rotate(180deg)';
+                
+                positionDropdown(button, menu);
+                
+                menu.style.opacity = '0';
+                menu.style.transform = 'translateY(-10px)';
+                
+                setTimeout(() => {
+                    menu.style.transition = 'all 0.2s ease';
+                    menu.style.opacity = '1';
+                    menu.style.transform = 'translateY(0)';
+                }, 10);
+            }
+        }
+
+        function positionDropdown(button, menu) {
+            const buttonRect = button.getBoundingClientRect();
+            const menuWidth = 200;
+            
+            let left = buttonRect.right - menuWidth;
+            let top = buttonRect.bottom + 5;
+            
+            if (left < 10) {
+                left = 10;
+            }
+            
+            if (top + 300 > window.innerHeight) {
+                top = buttonRect.top - 300;
+            }
+            
+            menu.style.position = 'fixed';
+            menu.style.left = left + 'px';
+            menu.style.top = top + 'px';
+            menu.style.zIndex = '1050';
+            menu.style.minWidth = menuWidth + 'px';
+        }
+
+        function closeAllActionDropdowns() {
+            const openMenus = document.querySelectorAll('.action-dropdown-menu[style*="display: block"]');
+            
+            openMenus.forEach(function(menu) {
+                const dropdown = menu.closest('.dropdown');
+                const button = dropdown.querySelector('.action-dropdown-btn');
+                const arrow = button.querySelector('.dropdown-arrow');
+                
+                menu.style.transition = 'all 0.2s ease';
+                menu.style.opacity = '0';
+                menu.style.transform = 'translateY(-10px)';
+                
+                setTimeout(() => {
+                    menu.style.display = 'none';
+                    button.classList.remove('active');
+                    arrow.style.transform = 'rotate(0deg)';
+                }, 200);
+            });
+        }
+    </script>
+</body>
+</html>

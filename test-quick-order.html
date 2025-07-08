@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Order Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        input, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quick Order System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Barcode Search API</h2>
+        <input type="text" id="barcodeInput" placeholder="Enter barcode (e.g., 1234567890123)" value="1234567890123">
+        <button onclick="testBarcodeSearch()">Test Barcode Search</button>
+        <div id="barcodeResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Product Search API</h2>
+        <input type="text" id="searchInput" placeholder="Enter search term" value="product">
+        <button onclick="testProductSearch()">Test Product Search</button>
+        <div id="searchResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Quick Order Routes</h2>
+        <button onclick="testQuickOrderPage()">Test Quick Order Page</button>
+        <button onclick="testQuickOrderAPI()">Test Quick Order API</button>
+        <div id="routeResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Database Connection</h2>
+        <button onclick="testDatabase()">Test Database</button>
+        <div id="dbResult"></div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+
+        async function testBarcodeSearch() {
+            const barcode = document.getElementById('barcodeInput').value;
+            const resultDiv = document.getElementById('barcodeResult');
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/products/barcode/${encodeURIComponent(barcode)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="test-result success">
+                            <strong>✓ Success:</strong> ${data.message}
+                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="test-result error">
+                            <strong>✗ Error:</strong> ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-result error">
+                        <strong>✗ Network Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testProductSearch() {
+            const query = document.getElementById('searchInput').value;
+            const resultDiv = document.getElementById('searchResult');
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/products/search?q=${encodeURIComponent(query)}&limit=5`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="test-result success">
+                            <strong>✓ Success:</strong> Found ${data.data.length} products
+                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="test-result error">
+                            <strong>✗ Error:</strong> ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-result error">
+                        <strong>✗ Network Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testQuickOrderPage() {
+            const resultDiv = document.getElementById('routeResult');
+            
+            try {
+                const response = await fetch(`${baseUrl}/admin/quick-order`);
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="test-result success">
+                            <strong>✓ Success:</strong> Quick Order page is accessible
+                            <br><a href="${baseUrl}/admin/quick-order" target="_blank">Open Quick Order Page</a>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="test-result error">
+                            <strong>✗ Error:</strong> Quick Order page returned ${response.status} ${response.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-result error">
+                        <strong>✗ Network Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testQuickOrderAPI() {
+            const resultDiv = document.getElementById('routeResult');
+            
+            // This will likely fail without authentication, but we can test if the route exists
+            try {
+                const response = await fetch(`${baseUrl}/admin/quick-order/statistics`);
+                
+                if (response.status === 401 || response.status === 403) {
+                    resultDiv.innerHTML += `
+                        <div class="test-result success">
+                            <strong>✓ Info:</strong> Quick Order API routes exist (authentication required)
+                        </div>
+                    `;
+                } else if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML += `
+                        <div class="test-result success">
+                            <strong>✓ Success:</strong> Quick Order API is working
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML += `
+                        <div class="test-result error">
+                            <strong>✗ Error:</strong> API returned ${response.status} ${response.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML += `
+                    <div class="test-result error">
+                        <strong>✗ Network Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testDatabase() {
+            const resultDiv = document.getElementById('dbResult');
+            
+            // Test if we can access a simple API that would require database
+            try {
+                const response = await fetch(`${baseUrl}/api/products/search?q=test&limit=1`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="test-result success">
+                            <strong>✓ Success:</strong> Database connection is working
+                            <br>API Response: ${data.message}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="test-result error">
+                            <strong>✗ Error:</strong> Database might have issues - ${data.message || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-result error">
+                        <strong>✗ Network Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run basic tests on page load
+        window.onload = function() {
+            console.log('Quick Order Test Page Loaded');
+            console.log('Base URL:', baseUrl);
+            
+            // Show instructions
+            const instructions = document.createElement('div');
+            instructions.className = 'test-section';
+            instructions.innerHTML = `
+                <h2>Instructions</h2>
+                <p><strong>Before testing:</strong></p>
+                <ol>
+                    <li>Make sure your Laravel server is running</li>
+                    <li>Run migrations: <code>php artisan migrate</code></li>
+                    <li>Seed some products with barcodes</li>
+                    <li>Make sure you're logged into the admin panel</li>
+                </ol>
+                <p><strong>Test Results:</strong></p>
+            `;
+            document.body.insertBefore(instructions, document.body.firstChild.nextSibling);
+        };
+    </script>
+</body>
+</html>

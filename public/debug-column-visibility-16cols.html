@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>16 Columns Debug Test - Column Visibility</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-panel { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .column-controls { margin: 20px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .column-controls label { display: block; margin: 5px 0; padding: 5px; background: #fff; border-radius: 3px; }
+        .test-results { background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe8e8; color: red; }
+        .success { background: #e8f5e8; color: green; }
+        #console-output { background: #000; color: #0f0; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
+        .table-container { overflow-x: auto; margin: 20px 0; border: 1px solid #ddd; }
+        #test-table { min-width: 1600px; }
+        .controls-row { display: flex; gap: 10px; margin: 10px 0; }
+        .test-button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .test-button:hover { background: #0056b3; }
+        .clear-button { background: #dc3545; }
+        .clear-button:hover { background: #c82333; }
+    </style>
+</head>
+<body>
+    <h1>16 Columns Debug Test - Column Visibility</h1>
+    
+    <div class="debug-panel">
+        <h3>Test Controls</h3>
+        <div class="controls-row">
+            <button class="test-button" onclick="debugColumnMapping()">Debug Column Mapping</button>
+            <button class="test-button" onclick="testSequentialToggle()">Test Sequential Toggle</button>
+            <button class="test-button" onclick="testRandomToggle()">Test Random Toggle</button>
+            <button class="test-button clear-button" onclick="clearConsole()">Clear Console</button>
+        </div>
+        
+        <div class="column-controls">
+            <label><input type="checkbox" class="column-toggle" value="0" checked> Col 0 (Checkbox)</label>
+            <label><input type="checkbox" class="column-toggle" value="1" checked> Col 1 (Invoice)</label>
+            <label><input type="checkbox" class="column-toggle" value="2" checked> Col 2 (Customer)</label>
+            <label><input type="checkbox" class="column-toggle" value="3" checked> Col 3 (Amount)</label>
+            <label><input type="checkbox" class="column-toggle" value="4" checked> Col 4 (Status)</label>
+            <label><input type="checkbox" class="column-toggle" value="5" checked> Col 5 (Date)</label>
+            <label><input type="checkbox" class="column-toggle" value="6" checked> Col 6 (Branch)</label>
+            <label><input type="checkbox" class="column-toggle" value="7" checked> Col 7 (Payment)</label>
+            <label><input type="checkbox" class="column-toggle" value="8" checked> Col 8 (Creator)</label>
+            <label><input type="checkbox" class="column-toggle" value="9" checked> Col 9 (Phone)</label>
+            <label><input type="checkbox" class="column-toggle" value="10" checked> Col 10 (Address)</label>
+            <label><input type="checkbox" class="column-toggle" value="11" checked> Col 11 (Email)</label>
+            <label><input type="checkbox" class="column-toggle" value="12" checked> Col 12 (Notes)</label>
+            <label><input type="checkbox" class="column-toggle" value="13" checked> Col 13 (Tax)</label>
+            <label><input type="checkbox" class="column-toggle" value="14" checked> Col 14 (Discount)</label>
+            <label><input type="checkbox" class="column-toggle" value="15" checked> Col 15 (Actions)</label>
+        </div>
+    </div>
+
+    <div class="test-results">
+        <h3>Console Output</h3>
+        <div id="console-output"></div>
+    </div>
+
+    <div class="table-container">
+        <table id="test-table" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th>Invoice Number</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Branch</th>
+                    <th>Payment</th>
+                    <th>Creator</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Email</th>
+                    <th>Notes</th>
+                    <th>Tax</th>
+                    <th>Discount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>INV-001</td>
+                    <td>Customer 1</td>
+                    <td>1,000,000</td>
+                    <td>Paid</td>
+                    <td>2025-07-08</td>
+                    <td>Branch 1</td>
+                    <td>Cash</td>
+                    <td>User 1</td>
+                    <td>0123456789</td>
+                    <td>Address 1</td>
+                    <td>customer1@test.com</td>
+                    <td>Note 1</td>
+                    <td>100,000</td>
+                    <td>50,000</td>
+                    <td>Edit | Delete</td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>INV-002</td>
+                    <td>Customer 2</td>
+                    <td>2,000,000</td>
+                    <td>Pending</td>
+                    <td>2025-07-08</td>
+                    <td>Branch 2</td>
+                    <td>Transfer</td>
+                    <td>User 2</td>
+                    <td>0987654321</td>
+                    <td>Address 2</td>
+                    <td>customer2@test.com</td>
+                    <td>Note 2</td>
+                    <td>200,000</td>
+                    <td>100,000</td>
+                    <td>Edit | Delete</td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>INV-003</td>
+                    <td>Customer 3</td>
+                    <td>3,000,000</td>
+                    <td>Processing</td>
+                    <td>2025-07-08</td>
+                    <td>Branch 3</td>
+                    <td>Card</td>
+                    <td>User 3</td>
+                    <td>0111222333</td>
+                    <td>Address 3</td>
+                    <td>customer3@test.com</td>
+                    <td>Note 3</td>
+                    <td>300,000</td>
+                    <td>150,000</td>
+                    <td>Edit | Delete</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        let dt;
+        let consoleOutput = document.getElementById('console-output');
+
+        function log(message) {
+            console.log(message);
+            consoleOutput.innerHTML += message + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+
+        function debugColumnMapping() {
+            if (!dt || !dt.column) {
+                log('DataTable not initialized');
+                return;
+            }
+
+            log('=== COLUMN MAPPING DEBUG ===');
+            var $headers = $(dt.table().header()).find('th');
+            
+            log('Headers in DOM: ' + $headers.length);
+            log('Columns in DataTable: ' + dt.columns().count());
+            
+            // Check each header
+            $headers.each(function(index) {
+                var $header = $(this);
+                var headerText = $header.text().trim();
+                var column = dt.column(index);
+                
+                log(`Header ${index}: text="${headerText}", visible=${$header.is(':visible')}, columnExists=${!!column}, columnVisible=${column ? column.visible() : 'N/A'}`);
+            });
+            
+            log('--- Column Details ---');
+            // Check each column
+            for (var i = 0; i < dt.columns().count(); i++) {
+                var column = dt.column(i);
+                var $header = $headers.eq(i);
+                log(`Column ${i}: visible=${column.visible()}, headerExists=${$header.length > 0}, headerVisible=${$header.length > 0 ? $header.is(':visible') : 'N/A'}`);
+            }
+            log('=== END COLUMN MAPPING ===');
+        }
+
+        function testSequentialToggle() {
+            log('\n=== SEQUENTIAL TOGGLE TEST ===');
+            // Test toggling columns 6, 7, 8, 9 sequentially
+            var testColumns = [6, 7, 8, 9];
+            var delay = 1000; // 1 second delay
+
+            testColumns.forEach(function(colIndex, i) {
+                setTimeout(function() {
+                    log(`\n--- Testing Column ${colIndex} ---`);
+                    var checkbox = $(`.column-toggle[value="${colIndex}"]`);
+                    checkbox.prop('checked', false).trigger('change');
+                }, i * delay);
+            });
+        }
+
+        function testRandomToggle() {
+            log('\n=== RANDOM TOGGLE TEST ===');
+            // Test random columns
+            var randomColumns = [3, 8, 12, 5, 10];
+            var delay = 800;
+
+            randomColumns.forEach(function(colIndex, i) {
+                setTimeout(function() {
+                    log(`\n--- Random Testing Column ${colIndex} ---`);
+                    var checkbox = $(`.column-toggle[value="${colIndex}"]`);
+                    var currentState = checkbox.is(':checked');
+                    checkbox.prop('checked', !currentState).trigger('change');
+                }, i * delay);
+            });
+        }
+
+        function forceHeaderSync() {
+            if (!dt || !dt.column) {
+                return;
+            }
+
+            log('Starting header sync...');
+
+            var $headers = $(dt.table().header()).find('th');
+            var columnCount = dt.columns().count();
+
+            log(`Syncing ${columnCount} columns with ${$headers.length} headers`);
+
+            // NEW APPROACH: Use DataTables column().header() to get the correct header for each column
+            // This avoids index mismatch issues when columns are hidden
+            log(`Syncing ${columnCount} columns using column().header() method`);
+
+            for (var columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+                var column = dt.column(columnIndex);
+                if (column && column.visible !== undefined) {
+                    var isVisible = column.visible();
+
+                    try {
+                        // Use DataTables API to get the actual header for this column
+                        var headerNode = column.header();
+                        var $header = $(headerNode);
+
+                        log(`Header sync - Column ${columnIndex}: DataTable visible=${isVisible}, Header exists=${$header.length > 0}, Header currently visible=${$header.length > 0 ? $header.is(':visible') : 'N/A'}`);
+
+                        // Only process if header exists
+                        if ($header.length > 0) {
+                            // Don't hide the first column (checkbox column)
+                            if (columnIndex === 0) {
+                                $header.show(); // Always show checkbox column
+                                log(`Column ${columnIndex} (checkbox): Always visible`);
+                            } else {
+                                // Only change header visibility if it doesn't match DataTable state
+                                if (isVisible && !$header.is(':visible')) {
+                                    $header.show();
+                                    log(`Column ${columnIndex}: Showing header (was hidden, should be visible)`);
+                                } else if (!isVisible && $header.is(':visible')) {
+                                    $header.hide();
+                                    log(`Column ${columnIndex}: Hiding header (was visible, should be hidden)`);
+                                } else {
+                                    log(`Column ${columnIndex}: Header already in correct state (${isVisible ? 'visible' : 'hidden'})`);
+                                }
+                            }
+                        } else {
+                            log(`Column ${columnIndex}: No header found via column().header()`);
+                        }
+                    } catch (error) {
+                        log(`Column ${columnIndex}: Error getting header - ${error.message}`);
+                    }
+                }
+            }
+
+            dt.columns.adjust();
+            log('Header sync completed');
+        }
+
+        $(document).ready(function() {
+            log('Initializing DataTable with 16 columns...');
+
+            dt = $('#test-table').DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                scrollX: true, // Enable horizontal scrolling
+                columnDefs: [
+                    { targets: [9, 10, 11, 12, 13, 14], visible: false } // Hide some columns initially
+                ]
+            });
+
+            log('DataTable initialized');
+            debugColumnMapping();
+
+            // Handle column toggle
+            $('.column-toggle').on('change', function() {
+                var columnIndex = parseInt($(this).val());
+                var isVisible = $(this).is(':checked');
+
+                log(`\n--- Column toggle clicked: Column ${columnIndex}, isVisible=${isVisible} ---`);
+
+                // Debug: Log all column visibility states before change
+                log('All columns visibility before change:');
+                for (var i = 0; i < dt.columns().count(); i++) {
+                    log(`Column ${i}: visible = ${dt.column(i).visible()}`);
+                }
+
+                try {
+                    var column = dt.column(columnIndex);
+
+                    if (column && column.visible !== undefined) {
+                        log(`Before toggle: Column ${columnIndex} currentVisibility=${column.visible()}, targetVisibility=${isVisible}`);
+
+                        // Use DataTables API to set column visibility for ONLY this column
+                        column.visible(isVisible, false); // false = don't redraw yet
+
+                        log(`After toggle: Column ${columnIndex} newVisibility=${column.visible()}`);
+
+                        // Debug: Log all column visibility states after change
+                        log('All columns visibility after change:');
+                        for (var i = 0; i < dt.columns().count(); i++) {
+                            log(`Column ${i}: visible = ${dt.column(i).visible()}`);
+                        }
+
+                        // Force all headers to sync with column visibility
+                        forceHeaderSync();
+
+                        // Now redraw the table
+                        dt.draw(false);
+
+                        log(`Column visibility updated successfully: Column ${columnIndex}, isVisible=${isVisible}, actualVisibility=${column.visible()}`);
+                    } else {
+                        log(`ERROR: Column not found: ${columnIndex}`);
+                    }
+                } catch (error) {
+                    log(`ERROR: ${error.message}`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

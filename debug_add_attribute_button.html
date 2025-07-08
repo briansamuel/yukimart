@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Add Attribute Button</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .btn { padding: 8px 16px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .hidden { display: none; }
+        .console { background: #f8f9fa; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug Add Attribute Button</h1>
+    
+    <div class="debug-section">
+        <h3>1. Test Button Visibility</h3>
+        <p>Check if button exists in DOM and is visible:</p>
+        <button onclick="checkButton()" class="btn">Check Button</button>
+        <div id="button-status" class="console"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>2. Test Container Visibility</h3>
+        <p>Check if variants container is visible:</p>
+        <button onclick="checkContainer()" class="btn">Check Container</button>
+        <div id="container-status" class="console"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>3. Manual Show Container</h3>
+        <p>Manually show variants container:</p>
+        <button onclick="showContainer()" class="btn">Show Container</button>
+        <div id="show-status" class="console"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>4. Test Add Attribute Function</h3>
+        <p>Manually call add attribute function:</p>
+        <button onclick="testAddAttribute()" class="btn">Add Attribute Row</button>
+        <div id="add-status" class="console"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>5. Product Type Test</h3>
+        <p>Test product type change:</p>
+        <select id="test-product-type" onchange="testProductTypeChange()">
+            <option value="simple">Simple</option>
+            <option value="variable">Variable</option>
+        </select>
+        <div id="type-status" class="console"></div>
+    </div>
+
+    <!-- Simulate the actual HTML structure -->
+    <div id="kt_product_variants_container" class="hidden">
+        <div class="card">
+            <div class="card-header">
+                <h3>Variant Management</h3>
+            </div>
+            <div class="card-body">
+                <div id="attribute_selection_container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6>Attributes</h6>
+                        <button type="button" id="add_new_attribute_row_btn" class="btn">
+                            <i class="fa fa-plus"></i> Add Attribute
+                        </button>
+                    </div>
+                    <div id="attribute_rows_container">
+                        <!-- Attribute rows will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Debug functions
+        function log(message, elementId) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML += `[${timestamp}] ${message}<br>`;
+        }
+
+        function checkButton() {
+            const button = document.querySelector('#add_new_attribute_row_btn');
+            const container = document.querySelector('#kt_product_variants_container');
+            
+            log(`Button found: ${!!button}`, 'button-status');
+            if (button) {
+                log(`Button visible: ${button.offsetParent !== null}`, 'button-status');
+                log(`Button disabled: ${button.disabled}`, 'button-status');
+                log(`Button has click listener: ${button.hasAttribute('data-listener-attached')}`, 'button-status');
+            }
+            log(`Container visible: ${container && container.offsetParent !== null}`, 'button-status');
+        }
+
+        function checkContainer() {
+            const container = document.querySelector('#kt_product_variants_container');
+            log(`Container found: ${!!container}`, 'container-status');
+            if (container) {
+                log(`Container display: ${container.style.display}`, 'container-status');
+                log(`Container class: ${container.className}`, 'container-status');
+                log(`Container visible: ${container.offsetParent !== null}`, 'container-status');
+            }
+        }
+
+        function showContainer() {
+            const container = document.querySelector('#kt_product_variants_container');
+            if (container) {
+                container.style.display = 'block';
+                container.classList.remove('hidden');
+                log('Container shown manually', 'show-status');
+                
+                // Re-check button
+                setTimeout(() => {
+                    const button = document.querySelector('#add_new_attribute_row_btn');
+                    log(`Button visible after show: ${button && button.offsetParent !== null}`, 'show-status');
+                    
+                    if (button && !button.hasAttribute('data-listener-attached')) {
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            log('Button clicked! (manual listener)', 'show-status');
+                            testAddAttribute();
+                        });
+                        button.setAttribute('data-listener-attached', 'true');
+                        log('Click listener attached manually', 'show-status');
+                    }
+                }, 100);
+            } else {
+                log('Container not found', 'show-status');
+            }
+        }
+
+        function testAddAttribute() {
+            log('Add attribute function called', 'add-status');
+            
+            const container = document.querySelector('#attribute_rows_container');
+            if (container) {
+                const rowIndex = container.children.length;
+                const rowHTML = `
+                    <div class="attribute-row" data-row-index="${rowIndex}" style="padding: 10px; border: 1px solid #ddd; margin: 10px 0;">
+                        <p>Attribute Row ${rowIndex + 1}</p>
+                        <select>
+                            <option>Choose attribute...</option>
+                            <option>Color</option>
+                            <option>Size</option>
+                        </select>
+                        <input type="text" placeholder="Enter values..." />
+                        <button onclick="this.parentElement.remove()">Remove</button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', rowHTML);
+                log(`Added attribute row ${rowIndex + 1}`, 'add-status');
+            } else {
+                log('Attribute rows container not found', 'add-status');
+            }
+        }
+
+        function testProductTypeChange() {
+            const select = document.getElementById('test-product-type');
+            const container = document.querySelector('#kt_product_variants_container');
+            
+            log(`Product type changed to: ${select.value}`, 'type-status');
+            
+            if (select.value === 'variable') {
+                if (container) {
+                    container.style.display = 'block';
+                    container.classList.remove('hidden');
+                    log('Container shown for variable product', 'type-status');
+                }
+            } else {
+                if (container) {
+                    container.style.display = 'none';
+                    log('Container hidden for simple product', 'type-status');
+                }
+            }
+        }
+
+        // Test KTProductVariantManager if available
+        function testVariantManager() {
+            if (typeof KTProductVariantManager !== 'undefined') {
+                log('KTProductVariantManager found', 'add-status');
+                try {
+                    KTProductVariantManager.showVariantsContainer();
+                    log('showVariantsContainer() called', 'add-status');
+                } catch (e) {
+                    log(`Error calling showVariantsContainer: ${e.message}`, 'add-status');
+                }
+            } else {
+                log('KTProductVariantManager not found', 'add-status');
+            }
+        }
+
+        // Auto-run some checks on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                checkButton();
+                checkContainer();
+                testVariantManager();
+            }, 1000);
+        });
+    </script>
+
+    <div class="debug-section">
+        <h3>6. Console Commands</h3>
+        <p>Open browser console and try these commands:</p>
+        <pre>
+// Check if variant manager exists
+console.log(typeof KTProductVariantManager);
+
+// Show variants container manually
+KTProductVariantManager.showVariantsContainer();
+
+// Add attribute row manually
+KTProductVariantManager.addAttributeRow();
+
+// Check button
+document.querySelector('#add_new_attribute_row_btn');
+
+// Check container
+document.querySelector('#kt_product_variants_container');
+        </pre>
+    </div>
+
+    <div class="debug-section">
+        <h3>7. Expected Behavior</h3>
+        <ul>
+            <li>✅ Button should exist in DOM</li>
+            <li>✅ Container should be hidden initially</li>
+            <li>✅ When product type = 'variable', container shows</li>
+            <li>✅ Button becomes clickable</li>
+            <li>✅ Click adds new attribute row</li>
+            <li>✅ Each row has select + tagify input</li>
+        </ul>
+    </div>
+</body>
+</html>

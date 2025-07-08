@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Action Menu Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-header {
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .endpoint-card {
+            border: 1px solid #e4e6ef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .endpoint-card:hover {
+            border-color: #3699ff;
+            box-shadow: 0 2px 8px rgba(54, 147, 255, 0.1);
+        }
+        
+        .method-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        .method-post {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        
+        .method-patch {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+        
+        .method-get {
+            background-color: rgba(23, 162, 184, 0.1);
+            color: #17a2b8;
+        }
+        
+        .test-button {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .response-area {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response-success {
+            border-left: 4px solid #28a745;
+        }
+        
+        .response-error {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .code-block {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-server me-3"></i>Backend Action Menu Test</h1>
+            <p class="mb-0">Testing the backend API endpoints for action menu functionality</p>
+        </div>
+        
+        <div class="test-section">
+            <h3 class="mb-4"><i class="fas fa-list me-2 text-primary"></i>Available API Endpoints</h3>
+            
+            <!-- Duplicate Product -->
+            <div class="endpoint-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5>
+                            <span class="method-badge method-post">POST</span>
+                            Duplicate Product
+                        </h5>
+                        <p class="text-muted mb-2">
+                            <code>/admin/products/{id}/duplicate</code>
+                        </p>
+                        <p class="mb-3">Creates a copy of an existing product with modified name and SKU.</p>
+                        
+                        <h6>Response Example:</h6>
+                        <div class="code-block">
+{
+  "success": true,
+  "message": "Product duplicated successfully.",
+  "data": {
+    "original_id": 1,
+    "new_id": 15,
+    "new_product_name": "iPhone 15 Pro Max (Copy)",
+    "new_sku": "IPH15PM-256-COPY"
+  }
+}
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-sm test-button" onclick="testDuplicate()">
+                            <i class="fas fa-copy me-1"></i>Test
+                        </button>
+                    </div>
+                </div>
+                <div id="duplicate-response" class="response-area" style="display: none;"></div>
+            </div>
+            
+            <!-- Change Status -->
+            <div class="endpoint-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5>
+                            <span class="method-badge method-patch">PATCH</span>
+                            Change Product Status
+                        </h5>
+                        <p class="text-muted mb-2">
+                            <code>/admin/products/{id}/status</code>
+                        </p>
+                        <p class="mb-3">Updates the product status (publish, draft, pending, trash).</p>
+                        
+                        <h6>Request Body:</h6>
+                        <div class="code-block">
+{
+  "status": "draft"
+}
+                        </div>
+                        
+                        <h6>Response Example:</h6>
+                        <div class="code-block">
+{
+  "success": true,
+  "message": "Product status updated successfully.",
+  "data": {
+    "product_id": 1,
+    "old_status": "publish",
+    "new_status": "draft"
+  }
+}
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-warning btn-sm test-button" onclick="testChangeStatus('draft')">
+                            <i class="fas fa-pause me-1"></i>To Draft
+                        </button>
+                        <button class="btn btn-success btn-sm test-button" onclick="testChangeStatus('publish')">
+                            <i class="fas fa-play me-1"></i>To Publish
+                        </button>
+                    </div>
+                </div>
+                <div id="status-response" class="response-area" style="display: none;"></div>
+            </div>
+            
+            <!-- Get History -->
+            <div class="endpoint-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5>
+                            <span class="method-badge method-get">GET</span>
+                            Get Product History
+                        </h5>
+                        <p class="text-muted mb-2">
+                            <code>/admin/products/{id}/history</code>
+                        </p>
+                        <p class="mb-3">Retrieves the activity history for a product including changes and stock movements.</p>
+                        
+                        <h6>Response Example:</h6>
+                        <div class="code-block">
+{
+  "success": true,
+  "message": "Product history retrieved successfully.",
+  "data": {
+    "product_id": 1,
+    "product_name": "iPhone 15 Pro Max",
+    "history": [
+      {
+        "type": "status_change",
+        "title": "Status Changed",
+        "description": "Status changed from 'publish' to 'draft'",
+        "created_at": "2024-01-20T10:30:00Z"
+      }
+    ]
+  }
+}
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-info btn-sm test-button" onclick="testGetHistory()">
+                            <i class="fas fa-history me-1"></i>Test
+                        </button>
+                    </div>
+                </div>
+                <div id="history-response" class="response-area" style="display: none;"></div>
+            </div>
+            
+            <!-- Quick Edit -->
+            <div class="endpoint-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5>
+                            <span class="method-badge method-post">POST</span>
+                            Quick Edit Product
+                        </h5>
+                        <p class="text-muted mb-2">
+                            <code>/admin/products/{id}/quick-edit</code>
+                        </p>
+                        <p class="mb-3">Quickly update specific product fields without full form submission.</p>
+                        
+                        <h6>Request Body:</h6>
+                        <div class="code-block">
+{
+  "product_name": "Updated Product Name",
+  "sale_price": 999000,
+  "reorder_point": 10
+}
+                        </div>
+                        
+                        <h6>Response Example:</h6>
+                        <div class="code-block">
+{
+  "success": true,
+  "message": "Product updated successfully.",
+  "data": {
+    "product_id": 1,
+    "updated_fields": ["product_name", "sale_price", "reorder_point"]
+  }
+}
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary btn-sm test-button" onclick="testQuickEdit()">
+                            <i class="fas fa-edit me-1"></i>Test
+                        </button>
+                    </div>
+                </div>
+                <div id="quickedit-response" class="response-area" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3 class="mb-4"><i class="fas fa-cogs me-2 text-info"></i>Test Configuration</h3>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="test-product-id" class="form-label">Product ID for Testing:</label>
+                        <input type="number" class="form-control" id="test-product-id" value="1" min="1">
+                        <small class="form-text text-muted">Enter a valid product ID from your database</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="csrf-token" class="form-label">CSRF Token:</label>
+                        <input type="text" class="form-control" id="csrf-token" placeholder="Enter CSRF token">
+                        <small class="form-text text-muted">Required for POST/PATCH requests</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle me-2"></i>Testing Instructions:</h6>
+                <ol class="mb-0">
+                    <li>Make sure you're logged into the admin panel</li>
+                    <li>Set a valid product ID that exists in your database</li>
+                    <li>Get CSRF token from your Laravel application</li>
+                    <li>Click the test buttons to verify API functionality</li>
+                    <li>Check the response areas for results</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3 class="mb-4"><i class="fas fa-code me-2 text-success"></i>Integration Code Examples</h3>
+            
+            <h5>JavaScript Integration:</h5>
+            <div class="code-block">
+// Duplicate Product
+function duplicateProduct(productId) {
+    fetch(`/admin/products/${productId}/duplicate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Product duplicated:', data.data);
+            // Refresh table or show success message
+        }
+    });
+}
+
+// Change Status
+function changeProductStatus(productId, newStatus) {
+    fetch(`/admin/products/${productId}/status`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Status changed:', data.data);
+            // Update UI or refresh table
+        }
+    });
+}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test functions
+        function getProductId() {
+            return document.getElementById('test-product-id').value;
+        }
+        
+        function getCsrfToken() {
+            return document.getElementById('csrf-token').value;
+        }
+        
+        function showResponse(elementId, response, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `response-area ${isSuccess ? 'response-success' : 'response-error'}`;
+            element.innerHTML = JSON.stringify(response, null, 2);
+        }
+        
+        function testDuplicate() {
+            const productId = getProductId();
+            const csrfToken = getCsrfToken();
+            
+            if (!csrfToken) {
+                alert('Please enter CSRF token');
+                return;
+            }
+            
+            fetch(`/admin/products/${productId}/duplicate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse('duplicate-response', data, data.success);
+            })
+            .catch(error => {
+                showResponse('duplicate-response', { error: error.message }, false);
+            });
+        }
+        
+        function testChangeStatus(status) {
+            const productId = getProductId();
+            const csrfToken = getCsrfToken();
+            
+            if (!csrfToken) {
+                alert('Please enter CSRF token');
+                return;
+            }
+            
+            fetch(`/admin/products/${productId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse('status-response', data, data.success);
+            })
+            .catch(error => {
+                showResponse('status-response', { error: error.message }, false);
+            });
+        }
+        
+        function testGetHistory() {
+            const productId = getProductId();
+            
+            fetch(`/admin/products/${productId}/history`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse('history-response', data, data.success);
+            })
+            .catch(error => {
+                showResponse('history-response', { error: error.message }, false);
+            });
+        }
+        
+        function testQuickEdit() {
+            const productId = getProductId();
+            const csrfToken = getCsrfToken();
+            
+            if (!csrfToken) {
+                alert('Please enter CSRF token');
+                return;
+            }
+            
+            const testData = {
+                product_name: 'Test Updated Product Name',
+                sale_price: 999000,
+                reorder_point: 15
+            };
+            
+            fetch(`/admin/products/${productId}/quick-edit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(testData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResponse('quickedit-response', data, data.success);
+            })
+            .catch(error => {
+                showResponse('quickedit-response', { error: error.message }, false);
+            });
+        }
+    </script>
+</body>
+</html>

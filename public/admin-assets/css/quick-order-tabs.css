@@ -1,0 +1,355 @@
+/**
+ * Quick Order Tabs Styling
+ */
+
+/* Tab Navigation */
+.nav-tabs .nav-link {
+    position: relative;
+    padding: 12px 20px;
+    border: 1px solid transparent;
+    border-radius: 0.475rem 0.475rem 0 0;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 150px;
+    max-width: 250px;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: #e9ecef;
+    color: #495057;
+    border-color: #dee2e6;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #ffffff;
+    color: #1e1e2d;
+    border-color: #dee2e6 #dee2e6 #ffffff;
+    font-weight: 600;
+}
+
+/* Tab Title */
+.tab-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
+}
+
+/* Items Count Badge */
+.tab-items-count {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    display: none; /* Hidden by default, shown when items > 0 */
+}
+
+.nav-link.active .tab-items-count {
+    background-color: #009ef7 !important;
+    color: white !important;
+}
+
+/* Close Tab Button */
+.close-tab-btn {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    margin-left: auto;
+}
+
+.close-tab-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.nav-link:hover .close-tab-btn {
+    opacity: 0.8;
+}
+
+.close-tab-btn i {
+    font-size: 10px;
+}
+
+/* Tab Content */
+.tab-content {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.475rem 0.475rem;
+    min-height: 600px;
+}
+
+.tab-pane {
+    padding: 20px;
+}
+
+/* Add New Tab Button */
+#addNewOrderTabBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 0.475rem;
+    transition: all 0.3s ease;
+}
+
+#addNewOrderTabBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#addNewOrderTabBtn i {
+    font-size: 12px;
+}
+
+/* Tab Header Card */
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-title h3 {
+    color: #1e1e2d;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-tabs .nav-link {
+        min-width: 120px;
+        max-width: 180px;
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    .tab-title {
+        font-size: 13px;
+    }
+    
+    .close-tab-btn {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .close-tab-btn i {
+        font-size: 9px;
+    }
+    
+    #addNewOrderTabBtn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    .tab-pane {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+    
+    .nav-tabs::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .nav-tabs::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .nav-tabs::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 2px;
+    }
+    
+    .nav-tabs .nav-link {
+        min-width: 100px;
+        max-width: 150px;
+        padding: 8px 12px;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    
+    .tab-title {
+        font-size: 12px;
+    }
+    
+    .tab-items-count {
+        font-size: 10px;
+        padding: 1px 4px;
+        min-width: 16px;
+    }
+}
+
+/* Animation for tab switching */
+.tab-pane {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tab-pane.active {
+    opacity: 1;
+}
+
+/* Loading state for tabs */
+.tab-loading {
+    position: relative;
+}
+
+.tab-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 10;
+}
+
+.tab-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #009ef7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 11;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tab notification badges */
+.tab-notification {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #f1416c;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Drag and drop styling for tabs */
+.nav-tabs .nav-item.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.nav-tabs .nav-item.drag-over {
+    border-left: 3px solid #009ef7;
+}
+
+/* Tab context menu */
+.tab-context-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.475rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 150px;
+    padding: 8px 0;
+}
+
+.tab-context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #495057;
+    transition: background-color 0.2s ease;
+}
+
+.tab-context-menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+.tab-context-menu-item.danger {
+    color: #f1416c;
+}
+
+.tab-context-menu-item.danger:hover {
+    background-color: #fef5f5;
+}
+
+/* Tab overflow handling */
+.nav-tabs-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-tabs-scroll {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.nav-tabs-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-tabs-scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #dee2e6;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs-scroll-btn:hover {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-tabs-scroll-btn.left {
+    left: 5px;
+}
+
+.nav-tabs-scroll-btn.right {
+    right: 5px;
+}
+
+.nav-tabs-scroll-btn i {
+    font-size: 12px;
+    color: #6c757d;
+}

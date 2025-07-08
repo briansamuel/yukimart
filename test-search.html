@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Product Search</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Test Product Search</h1>
+    
+    <div>
+        <label>Search Query:</label>
+        <input type="text" id="searchQuery" placeholder="Enter product name, SKU, or barcode" value="iPhone">
+        <button onclick="testSearch()">Test Search</button>
+    </div>
+    
+    <div>
+        <label>CSRF Token:</label>
+        <input type="text" id="csrfToken" placeholder="Get from browser console" style="width: 400px;">
+        <button onclick="getCSRFToken()">Get CSRF Token</button>
+    </div>
+    
+    <div id="results" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+    <script>
+        function getCSRFToken() {
+            // This will help get CSRF token from the main site
+            alert('Open yukimart.local/admin/quick-order in another tab, then run: $("meta[name=csrf-token]").attr("content") in console');
+        }
+
+        function testSearch() {
+            const query = $('#searchQuery').val();
+            const token = $('#csrfToken').val();
+            
+            if (!token) {
+                alert('Please enter CSRF token first');
+                return;
+            }
+            
+            $('#results').html('Searching...');
+            
+            $.ajax({
+                url: 'http://yukimart.local/admin/quick-order/search-product',
+                method: 'POST',
+                data: {
+                    query: query,
+                    limit: 10,
+                    _token: token
+                },
+                success: function(response) {
+                    console.log('Success:', response);
+                    let html = '<h3>Success!</h3>';
+                    html += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
+                    $('#results').html(html);
+                },
+                error: function(xhr) {
+                    console.log('Error:', xhr);
+                    let html = '<h3>Error!</h3>';
+                    html += '<p>Status: ' + xhr.status + '</p>';
+                    html += '<p>Response: ' + xhr.responseText + '</p>';
+                    $('#results').html(html);
+                }
+            });
+        }
+
+        // Test with barcode search too
+        function testBarcodeSearch() {
+            const token = $('#csrfToken').val();
+            
+            if (!token) {
+                alert('Please enter CSRF token first');
+                return;
+            }
+            
+            $('#results').html('Searching by barcode...');
+            
+            $.ajax({
+                url: 'http://yukimart.local/admin/quick-order/search-product',
+                method: 'POST',
+                data: {
+                    barcode: '1234567890123',
+                    _token: token
+                },
+                success: function(response) {
+                    console.log('Barcode Success:', response);
+                    let html = '<h3>Barcode Search Success!</h3>';
+                    html += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
+                    $('#results').html(html);
+                },
+                error: function(xhr) {
+                    console.log('Barcode Error:', xhr);
+                    let html = '<h3>Barcode Search Error!</h3>';
+                    html += '<p>Status: ' + xhr.status + '</p>';
+                    html += '<p>Response: ' + xhr.responseText + '</p>';
+                    $('#results').html(html);
+                }
+            });
+        }
+    </script>
+    
+    <div style="margin-top: 20px;">
+        <button onclick="testBarcodeSearch()">Test Barcode Search</button>
+        <p>This will test searching by barcode: 1234567890123</p>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Open yukimart.local/admin/quick-order in another tab</li>
+            <li>Open browser console (F12)</li>
+            <li>Run: <code>$("meta[name=csrf-token]").attr("content")</code></li>
+            <li>Copy the token and paste it in the CSRF Token field above</li>
+            <li>Click "Test Search" to test the search functionality</li>
+        </ol>
+    </div>
+</body>
+</html>

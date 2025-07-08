@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Reset Functionality</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-title {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .test-case {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        .reset-btn {
+            background: #e74c3c;
+        }
+        
+        .reset-btn:hover {
+            background: #c0392b;
+        }
+        
+        select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+        
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Reset Functionality Test Suite</h1>
+    
+    <div class="test-section">
+        <h2 class="test-title">📋 Test Environment Setup</h2>
+        
+        <div class="test-case">
+            <h3>Mock Product Filters</h3>
+            <label>Product Status:</label>
+            <select id="mock-status-filter" data-kt-products-table-filter="status">
+                <option value="">All Status</option>
+                <option value="publish">Published</option>
+                <option value="pending">Pending</option>
+                <option value="draft">Draft</option>
+                <option value="trash">Trash</option>
+            </select>
+            
+            <label>Stock Status:</label>
+            <select id="mock-stock-filter" data-kt-products-table-filter="stock_status">
+                <option value="">All Stock Status</option>
+                <option value="in_stock">In Stock</option>
+                <option value="low_stock">Low Stock</option>
+                <option value="out_of_stock">Out of Stock</option>
+            </select>
+            
+            <label>Search:</label>
+            <input type="text" id="mock-search" data-kt-products-table-filter="search" placeholder="Search products...">
+            
+            <br><br>
+            <button onclick="setTestFilters()">🎯 Set Test Filters</button>
+            <button class="reset-btn" onclick="testResetFunctionality()">🔄 Test Reset</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">🧪 Test Cases</h2>
+        
+        <div class="test-case">
+            <h3>Test Case 1: Individual Filter Reset</h3>
+            <p>Test resetting individual filters while keeping others intact.</p>
+            <button onclick="testIndividualReset()">Run Test</button>
+            <div id="test1-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>Test Case 2: Complete Reset</h3>
+            <p>Test resetting all filters at once.</p>
+            <button onclick="testCompleteReset()">Run Test</button>
+            <div id="test2-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>Test Case 3: Reset with Visual Feedback</h3>
+            <p>Test reset functionality with user feedback.</p>
+            <button onclick="testResetWithFeedback()">Run Test</button>
+            <div id="test3-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>Test Case 4: Keyboard Shortcut Reset</h3>
+            <p>Test Ctrl+R keyboard shortcut (simulated).</p>
+            <button onclick="testKeyboardReset()">Run Test</button>
+            <div id="test4-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>Test Case 5: Double-click Reset</h3>
+            <p>Test double-click to reset individual filters.</p>
+            <button onclick="testDoubleClickReset()">Run Test</button>
+            <div id="test5-result" class="test-result"></div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">📊 Test Results Summary</h2>
+        <div id="summary-results"></div>
+    </div>
+
+    <script>
+        // Mock functions to simulate the actual reset functionality
+        let testResults = [];
+        
+        // Mock reset individual filter function
+        function resetFilter(selector) {
+            const filterElement = document.querySelector(selector);
+            if (filterElement) {
+                filterElement.value = '';
+                return true;
+            }
+            return false;
+        }
+        
+        // Mock reset all filters function
+        function resetAllFilters() {
+            const filters = [
+                '[data-kt-products-table-filter="status"]',
+                '[data-kt-products-table-filter="stock_status"]',
+                '[data-kt-products-table-filter="search"]'
+            ];
+            
+            let resetCount = 0;
+            filters.forEach(selector => {
+                if (resetFilter(selector)) {
+                    resetCount++;
+                }
+            });
+            
+            return resetCount === filters.length;
+        }
+        
+        // Set test filters
+        function setTestFilters() {
+            document.getElementById('mock-status-filter').value = 'publish';
+            document.getElementById('mock-stock-filter').value = 'low_stock';
+            document.getElementById('mock-search').value = 'test product';
+            
+            showResult('info', 'Test filters have been set!', 'summary-results');
+        }
+        
+        // Test individual reset
+        function testIndividualReset() {
+            setTestFilters();
+            
+            // Reset only stock status
+            const success = resetFilter('[data-kt-products-table-filter="stock_status"]');
+            const stockValue = document.getElementById('mock-stock-filter').value;
+            const statusValue = document.getElementById('mock-status-filter').value;
+            
+            if (success && stockValue === '' && statusValue === 'publish') {
+                showResult('success', '✅ Individual reset works correctly!', 'test1-result');
+                testResults.push({test: 'Individual Reset', result: 'PASS'});
+            } else {
+                showResult('error', '❌ Individual reset failed!', 'test1-result');
+                testResults.push({test: 'Individual Reset', result: 'FAIL'});
+            }
+        }
+        
+        // Test complete reset
+        function testCompleteReset() {
+            setTestFilters();
+            
+            const success = resetAllFilters();
+            const allEmpty = document.getElementById('mock-status-filter').value === '' &&
+                           document.getElementById('mock-stock-filter').value === '' &&
+                           document.getElementById('mock-search').value === '';
+            
+            if (success && allEmpty) {
+                showResult('success', '✅ Complete reset works correctly!', 'test2-result');
+                testResults.push({test: 'Complete Reset', result: 'PASS'});
+            } else {
+                showResult('error', '❌ Complete reset failed!', 'test2-result');
+                testResults.push({test: 'Complete Reset', result: 'FAIL'});
+            }
+        }
+        
+        // Test reset with feedback
+        function testResetWithFeedback() {
+            setTestFilters();
+            
+            const success = resetAllFilters();
+            
+            if (success) {
+                // Simulate feedback
+                setTimeout(() => {
+                    showResult('success', '✅ Reset with feedback simulation complete!', 'test3-result');
+                    testResults.push({test: 'Reset with Feedback', result: 'PASS'});
+                }, 500);
+            } else {
+                showResult('error', '❌ Reset with feedback failed!', 'test3-result');
+                testResults.push({test: 'Reset with Feedback', result: 'FAIL'});
+            }
+        }
+        
+        // Test keyboard reset
+        function testKeyboardReset() {
+            setTestFilters();
+            
+            // Simulate Ctrl+R
+            const event = new KeyboardEvent('keydown', {
+                key: 'r',
+                ctrlKey: true,
+                bubbles: true
+            });
+            
+            document.dispatchEvent(event);
+            
+            // Since we can't actually prevent the page refresh, just simulate
+            const success = resetAllFilters();
+            
+            if (success) {
+                showResult('success', '✅ Keyboard shortcut simulation works!', 'test4-result');
+                testResults.push({test: 'Keyboard Reset', result: 'PASS'});
+            } else {
+                showResult('error', '❌ Keyboard shortcut failed!', 'test4-result');
+                testResults.push({test: 'Keyboard Reset', result: 'FAIL'});
+            }
+        }
+        
+        // Test double-click reset
+        function testDoubleClickReset() {
+            setTestFilters();
+            
+            // Simulate double-click on stock filter
+            const stockFilter = document.getElementById('mock-stock-filter');
+            const event = new MouseEvent('dblclick', {
+                bubbles: true,
+                cancelable: true
+            });
+            
+            stockFilter.dispatchEvent(event);
+            resetFilter('[data-kt-products-table-filter="stock_status"]');
+            
+            const stockValue = document.getElementById('mock-stock-filter').value;
+            
+            if (stockValue === '') {
+                showResult('success', '✅ Double-click reset simulation works!', 'test5-result');
+                testResults.push({test: 'Double-click Reset', result: 'PASS'});
+            } else {
+                showResult('error', '❌ Double-click reset failed!', 'test5-result');
+                testResults.push({test: 'Double-click Reset', result: 'FAIL'});
+            }
+            
+            updateSummary();
+        }
+        
+        // Show result helper
+        function showResult(type, message, elementId) {
+            const element = document.getElementById(elementId);
+            element.className = `test-result ${type}`;
+            element.innerHTML = message;
+        }
+        
+        // Update summary
+        function updateSummary() {
+            const summaryElement = document.getElementById('summary-results');
+            const passCount = testResults.filter(r => r.result === 'PASS').length;
+            const totalCount = testResults.length;
+            
+            let summaryHTML = `<h3>📈 Test Summary: ${passCount}/${totalCount} Tests Passed</h3>`;
+            
+            testResults.forEach(result => {
+                const icon = result.result === 'PASS' ? '✅' : '❌';
+                const className = result.result === 'PASS' ? 'success' : 'error';
+                summaryHTML += `<div class="test-result ${className}">${icon} ${result.test}: ${result.result}</div>`;
+            });
+            
+            summaryElement.innerHTML = summaryHTML;
+        }
+        
+        // Test reset functionality (main test)
+        function testResetFunctionality() {
+            testResults = []; // Reset results
+            
+            // Run all tests in sequence
+            setTimeout(() => testIndividualReset(), 100);
+            setTimeout(() => testCompleteReset(), 200);
+            setTimeout(() => testResetWithFeedback(), 300);
+            setTimeout(() => testKeyboardReset(), 400);
+            setTimeout(() => testDoubleClickReset(), 500);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showResult('info', 'Test environment ready. Click "Set Test Filters" to begin testing.', 'summary-results');
+        });
+    </script>
+</body>
+</html>
