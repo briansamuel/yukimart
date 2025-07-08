@@ -1,0 +1,38 @@
+name: Deploy Laravel App via Rsync
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H your-vps-ip >> ~/.ssh/known_hosts
+
+      - name: Sync code via rsync
+        run: |
+          rsync -az --delete --exclude=".git" --exclude=".env" --exclude="node_modules" --exclude="vendor" \
+            -e "ssh -i ~/.ssh/id_rsa" ./ root@your-vps-ip:/www/wwwroot/yukimart.hethongseovn.com
+
+      - name: Post-deploy Laravel commands
+        run: |
+          ssh -i ~/.ssh/id_rsa root@103.180.134.48 "
+            cd /www/wwwroot/yukimart.hethongseovn.com &&
+            composer install --no-dev --optimize-autoloader &&
+            php artisan migrate --force &&
+            php artisan config:cache &&
+            php artisan route:cache &&
+            php artisan view:cache &&
+            chown -R nginx:nginx storage bootstrap/cache
+          "
