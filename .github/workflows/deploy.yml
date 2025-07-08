@@ -22,7 +22,7 @@ jobs:
 
       - name: Sync code via rsync
         run: |
-          rsync -az --delete --exclude=".git" --exclude=".env" --exclude="node_modules" --exclude="vendor" \
+          rsync -az --delete --exclude=".git" --exclude=".env" --exclude="node_modules" --exclude="vendor" --exclude=".user.ini" \
             -e "ssh -i ~/.ssh/id_rsa" ./ root@103.180.134.48:/www/wwwroot/yukimart.hethongseovn.com
 
       - name: Post-deploy Laravel commands
