@@ -18,12 +18,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H your-vps-ip >> ~/.ssh/known_hosts
+          ssh-keyscan -H 103.180.134.48 >> ~/.ssh/known_hosts
 
       - name: Sync code via rsync
         run: |
           rsync -az --delete --exclude=".git" --exclude=".env" --exclude="node_modules" --exclude="vendor" \
-            -e "ssh -i ~/.ssh/id_rsa" ./ root@your-vps-ip:/www/wwwroot/yukimart.hethongseovn.com
+            -e "ssh -i ~/.ssh/id_rsa" ./ root@103.180.134.48:/www/wwwroot/yukimart.hethongseovn.com
 
       - name: Post-deploy Laravel commands
         run: |
