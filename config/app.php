@@ -204,8 +204,8 @@ return [
          * Package Service Providers...
          */
         // Responsive File Manager
-        Unisharp\Laravelfilemanager\LaravelFilemanagerServiceProvider::class,
-        Intervention\Image\ImageServiceProvider::class,
+        // Unisharp\Laravelfilemanager\LaravelFilemanagerServiceProvider::class,
+        // Intervention\Image\ImageServiceProvider::class,
         /*
          * Application Service Providers...
          */

@@ -12,6 +12,159 @@ var KTInvoicesList = function () {
     var currentRequest;
     var initialized = false;
 
+    // State management keys
+    var STORAGE_KEYS = {
+        FILTERS: 'invoice_filters_state',
+        COLUMNS: 'invoice_columns_state',
+        COLUMN_VISIBILITY: 'invoice_column_visibility_state'
+    };
+
+    /**
+     * Save state to localStorage
+     */
+    var saveState = function(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+            console.log('State saved:', key, data);
+        } catch (error) {
+            console.warn('Failed to save state:', error);
+        }
+    };
+
+    /**
+     * Load state from localStorage
+     */
+    var loadState = function(key, defaultValue = null) {
+        try {
+            var data = localStorage.getItem(key);
+            if (data) {
+                var parsed = JSON.parse(data);
+                console.log('State loaded:', key, parsed);
+                return parsed;
+            }
+        } catch (error) {
+            console.warn('Failed to load state:', error);
+        }
+        return defaultValue;
+    };
+
+    /**
+     * Save filter state
+     */
+    var saveFilterState = function() {
+        if (!filterForm) return;
+
+        var filterData = {};
+
+        // Save form inputs
+        $(filterForm).find('input, select').each(function() {
+            var $input = $(this);
+            var name = $input.attr('name') || $input.attr('id');
+
+            if (name) {
+                if ($input.is(':checkbox')) {
+                    filterData[name] = $input.is(':checked');
+                } else if ($input.is('select[multiple]')) {
+                    filterData[name] = $input.val() || [];
+                } else {
+                    filterData[name] = $input.val();
+                }
+            }
+        });
+
+        saveState(STORAGE_KEYS.FILTERS, filterData);
+    };
+
+    /**
+     * Restore filter state
+     */
+    var restoreFilterState = function() {
+        var filterData = loadState(STORAGE_KEYS.FILTERS);
+        if (!filterData || !filterForm) return;
+
+        console.log('Restoring filter state:', filterData);
+
+        // Restore form inputs
+        Object.keys(filterData).forEach(function(name) {
+            var $input = $(filterForm).find('[name="' + name + '"], #' + name);
+            var value = filterData[name];
+
+            if ($input.length > 0) {
+                if ($input.is(':checkbox')) {
+                    $input.prop('checked', value);
+                } else if ($input.is('select[multiple]')) {
+                    $input.val(value).trigger('change');
+                } else {
+                    $input.val(value).trigger('change');
+                }
+            }
+        });
+    };
+
+    /**
+     * Save column visibility state
+     */
+    var saveColumnVisibilityState = function() {
+        if (!dt) return;
+
+        var columnStates = {};
+        var columnCount = dt.columns().count();
+
+        for (var i = 0; i < columnCount; i++) {
+            var column = dt.column(i);
+            if (column) {
+                columnStates[i] = column.visible();
+            }
+        }
+
+        saveState(STORAGE_KEYS.COLUMN_VISIBILITY, columnStates);
+    };
+
+    /**
+     * Restore column visibility state
+     */
+    var restoreColumnVisibilityState = function() {
+        var columnStates = loadState(STORAGE_KEYS.COLUMN_VISIBILITY);
+        if (!columnStates || !dt) return;
+
+        console.log('Restoring column visibility state:', columnStates);
+
+        Object.keys(columnStates).forEach(function(columnIndex) {
+            var index = parseInt(columnIndex);
+            var isVisible = columnStates[columnIndex];
+            var column = dt.column(index);
+
+            if (column && column.visible() !== isVisible) {
+                column.visible(isVisible, false); // Don't redraw yet
+
+                // Update corresponding checkbox
+                $('.column-toggle[value="' + index + '"]').prop('checked', isVisible);
+            }
+        });
+
+        // Redraw table once after all changes
+        dt.draw(false);
+
+        // Force header sync
+        setTimeout(function() {
+            forceHeaderSync();
+        }, 100);
+    };
+
+    /**
+     * Clear all saved states
+     */
+    var clearAllStates = function() {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.FILTERS);
+            localStorage.removeItem(STORAGE_KEYS.COLUMNS);
+            localStorage.removeItem(STORAGE_KEYS.COLUMN_VISIBILITY);
+            console.log('All states cleared');
+        } catch (error) {
+            console.warn('Failed to clear states:', error);
+        }
+    };
+
     /**
      * Initialize DataTable
      */
@@ -332,16 +485,19 @@ var KTInvoicesList = function () {
         if (filterForm) {
             // Time filter change
             $(filterForm).on('change', 'input[name="time_filter"]', function() {
+                saveFilterState();
                 dt.ajax.reload();
             });
 
             // Status filter change
             $(filterForm).on('change', 'input[type="checkbox"]', function() {
+                saveFilterState();
                 dt.ajax.reload();
             });
 
             // Select2 change
             $(filterForm).on('change', 'select', function() {
+                saveFilterState();
                 dt.ajax.reload();
             });
 
@@ -386,7 +542,8 @@ var KTInvoicesList = function () {
                     }, 300);
                 }, 500); // Wait 500ms to show the selection effect
 
-                // Reload data
+                // Save filter state and reload data
+                saveFilterState();
                 dt.ajax.reload();
             });
 
@@ -593,6 +750,15 @@ var KTInvoicesList = function () {
                         // Don't hide the first column (checkbox column)
                         if (columnIndex === 0) {
                             $header.show(); // Always show checkbox column
+                            $header.css('display', ''); // Remove any inline display styles
+
+                            // Ensure checkbox select all is visible
+                            var $checkbox = $header.find('input[type="checkbox"]');
+                            if ($checkbox.length > 0) {
+                                $checkbox.show();
+                                $checkbox.closest('.form-check').show();
+                            }
+
                             console.log(`Column ${columnIndex} (checkbox): Always visible`);
                         } else {
                             // Only change header visibility if it doesn't match DataTable state
@@ -729,6 +895,9 @@ var KTInvoicesList = function () {
                         // Now redraw the table
                         dt.draw(false); // false = don't reset paging
 
+                        // Save column visibility state
+                        saveColumnVisibilityState();
+
                         console.log('Column visibility updated successfully:', {
                             columnIndex: columnIndex,
                             isVisible: isVisible,
@@ -788,6 +957,13 @@ var KTInvoicesList = function () {
         initSearch();
         initFilters();
         initColumnVisibility();
+
+        // Restore states after initialization
+        setTimeout(function() {
+            restoreFilterState();
+            restoreColumnVisibilityState();
+        }, 500);
+
         initialized = true;
     };
 
@@ -803,6 +979,15 @@ var KTInvoicesList = function () {
         },
         getTable: function() {
             return dt;
+        },
+        clearStates: function() {
+            clearAllStates();
+        },
+        saveFilterState: function() {
+            saveFilterState();
+        },
+        saveColumnState: function() {
+            saveColumnVisibilityState();
         }
     };
 }();
