@@ -22,9 +22,6 @@ class Invoice extends Model
         'discount_rate' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
-        'paid_amount' => 'decimal:2',
-        'remaining_amount' => 'decimal:2',
-        'paid_at' => 'datetime',
         'sent_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -105,6 +102,22 @@ class Invoice extends Model
     }
 
     /**
+     * Relationship with return orders.
+     */
+    public function returnOrders()
+    {
+        return $this->hasMany(ReturnOrder::class);
+    }
+
+    /**
+     * Relationship with payments.
+     */
+    public function payments()
+    {
+        return $this->morphMany(Payment::class, 'reference');
+    }
+
+    /**
      * Get status badge HTML.
      */
     protected function statusBadge(): Attribute
@@ -134,8 +147,8 @@ class Invoice extends Model
     protected function paymentStatusBadge(): Attribute
     {
         return new Attribute(
-            get: function($value, $attributes) {
-                $status = $attributes['payment_status'] ?? 'unpaid';
+            get: function() {
+                $status = $this->payment_status;
                 return match($status) {
                     'unpaid' => '<span class="badge badge-light">Chưa thanh toán</span>',
                     'partial' => '<span class="badge badge-warning">Thanh toán một phần</span>',
@@ -143,6 +156,42 @@ class Invoice extends Model
                     'overpaid' => '<span class="badge badge-info">Thanh toán thừa</span>',
                     default => '<span class="badge badge-secondary">Không xác định</span>',
                 };
+            }
+        );
+    }
+
+    /**
+     * Get payment status computed from payments.
+     */
+    protected function paymentStatus(): Attribute
+    {
+        return new Attribute(
+            get: function() {
+                $paidAmount = $this->paid_amount;
+                $totalAmount = $this->total_amount;
+
+                if ($paidAmount <= 0) {
+                    return 'unpaid';
+                } elseif ($paidAmount >= $totalAmount) {
+                    return $paidAmount > $totalAmount ? 'overpaid' : 'paid';
+                } else {
+                    return 'partial';
+                }
+            }
+        );
+    }
+
+    /**
+     * Get total paid amount from payments.
+     */
+    protected function paidAmount(): Attribute
+    {
+        return new Attribute(
+            get: function() {
+                return $this->payments()
+                    ->where('payment_type', 'receipt')
+                    ->where('status', 'completed')
+                    ->sum('actual_amount') ?? 0;
             }
         );
     }
@@ -182,7 +231,19 @@ class Invoice extends Model
     protected function formattedRemainingAmount(): Attribute
     {
         return new Attribute(
-            get: fn($value, $attributes) => number_format($attributes['remaining_amount'], 0, ',', '.') . ' VND'
+            get: fn() => number_format($this->remaining_amount, 0, ',', '.') . ' VND'
+        );
+    }
+
+    /**
+     * Get remaining amount computed from payments.
+     */
+    protected function remainingAmount(): Attribute
+    {
+        return new Attribute(
+            get: function() {
+                return max(0, $this->total_amount - $this->paid_amount);
+            }
         );
     }
 
@@ -192,11 +253,11 @@ class Invoice extends Model
     protected function isOverdue(): Attribute
     {
         return new Attribute(
-            get: function($value, $attributes) {
-                if ($attributes['payment_status'] === 'paid') {
+            get: function() {
+                if ($this->payment_status === 'paid') {
                     return false;
                 }
-                return Carbon::parse($attributes['due_date'])->isPast();
+                return Carbon::parse($this->due_date)->isPast();
             }
         );
     }

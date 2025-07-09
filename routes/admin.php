@@ -41,6 +41,8 @@ use App\Http\Controllers\Admin\CMS\MultiLanguageController;
 use App\Http\Controllers\Admin\CMS\MenusController;
 use App\Http\Controllers\Admin\CMS\ServiceController;
 use App\Http\Controllers\Admin\CMS\InvoiceController;
+use App\Http\Controllers\Admin\CMS\ReturnOrderController;
+use App\Http\Controllers\Admin\CMS\PaymentController;
 use App\Http\Controllers\Admin\CMS\AuditLogController;
 use App\Http\Controllers\Admin\CMS\InventoryImportExportController;
 use App\Http\Controllers\Admin\CMS\ReportsController;
@@ -651,6 +653,37 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoice.print');
         Route::get('/invoices/statistics', [InvoiceController::class, 'getStatistics'])->name('invoice.statistics');
         Route::post('/invoices/from-order/{order_id}', [InvoiceController::class, 'createFromOrder'])->name('invoice.from-order');
+
+        // Return Order routes
+        Route::prefix('return-orders')->name('return-order.')->group(function () {
+            Route::get('/', [ReturnOrderController::class, 'index'])->name('list');
+            Route::get('/data', [ReturnOrderController::class, 'getData'])->name('data');
+            Route::get('/create', [ReturnOrderController::class, 'create'])->name('create');
+            Route::post('/', [ReturnOrderController::class, 'store'])->name('store');
+            Route::get('/{returnOrder}', [ReturnOrderController::class, 'show'])->name('show');
+            Route::get('/{returnOrder}/edit', [ReturnOrderController::class, 'edit'])->name('edit');
+            Route::put('/{returnOrder}', [ReturnOrderController::class, 'update'])->name('update');
+            Route::post('/{returnOrder}/approve', [ReturnOrderController::class, 'approve'])->name('approve');
+            Route::post('/{returnOrder}/reject', [ReturnOrderController::class, 'reject'])->name('reject');
+            Route::post('/{returnOrder}/complete', [ReturnOrderController::class, 'complete'])->name('complete');
+            Route::get('/{returnOrder}/details', [ReturnOrderController::class, 'getDetails'])->name('details');
+        });
+
+        // Payment routes
+        Route::prefix('payments')->name('payment.')->group(function () {
+            Route::get('/', [PaymentController::class, 'index'])->name('list');
+            Route::get('/data', [PaymentController::class, 'getData'])->name('data');
+            Route::get('/create', [PaymentController::class, 'create'])->name('create');
+            Route::post('/', [PaymentController::class, 'store'])->name('store');
+            Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
+            Route::get('/{payment}/edit', [PaymentController::class, 'edit'])->name('edit');
+            Route::put('/{payment}', [PaymentController::class, 'update'])->name('update');
+            Route::post('/{payment}/approve', [PaymentController::class, 'approve'])->name('approve');
+            Route::post('/{payment}/cancel', [PaymentController::class, 'cancel'])->name('cancel');
+            Route::get('/{payment}/details', [PaymentController::class, 'getDetails'])->name('details');
+            Route::get('/statistics/summary', [PaymentController::class, 'getStatistics'])->name('statistics');
+            Route::post('/invoices/{invoice}/payment', [PaymentController::class, 'createInvoicePayment'])->name('invoice-payment');
+        });
 
         // Custom File Manager Routes
         Route::prefix('filemanager')->name('filemanager.')->group(function () {
