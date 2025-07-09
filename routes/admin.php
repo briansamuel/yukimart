@@ -613,6 +613,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::prefix('customers')->name('customers.')->group(function () {
             Route::get('/', [CustomerController::class, 'index'])->name('index');
             Route::get('/data', [CustomerController::class, 'getData'])->name('data');
+            Route::get('/statistics', [CustomerController::class, 'getStatistics'])->name('statistics');
+            Route::get('/active/list', [CustomerController::class, 'getActiveCustomers'])->name('active-list');
             Route::get('/create', [CustomerController::class, 'create'])->name('create');
             Route::post('/', [CustomerController::class, 'store'])->name('store');
             Route::get('/{customer}/statistics', [CustomerController::class, 'statistics'])->name('statistics.detail');
@@ -620,8 +622,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
             Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
             Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
-            Route::get('/statistics/summary', [CustomerController::class, 'getStatistics'])->name('statistics');
-            Route::get('/active/list', [CustomerController::class, 'getActiveCustomers'])->name('active-list');
         });
 
         // Invoice routes
@@ -648,6 +648,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('/invoices/{id}/payment', [InvoiceController::class, 'recordPayment'])->name('invoice.payment');
         Route::post('/invoices/{id}/send', [InvoiceController::class, 'sendInvoice'])->name('invoice.send');
         Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancelInvoice'])->name('invoice.cancel');
+        Route::get('/invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoice.print');
         Route::get('/invoices/statistics', [InvoiceController::class, 'getStatistics'])->name('invoice.statistics');
         Route::post('/invoices/from-order/{order_id}', [InvoiceController::class, 'createFromOrder'])->name('invoice.from-order');
 
@@ -704,6 +705,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::post('/bulk-delete', [UsersController::class, 'deleteMany'])->name('bulk-delete');
             Route::get('/ajax/get-list', [UsersController::class, 'ajaxGetList'])->name('ajax.getList');
             Route::get('/dropdown/available', [UsersController::class, 'getAvailableForDropdown'])->name('dropdown.available');
+            Route::get('/dropdown/list', [UsersController::class, 'listForDropdown'])->name('dropdown.list');
 
             // Branch Shop Management for Users
             Route::post('/{userId}/assign-branch-shop', [UsersController::class, 'assignBranchShop'])->name('assign-branch-shop');
@@ -853,8 +855,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::post('/', [QuickInvoiceController::class, 'store'])->name('store');
         });
 
-        // Users API for dropdowns
-        Route::get('/users/list', [UsersController::class, 'listForDropdown'])->name('users.list');
+
 
         // Shopee Integration Routes
         Route::prefix('shopee')->name('shopee.')->group(function () {

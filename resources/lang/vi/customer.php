@@ -5,6 +5,8 @@ return [
     'customer' => 'Khách hàng',
     'customers' => 'Khách hàng',
     'customer_management' => 'Quản lý khách hàng',
+    'manage_customers' => 'Quản lý khách hàng',
+    'manage_customers_description' => 'Quản lý thông tin khách hàng và theo dõi hoạt động mua hàng',
     'customer_list' => 'Danh sách khách hàng',
     'customer_details' => 'Chi tiết khách hàng',
     'new_customer' => 'Khách hàng mới',
@@ -46,6 +48,7 @@ return [
     'other' => 'Khác',
 
     // Statistics
+    'total' => 'Tổng số',
     'total_customers' => 'Tổng khách hàng',
     'active_customers' => 'Khách hàng hoạt động',
     'inactive_customers' => 'Khách hàng không hoạt động',
@@ -55,18 +58,27 @@ return [
     'customers_with_orders' => 'Khách hàng có đơn hàng',
     'top_customers' => 'Khách hàng VIP',
     'customer_statistics' => 'Thống kê khách hàng',
+    'this_month' => 'Tháng này',
+    'revenue' => 'Doanh thu',
 
     // Order Statistics
+    'orders' => 'Đơn hàng',
     'total_orders' => 'Tổng đơn hàng',
     'total_spent' => 'Tổng chi tiêu',
     'avg_order_value' => 'Giá trị đơn hàng TB',
     'last_order_date' => 'Đơn hàng cuối',
+    'last_order' => 'Đơn hàng cuối',
     'first_order_date' => 'Đơn hàng đầu',
     'recent_orders' => 'Đơn hàng gần đây',
     'order_history' => 'Lịch sử đơn hàng',
     'monthly_orders' => 'Đơn hàng theo tháng',
+    'contact' => 'Liên hệ',
+    'type' => 'Loại',
+    'total_amount' => 'Tổng tiền',
+    'no_statistics' => 'Chưa có thống kê',
 
     // Actions
+    'actions' => 'Thao tác',
     'add_customer' => 'Thêm khách hàng',
     'save_customer' => 'Lưu khách hàng',
     'update_customer' => 'Cập nhật khách hàng',

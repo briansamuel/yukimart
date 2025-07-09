@@ -222,6 +222,25 @@
                 <!--end::Tab pane Payment-->
             </div>
             <!--end::Tab content-->
+
+            <!--begin::Action Buttons-->
+            <div class="d-flex justify-content-end mt-6 pt-6 border-top">
+                <button type="button" class="btn btn-success me-3" onclick="showPrintModal({{ $invoice->id }})">
+                    <i class="fas fa-print me-2"></i>In
+                </button>
+                <button type="button" class="btn btn-primary me-3" onclick="sendInvoice({{ $invoice->id }})">
+                    <i class="fas fa-paper-plane me-2"></i>Gửi
+                </button>
+                <button type="button" class="btn btn-info me-3" onclick="exportInvoice({{ $invoice->id }})">
+                    <i class="fas fa-file-export me-2"></i>Xuất file
+                </button>
+                @if($invoice->payment_status != 'paid')
+                <button type="button" class="btn btn-warning" onclick="recordPayment({{ $invoice->id }})">
+                    <i class="fas fa-dollar-sign me-2"></i>Ghi nhận TT
+                </button>
+                @endif
+            </div>
+            <!--end::Action Buttons-->
         </div>
     </div>
 </div>

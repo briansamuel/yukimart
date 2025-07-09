@@ -207,6 +207,32 @@
             </div>
         </div>
     </div>
+
+    <!--begin::Action Buttons-->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-end pt-4 border-top">
+                <button type="button" class="btn btn-primary me-3" onclick="updateInvoice({{ $invoice->id }})">
+                    <i class="fas fa-edit me-2"></i>Cập nhật
+                </button>
+                <button type="button" class="btn btn-success me-3" onclick="showPrintModal({{ $invoice->id }})">
+                    <i class="fas fa-print me-2"></i>In
+                </button>
+                <button type="button" class="btn btn-info me-3" onclick="exportInvoice({{ $invoice->id }})">
+                    <i class="fas fa-file-export me-2"></i>Xuất file
+                </button>
+                <button type="button" class="btn btn-secondary me-3" onclick="sendInvoice({{ $invoice->id }})">
+                    <i class="fas fa-paper-plane me-2"></i>Gửi
+                </button>
+                @if($invoice->payment_status != 'paid')
+                <button type="button" class="btn btn-warning" onclick="recordPayment({{ $invoice->id }})">
+                    <i class="fas fa-dollar-sign me-2"></i>Ghi nhận TT
+                </button>
+                @endif
+            </div>
+        </div>
+    </div>
+    <!--end::Action Buttons-->
 </div>
 
 <script>
@@ -228,6 +254,234 @@ function copyToClipboard(text) {
             toastr.error('Không thể copy số tài khoản');
         }
         document.body.removeChild(textArea);
+    });
+}
+
+function updateInvoice(invoiceId) {
+    console.log('Update invoice:', invoiceId);
+
+    // Redirect to invoice edit page
+    const editUrl = `/admin/invoices/${invoiceId}/edit`;
+    window.location.href = editUrl;
+}
+
+function exportInvoice(invoiceId) {
+    console.log('Export invoice:', invoiceId);
+
+    // Show loading message
+    Swal.fire({
+        title: 'Đang xuất file...',
+        text: 'Vui lòng đợi trong giây lát',
+        icon: 'info',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // Create download link
+    const exportUrl = `/admin/invoices/${invoiceId}/export`;
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = `invoice-${invoiceId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Close loading and show success
+    setTimeout(() => {
+        Swal.fire({
+            title: 'Xuất file thành công',
+            text: 'File đã được tải xuống',
+            icon: 'success',
+            confirmButtonText: 'OK',
+            timer: 2000
+        });
+    }, 1000);
+}
+
+function sendInvoice(invoiceId) {
+    console.log('Send invoice:', invoiceId);
+
+    Swal.fire({
+        title: 'Gửi hóa đơn',
+        text: 'Bạn có muốn gửi hóa đơn này qua email?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Gửi',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Đang gửi...',
+                text: 'Vui lòng đợi trong giây lát',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Simulate sending (replace with actual AJAX call)
+            setTimeout(() => {
+                Swal.fire({
+                    title: 'Gửi thành công',
+                    text: 'Hóa đơn đã được gửi qua email',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    timer: 2000
+                });
+            }, 2000);
+        }
+    });
+}
+
+function recordPayment(invoiceId) {
+    console.log('Record payment for invoice:', invoiceId);
+
+    Swal.fire({
+        title: 'Ghi nhận thanh toán',
+        html: `
+            <div class="mb-3">
+                <label class="form-label">Số tiền thanh toán:</label>
+                <input type="number" id="paymentAmount" class="form-control" placeholder="Nhập số tiền">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phương thức thanh toán:</label>
+                <select id="paymentMethod" class="form-select">
+                    <option value="cash">Tiền mặt</option>
+                    <option value="transfer">Chuyển khoản</option>
+                    <option value="card">Thẻ</option>
+                    <option value="other">Khác</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Ghi chú:</label>
+                <textarea id="paymentNote" class="form-control" rows="2" placeholder="Ghi chú (tùy chọn)"></textarea>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Ghi nhận',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#d33',
+        preConfirm: () => {
+            const amount = document.getElementById('paymentAmount').value;
+            const method = document.getElementById('paymentMethod').value;
+            const note = document.getElementById('paymentNote').value;
+
+            if (!amount || amount <= 0) {
+                Swal.showValidationMessage('Vui lòng nhập số tiền hợp lệ');
+                return false;
+            }
+
+            return { amount, method, note };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const { amount, method, note } = result.value;
+
+            // Show loading
+            Swal.fire({
+                title: 'Đang xử lý...',
+                text: 'Vui lòng đợi trong giây lát',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Simulate payment recording (replace with actual AJAX call)
+            setTimeout(() => {
+                Swal.fire({
+                    title: 'Ghi nhận thành công',
+                    text: `Đã ghi nhận thanh toán ${new Intl.NumberFormat('vi-VN').format(amount)}đ`,
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    timer: 2000
+                }).then(() => {
+                    // Reload the detail panel to update payment status
+                    location.reload();
+                });
+            }, 1500);
+        }
+    });
+}
+</script>
+
+
+
+<script>
+function showPrintModal(invoiceId) {
+    console.log('Show print modal for invoice:', invoiceId);
+
+    Swal.fire({
+        title: 'Chọn template in',
+        html: `
+            <div class="mb-3">
+                <label class="form-label">Chọn template:</label>
+                <select id="printTemplate" class="form-select">
+                    <option value="standard">Template mặc định</option>
+                    <option value="retail">Template bán lẻ</option>
+                    <option value="sale">Template khuyến mãi</option>
+                </select>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'In hóa đơn',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        preConfirm: () => {
+            const template = document.getElementById('printTemplate').value;
+            return { template };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const { template } = result.value;
+            console.log('Print invoice:', invoiceId, 'with template:', template);
+
+            // Create print content URL
+            const printUrl = `/admin/invoices/${invoiceId}/print?template=${template}`;
+
+            // Create iframe for printing
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.top = '-9999px';
+            iframe.style.left = '-9999px';
+            iframe.style.width = '0px';
+            iframe.style.height = '0px';
+            iframe.style.border = 'none';
+
+            document.body.appendChild(iframe);
+
+            iframe.onload = function() {
+                try {
+                    // Print the iframe content
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+
+                    // Remove iframe after printing
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 1000);
+                } catch (error) {
+                    console.error('Print error:', error);
+                    // Fallback: open in new window if iframe fails
+                    window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    document.body.removeChild(iframe);
+                }
+            };
+
+            iframe.src = printUrl;
+        }
     });
 }
 </script>

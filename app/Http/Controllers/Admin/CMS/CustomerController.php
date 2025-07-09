@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class CustomerController extends Controller
@@ -158,7 +160,7 @@ class CustomerController extends Controller
             // Handle avatar upload
             if ($request->hasFile('avatar')) {
                 $avatar = $request->file('avatar');
-                $avatarName = time() . '_' . \Str::slug($data['name']) . '.' . $avatar->getClientOriginalExtension();
+                $avatarName = time() . '_' . Str::slug($data['name']) . '.' . $avatar->getClientOriginalExtension();
                 $avatar->storeAs('public/customers', $avatarName);
                 $data['avatar'] = 'customers/' . $avatarName;
             }
@@ -266,11 +268,11 @@ class CustomerController extends Controller
             if ($request->hasFile('avatar')) {
                 // Delete old avatar
                 if ($customer->avatar) {
-                    \Storage::delete('public/' . $customer->avatar);
+                    Storage::delete('public/' . $customer->avatar);
                 }
                 
                 $avatar = $request->file('avatar');
-                $avatarName = time() . '_' . \Str::slug($data['name']) . '.' . $avatar->getClientOriginalExtension();
+                $avatarName = time() . '_' . Str::slug($data['name']) . '.' . $avatar->getClientOriginalExtension();
                 $avatar->storeAs('public/customers', $avatarName);
                 $data['avatar'] = 'customers/' . $avatarName;
             }
@@ -307,7 +309,7 @@ class CustomerController extends Controller
 
             // Delete avatar
             if ($customer->avatar) {
-                \Storage::delete('public/' . $customer->avatar);
+                Storage::delete('public/' . $customer->avatar);
             }
 
             $customer->delete();
@@ -331,8 +333,11 @@ class CustomerController extends Controller
     public function getStatistics()
     {
         try {
-            // Calculate total revenue from all completed orders
-            $totalRevenue = Order::where('status', 'completed')->sum('final_amount');
+            // Calculate total revenue from all customer orders (completed status)
+            $totalRevenue = \App\Models\Order::whereNotNull('customer_id')
+                ->where('customer_id', '>', 0)
+                ->where('status', 'completed')
+                ->sum('final_amount');
 
             $stats = [
                 'total_customers' => Customer::count(),
@@ -340,9 +345,14 @@ class CustomerController extends Controller
                 'inactive_customers' => Customer::where('status', 'inactive')->count(),
                 'individual_customers' => Customer::where('customer_type', 'individual')->count(),
                 'business_customers' => Customer::where('customer_type', 'business')->count(),
-                'new_customers_this_month' => Customer::whereMonth('created_at', Carbon::now()->month)->count(),
+                'new_customers_this_month' => Customer::whereMonth('created_at', Carbon::now()->month)
+                    ->whereYear('created_at', Carbon::now()->year)
+                    ->count(),
+                'new_customers' => Customer::whereMonth('created_at', Carbon::now()->month)
+                    ->whereYear('created_at', Carbon::now()->year)
+                    ->count(), // Alias for JavaScript compatibility
                 'customers_with_orders' => Customer::has('orders')->count(),
-                'total_revenue' => number_format($totalRevenue, 0, ',', '.'),
+                'total_revenue' => number_format($totalRevenue, 0, ',', '.'), // Format for display
                 'top_customers' => Customer::withSum('orders', 'final_amount')
                     ->orderBy('orders_sum_final_amount', 'desc')
                     ->limit(10)
@@ -352,7 +362,7 @@ class CustomerController extends Controller
                             'id' => $customer->id,
                             'name' => $customer->name,
                             'email' => $customer->email,
-                            'total_spent' => $customer->orders_sum_final_amount ?? 0,
+                            'total_spent' => number_format($customer->orders_sum_final_amount ?? 0, 0, ',', '.'),
                         ];
                     }),
             ];

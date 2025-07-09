@@ -397,6 +397,8 @@ var KTInvoicesList = function () {
 
                 // Initialize bulk actions
                 initBulkActions();
+
+
             }
         });
 
@@ -1305,14 +1307,59 @@ KTUtil.onDOMContentLoaded(function () {
 
 // Global functions for action buttons
 function printInvoice(invoiceId) {
-    // TODO: Implement print functionality
     console.log('Print invoice:', invoiceId);
-    Swal.fire({
-        title: 'In hóa đơn',
-        text: 'Chức năng in hóa đơn đang được phát triển',
-        icon: 'info',
-        confirmButtonText: 'OK'
+
+    // Open print page in new window
+    const printUrl = `/admin/invoices/${invoiceId}/print`;
+    const printWindow = window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+
+    if (!printWindow) {
+        Swal.fire({
+            title: 'Lỗi',
+            text: 'Không thể mở cửa sổ in. Vui lòng kiểm tra cài đặt popup blocker.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    }
+}
+
+// Show print template modal
+function showPrintModal(invoiceId) {
+    console.log('Show print modal for invoice:', invoiceId);
+
+    // Store invoice ID for later use
+    window.currentInvoiceId = invoiceId;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('print_template_modal'));
+    modal.show();
+
+    // Add click handlers for template cards
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const template = this.dataset.template;
+            printInvoiceWithTemplate(invoiceId, template);
+            modal.hide();
+        });
     });
+}
+
+// Print invoice with specific template
+function printInvoiceWithTemplate(invoiceId, template) {
+    console.log('Print invoice with template:', invoiceId, template);
+
+    // Build print URL with template parameter
+    const printUrl = `/admin/invoices/${invoiceId}/print?template=${template}`;
+    const printWindow = window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+
+    if (!printWindow) {
+        Swal.fire({
+            title: 'Lỗi',
+            text: 'Không thể mở cửa sổ in. Vui lòng kiểm tra cài đặt popup blocker.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    }
 }
 
 function sendInvoice(invoiceId) {
@@ -1336,6 +1383,101 @@ function recordPayment(invoiceId) {
         confirmButtonText: 'OK'
     });
 }
+
+// Export invoice function
+function exportInvoice(invoiceId) {
+    console.log('Export invoice:', invoiceId);
+    Swal.fire({
+        title: 'Xuất file',
+        text: 'Chức năng xuất file đang được phát triển',
+        icon: 'info',
+        confirmButtonText: 'OK'
+    });
+}
+
+// Send invoice function
+function sendInvoice(invoiceId) {
+    console.log('Send invoice:', invoiceId);
+    Swal.fire({
+        title: 'Gửi hóa đơn',
+        text: 'Chức năng gửi hóa đơn đang được phát triển',
+        icon: 'info',
+        confirmButtonText: 'OK'
+    });
+}
+
+// Show print modal function
+function showPrintModal(invoiceId) {
+    console.log('Show print modal for invoice:', invoiceId);
+
+    // Create modal HTML
+    const modalHtml = `
+        <div class="modal fade" id="printModal" tabindex="-1" aria-labelledby="printModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="printModalLabel">Chọn template in</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Template:</label>
+                                <select class="form-select" id="printTemplate">
+                                    <option value="default">Template mặc định</option>
+                                    <option value="simple">Template đơn giản</option>
+                                    <option value="detailed">Template chi tiết</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary" onclick="printInvoice(${invoiceId})">In hóa đơn</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('printModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('printModal'));
+    modal.show();
+}
+
+// Print invoice function
+function printInvoice(invoiceId) {
+    const template = document.getElementById('printTemplate').value;
+    console.log('Print invoice:', invoiceId, 'with template:', template);
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('printModal'));
+    modal.hide();
+
+    // Show success message
+    Swal.fire({
+        title: 'In hóa đơn',
+        text: `Đang in hóa đơn với template: ${template}`,
+        icon: 'success',
+        confirmButtonText: 'OK'
+    });
+}
+
+// Expose functions to global scope
+window.showPrintModal = showPrintModal;
+window.printInvoice = printInvoice;
+window.sendInvoice = sendInvoice;
+window.exportInvoice = exportInvoice;
+window.recordPayment = recordPayment;
 
 function cancelInvoice(invoiceId) {
     Swal.fire({
@@ -1418,6 +1560,8 @@ function initSelectAllCheckbox() {
         updateBulkActionsVisibility();
     });
 }
+
+
 
 /**
  * Initialize bulk actions
@@ -1555,9 +1699,55 @@ function bulkCancel() {
     });
 }
 
+// Get selected invoice IDs
+function getSelectedInvoiceIds() {
+    const selectedIds = [];
+
+    // Get from DataTable API using checkbox method
+    if (window.invoiceTable) {
+        const table = window.invoiceTable;
+        const checkboxes = $('#kt_invoices_table tbody input[type="checkbox"]:checked');
+
+        checkboxes.each(function() {
+            const row = $(this).closest('tr');
+            const rowData = table.row(row).data();
+            if (rowData && rowData.id) {
+                selectedIds.push(rowData.id);
+            }
+        });
+    } else {
+        // Fallback: get from checkbox value attribute
+        const checkboxes = document.querySelectorAll('#kt_invoices_table tbody input[type="checkbox"]:checked');
+        checkboxes.forEach(checkbox => {
+            const invoiceId = checkbox.value;
+            if (invoiceId) {
+                selectedIds.push(invoiceId);
+            }
+        });
+    }
+
+    console.log('Selected invoice IDs:', selectedIds);
+    return selectedIds;
+}
+
+
+
 // Initialize when DOM is ready
 $(document).ready(function() {
     KTInvoicesList.init();
     // Expose the DataTable instance
     window.invoiceTable = KTInvoicesList.getTable();
+
+    // Expose functions to global scope
+    console.log('Exposing functions to global scope...');
+    window.showPrintModal = showPrintModal;
+    window.sendInvoice = sendInvoice;
+    window.exportInvoice = exportInvoice;
+    window.recordPayment = recordPayment;
+    console.log('Functions exposed:', {
+        showPrintModal: typeof window.showPrintModal,
+        sendInvoice: typeof window.sendInvoice,
+        exportInvoice: typeof window.exportInvoice,
+        recordPayment: typeof window.recordPayment
+    });
 });

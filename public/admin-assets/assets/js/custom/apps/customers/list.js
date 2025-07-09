@@ -308,17 +308,34 @@ var KTCustomersList = function () {
 
     // Load statistics
     var loadStatistics = function() {
-        fetch('/admin/customers/statistics/summary')
-            .then(response => response.json())
+        console.log('Loading customer statistics...');
+        fetch('/admin/customers/statistics')
+            .then(response => {
+                console.log('Statistics response status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Statistics data:', data);
                 if (data.success) {
-                    document.getElementById('total_customers').textContent = data.data.total_customers;
-                    document.getElementById('active_customers').textContent = data.data.active_customers;
-                    document.getElementById('new_customers').textContent = data.data.new_customers_this_month;
-                    document.getElementById('total_revenue').textContent = data.data.total_revenue + '₫';
+                    const totalCustomersEl = document.getElementById('total_customers');
+                    const activeCustomersEl = document.getElementById('active_customers');
+                    const newCustomersEl = document.getElementById('new_customers');
+                    const totalRevenueEl = document.getElementById('total_revenue');
+
+                    if (totalCustomersEl) totalCustomersEl.textContent = data.data.total_customers;
+                    if (activeCustomersEl) activeCustomersEl.textContent = data.data.active_customers;
+                    if (newCustomersEl) newCustomersEl.textContent = data.data.new_customers_this_month;
+                    if (totalRevenueEl) totalRevenueEl.textContent = data.data.total_revenue + '₫';
+
+                    console.log('Statistics updated successfully');
+                } else {
+                    console.error('Statistics API returned error:', data);
+                }
                 }
             })
-            .catch(error => console.error('Error loading statistics:', error));
+            .catch(error => {
+                console.error('Error loading statistics:', error);
+            });
     }
 
     // Public methods

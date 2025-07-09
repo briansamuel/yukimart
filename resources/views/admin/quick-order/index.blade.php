@@ -361,24 +361,29 @@
             color: #7e8299;
         }
 
-        .channel-icon.direct {
+        .channel-icon.offline {
             background: #e1f0ff;
             color: #009ef7;
         }
 
-        .channel-icon.facebook {
+        .channel-icon.online {
+            background: #e8f5e8;
+            color: #50cd89;
+        }
+
+        .channel-icon.marketplace {
+            background: #fff5e6;
+            color: #f1416c;
+        }
+
+        .channel-icon.social_media {
             background: #1877f2;
             color: white;
         }
 
-        .channel-icon.tiktok {
-            background: #000;
-            color: white;
-        }
-
-        .channel-icon.instagram {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-            color: white;
+        .channel-icon.phone_order {
+            background: #f1f1f1;
+            color: #7e8299;
         }
 
         .branch-icon {
@@ -1447,20 +1452,20 @@
                     <!-- Dropdowns Row -->
                     <div class="dropdowns-row">
                         <!-- Seller Dropdown -->
-                        <div class="info-dropdown" id="sellerDropdown">
+                        <div class="info-dropdown" id="TAB_ID_sellerDropdown">
                             <div class="info-label">Người bán</div>
-                            <div class="info-dropdown-toggle {{ Auth::user()->is_root == 1 ? '' : 'disabled' }}" id="sellerToggle">
-                                <span id="sellerName">{{ Auth::user()->full_name ?? Auth::user()->name }}</span>
+                            <div class="info-dropdown-toggle {{ Auth::user()->is_root == 1 ? '' : 'disabled' }}" id="TAB_ID_sellerToggle">
+                                <span id="TAB_ID_sellerName">{{ Auth::user()->full_name ?? Auth::user()->name }}</span>
                                 @if(Auth::user()->is_root == 1)
                                     <i class="fas fa-chevron-down"></i>
                                 @endif
                             </div>
                             @if(Auth::user()->is_root == 1)
-                                <div class="info-dropdown-menu" id="sellerMenu">
+                                <div class="info-dropdown-menu" id="TAB_ID_sellerMenu">
                                     <div class="info-dropdown-search">
-                                        <input type="text" placeholder="Tìm người bán..." id="sellerSearch">
+                                        <input type="text" placeholder="Tìm người bán..." id="TAB_ID_sellerSearch">
                                     </div>
-                                    <div id="sellerList">
+                                    <div id="TAB_ID_sellerList">
                                         <!-- Seller list will be populated by JavaScript -->
                                     </div>
                                 </div>
@@ -1468,44 +1473,50 @@
                         </div>
 
                         <!-- Channel Dropdown -->
-                        <div class="info-dropdown" id="channelDropdown">
+                        <div class="info-dropdown" id="TAB_ID_channelDropdown">
                             <div class="info-label">Kênh bán hàng</div>
-                            <div class="info-dropdown-toggle" id="channelToggle">
-                                <div class="info-dropdown-icon channel-icon direct">
+                            <div class="info-dropdown-toggle" id="TAB_ID_channelToggle">
+                                <div class="info-dropdown-icon channel-icon offline">
                                     <i class="fas fa-store"></i>
                                 </div>
-                                <span id="channelName">Bán trực tiếp</span>
+                                <span id="TAB_ID_channelName">Cửa hàng</span>
                                 <i class="fas fa-chevron-down"></i>
                             </div>
-                            <div class="info-dropdown-menu" id="channelMenu">
+                            <div class="info-dropdown-menu" id="TAB_ID_channelMenu">
                                 <div class="info-dropdown-search">
-                                    <input type="text" placeholder="Tìm kênh bán hàng..." id="channelSearch">
+                                    <input type="text" placeholder="Tìm kênh bán hàng..." id="TAB_ID_channelSearch">
                                 </div>
-                                <div id="channelList">
-                                    <div class="info-dropdown-item selected" data-channel="direct">
-                                        <div class="info-dropdown-icon channel-icon direct">
+                                <div id="TAB_ID_channelList">
+                                    <div class="info-dropdown-item selected" data-channel="offline">
+                                        <div class="info-dropdown-icon channel-icon offline">
                                             <i class="fas fa-store"></i>
                                         </div>
-                                        <span>Bán trực tiếp</span>
+                                        <span>Cửa hàng</span>
                                         <i class="fas fa-check ms-auto"></i>
                                     </div>
-                                    <div class="info-dropdown-item" data-channel="facebook">
-                                        <div class="info-dropdown-icon channel-icon facebook">
+                                    <div class="info-dropdown-item" data-channel="online">
+                                        <div class="info-dropdown-icon channel-icon online">
+                                            <i class="fas fa-globe"></i>
+                                        </div>
+                                        <span>Website</span>
+                                    </div>
+                                    <div class="info-dropdown-item" data-channel="marketplace">
+                                        <div class="info-dropdown-icon channel-icon marketplace">
+                                            <i class="fas fa-shopping-cart"></i>
+                                        </div>
+                                        <span>Marketplace</span>
+                                    </div>
+                                    <div class="info-dropdown-item" data-channel="social_media">
+                                        <div class="info-dropdown-icon channel-icon social_media">
                                             <i class="fab fa-facebook-f"></i>
                                         </div>
-                                        <span>Facebook</span>
+                                        <span>Mạng xã hội</span>
                                     </div>
-                                    <div class="info-dropdown-item" data-channel="tiktok">
-                                        <div class="info-dropdown-icon channel-icon tiktok">
-                                            <i class="fab fa-tiktok"></i>
+                                    <div class="info-dropdown-item" data-channel="phone_order">
+                                        <div class="info-dropdown-icon channel-icon phone_order">
+                                            <i class="fas fa-phone"></i>
                                         </div>
-                                        <span>Hàng Nhật Nội Địa Yuki Mart</span>
-                                    </div>
-                                    <div class="info-dropdown-item" data-channel="instagram">
-                                        <div class="info-dropdown-icon channel-icon instagram">
-                                            <i class="fab fa-instagram"></i>
-                                        </div>
-                                        <span>Instagram</span>
+                                        <span>Điện thoại</span>
                                     </div>
                                 </div>
                             </div>
@@ -1516,20 +1527,20 @@
                     <div class="branch-time-row">
                         <!-- Branch Shop Column -->
                         <div class="col-6">
-                            <div class="info-dropdown" id="branchShopDropdown">
+                            <div class="info-dropdown" id="TAB_ID_branchShopDropdown">
                                 <div class="info-label">Chi nhánh</div>
-                                <div class="info-dropdown-toggle" id="branchShopToggle">
+                                <div class="info-dropdown-toggle" id="TAB_ID_branchShopToggle">
                                     <div class="info-dropdown-icon branch-icon">
                                         <i class="fas fa-building"></i>
                                     </div>
-                                    <span id="branchShopName">{{ $defaultBranchShop->name ?? 'Chọn chi nhánh' }}</span>
+                                    <span id="TAB_ID_branchShopName">{{ $defaultBranchShop->name ?? 'Chọn chi nhánh' }}</span>
                                     <i class="fas fa-chevron-down"></i>
                                 </div>
-                                <div class="info-dropdown-menu" id="branchShopMenu">
+                                <div class="info-dropdown-menu" id="TAB_ID_branchShopMenu">
                                     <div class="info-dropdown-search">
-                                        <input type="text" placeholder="Tìm chi nhánh..." id="branchShopSearch">
+                                        <input type="text" placeholder="Tìm chi nhánh..." id="TAB_ID_branchShopSearch">
                                     </div>
-                                    <div id="branchShopList">
+                                    <div id="TAB_ID_branchShopList">
                                         @foreach($branchShops as $branchShop)
                                             <div class="info-dropdown-item {{ ($defaultBranchShop && $defaultBranchShop->id == $branchShop->id) ? 'selected' : '' }}"
                                                  data-branch-id="{{ $branchShop->id }}"
@@ -1700,7 +1711,7 @@
 
         <!-- Hidden inputs for order data -->
         <input type="hidden" id="soldBy" value="{{ Auth::id() }}">
-        <input type="hidden" id="channel" value="direct">
+        <input type="hidden" id="channel" value="offline">
     </div>
 
     <!-- Discount Modal -->
@@ -2060,7 +2071,7 @@
         let searchTimeout = null;
         let currentSearchRequest = null;
         let selectedSeller = @json(Auth::user());
-        let selectedChannel = 'direct';
+        let selectedChannel = 'offline';
         let allUsers = []; // Will be populated if user is admin
         let orderCreatedTime = null; // Time when order was created
         let autoSaveInterval;
@@ -2134,6 +2145,11 @@
             tabContent.attr('data-tab-id', tabId);
             tabContent.addClass('h-100');
             tabContent.show();
+
+            // Replace TAB_ID placeholders with actual tab ID using string replacement
+            let htmlContent = tabContent.html();
+            htmlContent = htmlContent.replace(/TAB_ID_/g, tabId + '_');
+            tabContent.html(htmlContent);
 
             // Add tab content to container
             $('#orderTabsContent').append(tabContent);
@@ -2648,6 +2664,16 @@
                 addNewTab();
             }
 
+            // Emergency fix: Clear localStorage if too many tabs
+            if (orderTabs.length > 10) {
+                console.warn('Too many tabs detected, clearing localStorage');
+                localStorage.removeItem('quickOrderDrafts');
+                orderTabs = [];
+                $('#orderTabsContainer').empty();
+                $('#orderTabsContent').empty();
+                addNewTab();
+            }
+
             // Setup auto-save
             setupAutoSave();
 
@@ -2727,8 +2753,8 @@
             // Auto focus on barcode input
             $('#globalBarcodeInput').focus();
 
-            // Add default order tab
-            addNewTab('order');
+            // Add default order tab (commented out - already created above)
+            // addNewTab('order');
         });
 
         function addNewTab(type = 'order') {
@@ -2749,6 +2775,7 @@
                 branch_shop_search: defaultBranchShop ? defaultBranchShop.name : '',
                 payment_method: 'cash',
                 bank_account_id: '',
+                channel: 'offline',
                 notes: ''
             };
 
@@ -2776,6 +2803,11 @@
             tabContent.attr('data-tab-id', tabId);
             tabContent.addClass('h-100');
             tabContent.show();
+
+            // Replace TAB_ID placeholders with actual tab ID using string replacement
+            let htmlContent = tabContent.html();
+            htmlContent = htmlContent.replace(/TAB_ID_/g, tabId + '_');
+            tabContent.html(htmlContent);
 
             // Add tab content to container
             $('#orderTabsContent').append(tabContent);
@@ -3518,109 +3550,118 @@
                 loadUsers();
             @endif
 
-            // Branch shop dropdown toggle
-            $('#branchShopToggle').on('click', function(e) {
+            // Branch shop dropdown toggle - use delegation for dynamic tabs
+            $(document).on('click', '[id$="_branchShopToggle"]', function(e) {
                 e.stopPropagation();
-                $('#branchShopMenu').toggleClass('show');
-                $('#channelMenu').removeClass('show');
-                $('#sellerMenu').removeClass('show');
+                const tabId = $(this).attr('id').replace('_branchShopToggle', '');
+                $(`#${tabId}_branchShopMenu`).toggleClass('show');
+                $(`[id$="_channelMenu"]`).removeClass('show');
+                $(`[id$="_sellerMenu"]`).removeClass('show');
             });
 
-            // Channel dropdown events
-            $('#channelToggle').on('click', function(e) {
+            // Channel dropdown events - use delegation for dynamic tabs
+            $(document).on('click', '[id$="_channelToggle"]', function(e) {
                 e.stopPropagation();
-                $('#channelMenu').toggleClass('show');
-                $('#branchShopMenu').removeClass('show');
-                $('#sellerMenu').removeClass('show');
+                const tabId = $(this).attr('id').replace('_channelToggle', '');
+                $(`#${tabId}_channelMenu`).toggleClass('show');
+                $(`[id$="_branchShopMenu"]`).removeClass('show');
+                $(`[id$="_sellerMenu"]`).removeClass('show');
             });
 
-            // Branch shop search
-            $('#branchShopSearch').on('input', function() {
+            // Branch shop search - use delegation for dynamic tabs
+            $(document).on('input', '[id$="_branchShopSearch"]', function() {
                 const query = $(this).val().toLowerCase();
-                $('#branchShopList .info-dropdown-item').each(function() {
+                const tabId = $(this).attr('id').replace('_branchShopSearch', '');
+                $(`#${tabId}_branchShopList .info-dropdown-item`).each(function() {
                     const title = $(this).find('.info-dropdown-title').text().toLowerCase();
                     const subtitle = $(this).find('.info-dropdown-subtitle').text().toLowerCase();
                     $(this).toggle(title.includes(query) || subtitle.includes(query));
                 });
             });
 
-            // Channel search
-            $('#channelSearch').on('input', function() {
+            // Channel search - use delegation for dynamic tabs
+            $(document).on('input', '[id$="_channelSearch"]', function() {
                 const query = $(this).val().toLowerCase();
-                $('#channelList .info-dropdown-item').each(function() {
+                const tabId = $(this).attr('id').replace('_channelSearch', '');
+                $(`#${tabId}_channelList .info-dropdown-item`).each(function() {
                     const text = $(this).find('span').text().toLowerCase();
                     $(this).toggle(text.includes(query));
                 });
             });
 
-            // Branch shop selection
-            $(document).on('click', '#branchShopList .info-dropdown-item', function() {
+            // Branch shop selection - use delegation for dynamic tabs
+            $(document).on('click', '[id$="_branchShopList"] .info-dropdown-item', function() {
                 const branchId = $(this).data('branch-id');
                 const branchName = $(this).data('branch-name');
+                const tabId = $(this).closest('[id$="_branchShopList"]').attr('id').replace('_branchShopList', '');
 
                 // Update selected branch shop
-                $('#branchShopName').text(branchName);
+                $(`#${tabId}_branchShopName`).text(branchName);
 
                 // Update UI
-                $('#branchShopList .info-dropdown-item').removeClass('selected');
+                $(`#${tabId}_branchShopList .info-dropdown-item`).removeClass('selected');
                 $(this).addClass('selected');
-                $('#branchShopMenu').removeClass('show');
+                $(`#${tabId}_branchShopMenu`).removeClass('show');
 
                 // Update all tabs with new branch shop
                 updateAllTabsBranchShop(branchId, branchName);
             });
 
-            // Channel selection
-            $(document).on('click', '#channelList .info-dropdown-item', function() {
+            // Channel selection - use delegation for dynamic tabs
+            $(document).on('click', '[id$="_channelList"] .info-dropdown-item', function() {
                 const channel = $(this).data('channel');
                 const channelName = $(this).find('span').text();
                 const iconHtml = $(this).find('.info-dropdown-icon').clone();
+                const tabId = $(this).closest('[id$="_channelList"]').attr('id').replace('_channelList', '');
 
                 // Update selected channel
                 selectedChannel = channel;
-                $('#channelName').text(channelName);
-                $('#channelToggle .info-dropdown-icon').replaceWith(iconHtml);
+                $(`#${tabId}_channelName`).text(channelName);
+                $(`#${tabId}_channelToggle .info-dropdown-icon`).replaceWith(iconHtml);
 
                 // Update UI
-                $('#channelList .info-dropdown-item').removeClass('selected');
+                $(`#${tabId}_channelList .info-dropdown-item`).removeClass('selected');
                 $(this).addClass('selected');
-                $('#channelMenu').removeClass('show');
+                $(`#${tabId}_channelMenu`).removeClass('show');
 
                 // Update all tabs with new channel
                 updateAllTabsChannel(channel);
             });
 
-            // Seller dropdown events (only for super admin)
+            // Seller dropdown events (only for super admin) - use delegation for dynamic tabs
             @if(Auth::user()->is_root == 1)
-                $('#sellerToggle').on('click', function(e) {
+                $(document).on('click', '[id$="_sellerToggle"]', function(e) {
                     e.stopPropagation();
-                    $('#sellerMenu').toggleClass('show');
-                    $('#branchShopMenu').removeClass('show');
-                    $('#channelMenu').removeClass('show');
+                    const tabId = $(this).attr('id').replace('_sellerToggle', '');
+                    $(`#${tabId}_sellerMenu`).toggleClass('show');
+                    $(`[id$="_branchShopMenu"]`).removeClass('show');
+                    $(`[id$="_channelMenu"]`).removeClass('show');
                 });
 
-                // Seller search
-                $('#sellerSearch').on('input', function() {
+                // Seller search - use delegation for dynamic tabs
+                $(document).on('input', '[id$="_sellerSearch"]', function() {
                     const query = $(this).val().toLowerCase();
-                    $('#sellerList .info-dropdown-item').each(function() {
+                    const tabId = $(this).attr('id').replace('_sellerSearch', '');
+                    $(`#${tabId}_sellerList .info-dropdown-item`).each(function() {
                         const text = $(this).find('span').text().toLowerCase();
                         $(this).toggle(text.includes(query));
                     });
                 });
 
-                // Seller selection
-                $(document).on('click', '#sellerList .info-dropdown-item', function() {
+                // Seller selection - use delegation for dynamic tabs
+                $(document).on('click', '[id$="_sellerList"] .info-dropdown-item', function() {
                     const userId = $(this).data('user-id');
                     const userName = $(this).find('span').text();
+                    const tabId = $(this).closest('[id$="_sellerList"]').attr('id').replace('_sellerList', '');
 
                     // Update selected seller
                     selectedSeller = allUsers.find(u => u.id == userId);
-                    $('#sellerName').text(userName);
+                    $(`#${tabId}_sellerName`).text(userName);
 
                     // Update UI
-                    $('#sellerList .info-dropdown-item').removeClass('selected');
+                    $(`#${tabId}_sellerList .info-dropdown-item`).removeClass('selected');
                     $(this).addClass('selected');
-                    $('#sellerMenu').removeClass('show');
+                    $(`#${tabId}_sellerMenu`).removeClass('show');
 
                     // Update all tabs with new seller
                     updateAllTabsSeller(userId);
@@ -3632,7 +3673,7 @@
         function loadUsers() {
             // Load users via AJAX (you'll need to create this endpoint)
             $.ajax({
-                url: '{{ route("admin.users.list") }}', // You'll need to create this route
+                url: '/admin/users/dropdown/list', // API endpoint for users dropdown
                 method: 'GET',
                 success: function(response) {
                     if (response.success && response.data) {
@@ -3660,7 +3701,9 @@
                     </div>
                 `;
             });
-            $('#sellerList').html(html);
+
+            // Populate seller list for all tabs
+            $('[id$="_sellerList"]').html(html);
         }
         @endif
 
@@ -4287,34 +4330,27 @@
             updateDiscountPreview();
         });
 
-        // Restore formatting on page load
-        $(document).ready(function() {
-            // Format existing values in summary inputs
-            const discountInput = $('#discountAmount');
-            const otherInput = $('#otherAmount');
-            const paidInput = $('#paidAmount');
 
-            if (discountInput.val() && discountInput.val() !== '0') {
-                discountInput.val(formatCurrency(parseCurrency(discountInput.val())));
-            }
 
-            if (otherInput.val() && otherInput.val() !== '0') {
-                otherInput.val(formatCurrency(parseCurrency(otherInput.val())));
-            }
+        // Function to fix existing tabs with TAB_ID_ placeholders
+        function fixExistingTabIds() {
+            // Find all tab contents
+            $('#orderTabsContent > div[id$="_content"]').each(function() {
+                const tabContent = $(this);
+                const tabId = tabContent.attr('data-tab-id');
 
-            if (paidInput.val() && paidInput.val() !== '0') {
-                paidInput.val(formatCurrency(parseCurrency(paidInput.val())));
-            }
-
-            // Restore current tab data if exists
-            const currentTab = getCurrentTab();
-            if (currentTab) {
-                updateOrderSummary(currentTab.id);
-            }
-
-            // Bind other charges events
-            bindChargeCheckboxEvents();
-        });
+                if (tabId) {
+                    // Fix all elements with TAB_ID_ in their IDs
+                    tabContent.find('[id*="TAB_ID_"]').each(function() {
+                        const element = $(this);
+                        const oldId = element.attr('id');
+                        const newId = oldId.replace('TAB_ID_', tabId + '_');
+                        element.attr('id', newId);
+                        console.log('Fixed ID:', oldId, '->', newId);
+                    });
+                }
+            });
+        }
 
     </script>
 

@@ -54,11 +54,7 @@
                                 <!--end::Add invoice-->
                                
                               
-                                <!--begin::Print-->
-                                <button type="button" class="btn btn-light-success">
-                                    <i class="fas fa-print fs-2"></i>In
-                                </button>
-                                <!--end::Print-->
+
                                 <!--begin::Column visibility-->
                                 <div class="position-relative">
                                     <button type="button" class="btn btn-success" id="column_visibility_trigger">
@@ -320,6 +316,7 @@
 @endsection
 
 @section('scripts')
+<script src="{{ asset('admin-assets/js/invoice-list.js') }}"></script>
 <script>
 // Set global variable for AJAX URL
 var invoiceAjaxUrl = "{{ route('admin.invoice.ajax') }}";
@@ -334,9 +331,125 @@ $(document).ready(function() {
     } else {
         console.error('KTInvoicesList not found');
     }
+
+
 });
 </script>
-<script src="{{ asset('admin-assets/js/invoice-list.js') }}"></script>
 
+<!--begin::Print Template Modal-->
+<div class="modal fade" id="print_template_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mw-650px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="fw-bold">Chọn mẫu in hóa đơn</h2>
+                <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
+                    <i class="ki-duotone ki-cross fs-1">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                </div>
+            </div>
+            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+                <div class="row g-5">
+                    <!--begin::Template 1-->
+                    <div class="col-12">
+                        <div class="card card-bordered h-100 cursor-pointer template-card" data-template="standard">
+                            <div class="card-body d-flex align-items-center p-6">
+                                <div class="symbol symbol-50px me-5">
+                                    <div class="symbol-label bg-light-primary">
+                                        <i class="fas fa-file-invoice fs-2 text-primary"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="fw-bold text-gray-800 mb-1">Hóa đơn Sỉ, CTV</h5>
+                                    <div class="text-muted fs-7">Mẫu hóa đơn tiêu chuẩn cho khách hàng sỉ và cộng tác viên</div>
+                                </div>
+                                <div class="ms-3">
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--end::Template 1-->
+
+                    <!--begin::Template 2-->
+                    <div class="col-12">
+                        <div class="card card-bordered h-100 cursor-pointer template-card" data-template="retail">
+                            <div class="card-body d-flex align-items-center p-6">
+                                <div class="symbol symbol-50px me-5">
+                                    <div class="symbol-label bg-light-info">
+                                        <i class="fas fa-receipt fs-2 text-info"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="fw-bold text-gray-800 mb-1">Mẫu in hóa đơn 2</h5>
+                                    <div class="text-muted fs-7">Mẫu hóa đơn đơn giản cho khách hàng lẻ</div>
+                                </div>
+                                <div class="ms-3">
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--end::Template 2-->
+
+                    <!--begin::Template 3-->
+                    <div class="col-12">
+                        <div class="card card-bordered h-100 cursor-pointer template-card" data-template="sale">
+                            <div class="card-body d-flex align-items-center p-6">
+                                <div class="symbol symbol-50px me-5">
+                                    <div class="symbol-label bg-light-success">
+                                        <i class="fas fa-shopping-cart fs-2 text-success"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="fw-bold text-gray-800 mb-1">Hóa đơn Sale</h5>
+                                    <div class="text-muted fs-7">Mẫu hóa đơn cho kênh bán hàng sale</div>
+                                </div>
+                                <div class="ms-3">
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--end::Template 3-->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end::Print Template Modal-->
+
+<style>
+.template-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.template-card:hover {
+    border-color: #009ef7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 158, 247, 0.15);
+}
+
+.template-card .card-body {
+    transition: all 0.3s ease;
+}
+
+.template-card:hover .card-body {
+    background: rgba(0, 158, 247, 0.02);
+}
+
+.template-card:hover .fas {
+    transform: scale(1.1);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>
 
 @endsection

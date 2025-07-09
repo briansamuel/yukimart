@@ -10,6 +10,7 @@ use App\Models\BranchShop;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\InvoiceService;
+use App\Services\InvoicePrintService;
 use App\Services\ValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,12 +19,14 @@ class InvoiceController extends Controller
 {
     protected $invoiceService;
     protected $validationService;
+    protected $printService;
     protected $request;
 
-    public function __construct(InvoiceService $invoiceService, ValidationService $validationService, Request $request)
+    public function __construct(InvoiceService $invoiceService, ValidationService $validationService, InvoicePrintService $printService, Request $request)
     {
         $this->invoiceService = $invoiceService;
         $this->validationService = $validationService;
+        $this->printService = $printService;
         $this->request = $request;
     }
 
@@ -465,9 +468,9 @@ class InvoiceController extends Controller
     {
         try {
             $invoice = Invoice::findOrFail($id);
-            
+
             $result = $this->invoiceService->sendInvoice($invoice);
-            
+
             return response()->json($result);
 
         } catch (\Exception $e) {
@@ -478,6 +481,40 @@ class InvoiceController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Print single invoice.
+     */
+    public function print($id, Request $request)
+    {
+        try {
+            $invoice = Invoice::with(['customer', 'branchShop', 'invoiceItems.product', 'creator', 'order'])
+                             ->findOrFail($id);
+
+            // Get template from request parameter, default to 'standard'
+            $template = $request->get('template', 'standard');
+
+            // Map template names to view files
+            $templateViews = [
+                'standard' => 'admin.invoice.print.standard',
+                'retail' => 'admin.invoice.print.retail',
+                'sale' => 'admin.invoice.print.sale'
+            ];
+
+            // Use standard template if requested template doesn't exist
+            $viewName = $templateViews[$template] ?? $templateViews['standard'];
+
+            $data = $this->printService->prepareInvoiceData($invoice);
+            $data['template'] = $template;
+
+            return view($viewName, $data);
+
+        } catch (\Exception $e) {
+            return redirect()->route('invoice.list')->with('error', 'Không tìm thấy hóa đơn');
+        }
+    }
+
+
 
     /**
      * Cancel invoice.

@@ -5,11 +5,15 @@ return [
     'customer' => 'Customer',
     'customers' => 'Customers',
     'customer_management' => 'Customer Management',
+    'manage_customers' => 'Manage Customers',
+    'manage_customers_description' => 'Manage customer information and track purchase activities',
     'customer_list' => 'Customer List',
     'customer_details' => 'Customer Details',
     'new_customer' => 'New Customer',
     'create_customer' => 'Create Customer',
     'edit_customer' => 'Edit Customer',
+    'select_customer' => 'Select Customer',
+    'search_customer' => 'Search customers...',
     'delete_customer' => 'Delete Customer',
 
     // Fields
@@ -44,6 +48,7 @@ return [
     'other' => 'Other',
 
     // Statistics
+    'total' => 'Total',
     'total_customers' => 'Total Customers',
     'active_customers' => 'Active Customers',
     'inactive_customers' => 'Inactive Customers',
@@ -53,18 +58,27 @@ return [
     'customers_with_orders' => 'Customers with Orders',
     'top_customers' => 'VIP Customers',
     'customer_statistics' => 'Customer Statistics',
+    'this_month' => 'This Month',
+    'revenue' => 'Revenue',
 
     // Order Statistics
+    'orders' => 'Orders',
     'total_orders' => 'Total Orders',
     'total_spent' => 'Total Spent',
     'avg_order_value' => 'Avg Order Value',
     'last_order_date' => 'Last Order',
+    'last_order' => 'Last Order',
     'first_order_date' => 'First Order',
     'recent_orders' => 'Recent Orders',
     'order_history' => 'Order History',
     'monthly_orders' => 'Monthly Orders',
+    'contact' => 'Contact',
+    'type' => 'Type',
+    'total_amount' => 'Total Amount',
+    'no_statistics' => 'No statistics available',
 
     // Actions
+    'actions' => 'Actions',
     'add_customer' => 'Add Customer',
     'save_customer' => 'Save Customer',
     'update_customer' => 'Update Customer',
