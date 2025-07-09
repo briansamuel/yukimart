@@ -102,10 +102,10 @@ class AppServiceProvider extends ServiceProvider
         // View::share( 'menus_footer', Menu::getByName('Footer Menu'));
 
         // Register FontAwesome helper as a global function
-        if (!function_exists('faIcon')) {
-            function faIcon($name, $size = '', $class = '', $color = '') {
-                return \App\Helpers\FontAwesomeHelper::render($name, $size, $class, $color);
-            }
-        }
+        // if (!function_exists('faIcon')) {
+        //     function faIcon($name, $size = '', $class = '', $color = '') {
+        //         return \App\Helpers\FontAwesomeHelper::render($name, $size, $class, $color);
+        //     }
+        // }
     }
 }
