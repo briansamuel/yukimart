@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Management Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .controls { margin: 20px 0; }
+        .controls button { margin: 5px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .controls button:hover { background: #0056b3; }
+        .clear-btn { background: #dc3545; }
+        .clear-btn:hover { background: #c82333; }
+        .status { background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe8e8; color: red; }
+        .success { background: #e8f5e8; color: green; }
+        #output { background: #000; color: #0f0; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
+        .form-group { margin: 10px 0; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { padding: 5px; border: 1px solid #ddd; border-radius: 3px; }
+        .checkbox-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+        .checkbox-group label { display: flex; align-items: center; font-weight: normal; }
+        .checkbox-group input { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <h1>State Management Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Controls</h3>
+        <div class="controls">
+            <button onclick="testSaveFilterState()">Save Filter State</button>
+            <button onclick="testLoadFilterState()">Load Filter State</button>
+            <button onclick="testSaveColumnState()">Save Column State</button>
+            <button onclick="testLoadColumnState()">Load Column State</button>
+            <button onclick="testClearAllStates()" class="clear-btn">Clear All States</button>
+            <button onclick="showCurrentStates()">Show Current States</button>
+            <button onclick="clearOutput()">Clear Output</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Mock Filter Form</h3>
+        <form id="mock_filter_form">
+            <div class="form-group">
+                <label>Time Filter:</label>
+                <select name="time_filter" id="time_filter">
+                    <option value="">Select time...</option>
+                    <option value="this_month">This Month</option>
+                    <option value="last_month">Last Month</option>
+                    <option value="this_year">This Year</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Search:</label>
+                <input type="text" name="search" id="search" placeholder="Search invoices...">
+            </div>
+            
+            <div class="form-group">
+                <label>Status Filters:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="status[]" value="processing" checked> Processing</label>
+                    <label><input type="checkbox" name="status[]" value="completed" checked> Completed</label>
+                    <label><input type="checkbox" name="status[]" value="cancelled"> Cancelled</label>
+                    <label><input type="checkbox" name="status[]" value="failed"> Failed</label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Payment Status:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="payment_status[]" value="paid"> Paid</label>
+                    <label><input type="checkbox" name="payment_status[]" value="unpaid"> Unpaid</label>
+                    <label><input type="checkbox" name="payment_status[]" value="partial"> Partial</label>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="test-section">
+        <h3>Mock Column Visibility</h3>
+        <div class="checkbox-group">
+            <label><input type="checkbox" class="column-toggle" value="0" checked> Checkbox</label>
+            <label><input type="checkbox" class="column-toggle" value="1" checked> Invoice Number</label>
+            <label><input type="checkbox" class="column-toggle" value="2" checked> Customer</label>
+            <label><input type="checkbox" class="column-toggle" value="3" checked> Amount</label>
+            <label><input type="checkbox" class="column-toggle" value="4" checked> Status</label>
+            <label><input type="checkbox" class="column-toggle" value="5" checked> Date</label>
+            <label><input type="checkbox" class="column-toggle" value="6" checked> Branch</label>
+            <label><input type="checkbox" class="column-toggle" value="7" checked> Payment</label>
+            <label><input type="checkbox" class="column-toggle" value="8" checked> Creator</label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Output</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Mock the storage keys and functions from invoice-list.js
+        var STORAGE_KEYS = {
+            FILTERS: 'invoice_filters_state',
+            COLUMNS: 'invoice_columns_state',
+            COLUMN_VISIBILITY: 'invoice_column_visibility_state'
+        };
+
+        function log(message) {
+            console.log(message);
+            var output = document.getElementById('output');
+            output.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        function saveState(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                log('State saved: ' + key + ' = ' + JSON.stringify(data));
+                return true;
+            } catch (error) {
+                log('ERROR: Failed to save state: ' + error.message);
+                return false;
+            }
+        }
+
+        function loadState(key, defaultValue = null) {
+            try {
+                var data = localStorage.getItem(key);
+                if (data) {
+                    var parsed = JSON.parse(data);
+                    log('State loaded: ' + key + ' = ' + JSON.stringify(parsed));
+                    return parsed;
+                }
+                log('No state found for: ' + key);
+            } catch (error) {
+                log('ERROR: Failed to load state: ' + error.message);
+            }
+            return defaultValue;
+        }
+
+        function testSaveFilterState() {
+            log('\n=== TESTING SAVE FILTER STATE ===');
+            var filterForm = document.getElementById('mock_filter_form');
+            var filterData = {};
+            
+            // Save form inputs
+            var inputs = filterForm.querySelectorAll('input, select');
+            inputs.forEach(function(input) {
+                var name = input.getAttribute('name') || input.getAttribute('id');
+                
+                if (name) {
+                    if (input.type === 'checkbox') {
+                        if (!filterData[name]) filterData[name] = [];
+                        if (input.checked) {
+                            filterData[name].push(input.value);
+                        }
+                    } else {
+                        filterData[name] = input.value;
+                    }
+                }
+            });
+            
+            saveState(STORAGE_KEYS.FILTERS, filterData);
+        }
+
+        function testLoadFilterState() {
+            log('\n=== TESTING LOAD FILTER STATE ===');
+            var filterData = loadState(STORAGE_KEYS.FILTERS);
+            if (!filterData) return;
+            
+            var filterForm = document.getElementById('mock_filter_form');
+            
+            Object.keys(filterData).forEach(function(name) {
+                var value = filterData[name];
+                var inputs = filterForm.querySelectorAll('[name="' + name + '"], #' + name);
+                
+                inputs.forEach(function(input) {
+                    if (input.type === 'checkbox') {
+                        input.checked = Array.isArray(value) ? value.includes(input.value) : value === input.value;
+                    } else {
+                        input.value = value;
+                    }
+                });
+            });
+            
+            log('Filter state restored successfully');
+        }
+
+        function testSaveColumnState() {
+            log('\n=== TESTING SAVE COLUMN STATE ===');
+            var columnStates = {};
+            
+            document.querySelectorAll('.column-toggle').forEach(function(checkbox) {
+                var columnIndex = parseInt(checkbox.value);
+                columnStates[columnIndex] = checkbox.checked;
+            });
+            
+            saveState(STORAGE_KEYS.COLUMN_VISIBILITY, columnStates);
+        }
+
+        function testLoadColumnState() {
+            log('\n=== TESTING LOAD COLUMN STATE ===');
+            var columnStates = loadState(STORAGE_KEYS.COLUMN_VISIBILITY);
+            if (!columnStates) return;
+            
+            Object.keys(columnStates).forEach(function(columnIndex) {
+                var index = parseInt(columnIndex);
+                var isVisible = columnStates[columnIndex];
+                var checkbox = document.querySelector('.column-toggle[value="' + index + '"]');
+                
+                if (checkbox) {
+                    checkbox.checked = isVisible;
+                }
+            });
+            
+            log('Column visibility state restored successfully');
+        }
+
+        function testClearAllStates() {
+            log('\n=== CLEARING ALL STATES ===');
+            try {
+                localStorage.removeItem(STORAGE_KEYS.FILTERS);
+                localStorage.removeItem(STORAGE_KEYS.COLUMNS);
+                localStorage.removeItem(STORAGE_KEYS.COLUMN_VISIBILITY);
+                log('All states cleared successfully');
+            } catch (error) {
+                log('ERROR: Failed to clear states: ' + error.message);
+            }
+        }
+
+        function showCurrentStates() {
+            log('\n=== CURRENT STATES IN LOCALSTORAGE ===');
+            
+            Object.keys(STORAGE_KEYS).forEach(function(key) {
+                var storageKey = STORAGE_KEYS[key];
+                var data = localStorage.getItem(storageKey);
+                
+                if (data) {
+                    try {
+                        var parsed = JSON.parse(data);
+                        log(key + ' (' + storageKey + '): ' + JSON.stringify(parsed, null, 2));
+                    } catch (error) {
+                        log(key + ' (' + storageKey + '): ' + data + ' (raw)');
+                    }
+                } else {
+                    log(key + ' (' + storageKey + '): No data');
+                }
+            });
+        }
+
+        // Auto-save on form changes
+        document.getElementById('mock_filter_form').addEventListener('change', function() {
+            log('Form changed, auto-saving...');
+            testSaveFilterState();
+        });
+
+        document.querySelectorAll('.column-toggle').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                log('Column visibility changed, auto-saving...');
+                testSaveColumnState();
+            });
+        });
+
+        // Initial load
+        log('State Management Test initialized');
+        showCurrentStates();
+    </script>
+</body>
+</html>

@@ -80,6 +80,7 @@ class InvoiceSeeder extends Seeder
                 $paymentStatus = $faker->randomElement($paymentStatuses);
                 $status = $faker->randomElement(['processing', 'completed', 'cancelled', 'failed']);
                 $invoiceType = $faker->randomElement($invoiceTypes);
+                $salesChannel = $faker->randomElement(['offline', 'online', 'marketplace', 'social_media', 'phone_order']);
 
                 // Generate unique invoice number
                 $invoiceNumber = 'INV-' . $carbonDate->format('Ymd') . '-' . str_pad($totalInvoices + $i + rand(1000, 9999), 4, '0', STR_PAD_LEFT);
@@ -111,6 +112,7 @@ class InvoiceSeeder extends Seeder
                     'customer_id' => $customerId,
                     'branch_shop_id' => $branchShop->id,
                     'invoice_type' => $invoiceType,
+                    'sales_channel' => $salesChannel,
                     'status' => $status,
                     'invoice_date' => $invoiceDate,
                     'due_date' => $dueDate,
@@ -120,18 +122,13 @@ class InvoiceSeeder extends Seeder
                     'discount_rate' => $discountRate,
                     'discount_amount' => $discountAmount,
                     'total_amount' => $totalAmount,
-                'paid_amount' => $paidAmount,
-                'remaining_amount' => $remainingAmount,
-                'payment_method' => $paymentMethod,
-                'payment_status' => $paymentStatus,
-                'paid_at' => $paymentStatus === 'paid' ? $carbonDate : null,
                     'paid_amount' => $paidAmount,
                     'remaining_amount' => $remainingAmount,
                     'payment_method' => $paymentMethod,
                     'payment_status' => $paymentStatus,
                     'paid_at' => $paymentStatus === 'paid' ? $carbonDate : null,
                     'notes' => $faker->optional(0.3)->sentence(),
-                    'created_by' => $user->id, // Use the selected user as creator
+                    'created_by' => $user->id,
                     'created_at' => $carbonDate,
                     'updated_at' => $carbonDate,
                 ]);
