@@ -331,6 +331,9 @@ class CustomerController extends Controller
     public function getStatistics()
     {
         try {
+            // Calculate total revenue from all completed orders
+            $totalRevenue = Order::where('status', 'completed')->sum('final_amount');
+
             $stats = [
                 'total_customers' => Customer::count(),
                 'active_customers' => Customer::where('status', 'active')->count(),
@@ -339,6 +342,7 @@ class CustomerController extends Controller
                 'business_customers' => Customer::where('customer_type', 'business')->count(),
                 'new_customers_this_month' => Customer::whereMonth('created_at', Carbon::now()->month)->count(),
                 'customers_with_orders' => Customer::has('orders')->count(),
+                'total_revenue' => number_format($totalRevenue, 0, ',', '.'),
                 'top_customers' => Customer::withSum('orders', 'final_amount')
                     ->orderBy('orders_sum_final_amount', 'desc')
                     ->limit(10)

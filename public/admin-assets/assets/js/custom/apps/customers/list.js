@@ -308,13 +308,13 @@ var KTCustomersList = function () {
 
     // Load statistics
     var loadStatistics = function() {
-        fetch('/admin/customers/statistics')
+        fetch('/admin/customers/statistics/summary')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     document.getElementById('total_customers').textContent = data.data.total_customers;
                     document.getElementById('active_customers').textContent = data.data.active_customers;
-                    document.getElementById('new_customers').textContent = data.data.new_customers;
+                    document.getElementById('new_customers').textContent = data.data.new_customers_this_month;
                     document.getElementById('total_revenue').textContent = data.data.total_revenue + '₫';
                 }
             })

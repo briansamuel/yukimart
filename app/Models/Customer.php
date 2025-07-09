@@ -46,6 +46,34 @@ class Customer extends Model
     }
 
     /**
+     * Get customer status badge HTML.
+     */
+    protected function statusBadge(): Attribute
+    {
+        return new Attribute(
+            get: function($value, $attributes) {
+                $status = $attributes['status'] ?? 'inactive';
+                $badgeClass = $status === 'active' ? 'badge-light-success' : 'badge-light-danger';
+                $statusText = $status === 'active' ? 'Hoạt động' : 'Không hoạt động';
+                return "<span class=\"badge {$badgeClass}\">{$statusText}</span>";
+            }
+        );
+    }
+
+    /**
+     * Get customer type display text.
+     */
+    protected function customerTypeDisplay(): Attribute
+    {
+        return new Attribute(
+            get: function($value, $attributes) {
+                $type = $attributes['customer_type'] ?? 'individual';
+                return $type === 'business' ? 'Doanh nghiệp' : 'Cá nhân';
+            }
+        );
+    }
+
+    /**
      * Scope for search by name, phone, or email.
      */
     public function scopeSearch($query, $search)
