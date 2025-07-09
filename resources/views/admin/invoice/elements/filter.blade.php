@@ -165,11 +165,8 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn người tạo" data-allow-clear="true" name="creator_id">
+                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn người tạo" data-allow-clear="true" name="creator_id" id="creator_filter">
                     <option></option>
-                    <option value="1">Admin</option>
-                    <option value="2">Nhân viên 1</option>
-                    <option value="3">Nhân viên 2</option>
                 </select>
             </div>
             <!--end::Card body-->
@@ -190,11 +187,8 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn người bán" data-allow-clear="true" name="seller_id">
+                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn người bán" data-allow-clear="true" name="seller_id" id="seller_filter">
                     <option></option>
-                    <option value="1">Admin</option>
-                    <option value="2">Nhân viên 1</option>
-                    <option value="3">Nhân viên 2</option>
                 </select>
             </div>
             <!--end::Card body-->
@@ -285,12 +279,7 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn kênh bán" data-allow-clear="true" name="sales_channel">
-                    <option></option>
-                    @foreach($salesChannels as $channel)
-                        <option value="{{ $channel['value'] }}">{{ $channel['label'] }}</option>
-                    @endforeach
-                </select>
+                <input class="form-control form-control-solid" name="sales_channel_tags" id="sales_channel_tags" placeholder="Chọn kênh bán..." />
             </div>
             <!--end::Card body-->
         </div>
@@ -401,6 +390,8 @@
             </div>
             <!--end::Card body-->
         </div>
+
+
 
         <div class="card card-flush mb-5">
             <!--begin::Card header-->

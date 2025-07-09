@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Checkbox Debug Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <style>
+        .debug-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .debug-log {
+            background: #000;
+            color: #0f0;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .test-button {
+            margin: 0.25rem;
+        }
+        #bulk-actions-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <h1>Invoice Checkbox Functionality Debug Test</h1>
+        
+        <!-- Debug Panel -->
+        <div class="debug-panel">
+            <h3>Debug Controls</h3>
+            <button class="btn btn-primary test-button" onclick="testAddHeaderCheckbox()">Test Add Header Checkbox</button>
+            <button class="btn btn-success test-button" onclick="testInitSelectAll()">Test Init Select All</button>
+            <button class="btn btn-warning test-button" onclick="testInitBulkActions()">Test Init Bulk Actions</button>
+            <button class="btn btn-info test-button" onclick="testCheckboxChange()">Test Checkbox Change</button>
+            <button class="btn btn-danger test-button" onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <!-- Action Buttons Area -->
+        <div class="mb-3">
+            <div class="d-flex gap-2">
+                <!-- Bulk Actions Container (Hidden by default) -->
+                <div class="dropdown" id="bulk-actions-container">
+                    <button class="btn btn-primary dropdown-toggle me-2" type="button" id="bulk-actions-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cogs"></i> Thao tác
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="bulk-actions-btn">
+                        <li><a class="dropdown-item" href="#" onclick="bulkUpdateDelivery()">
+                            <i class="fas fa-truck"></i> Cập nhật Giao hàng
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="bulkCancel()">
+                            <i class="fas fa-times"></i> Huỷ
+                        </a></li>
+                    </ul>
+                </div>
+                
+                <button class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Xuất Excel
+                </button>
+                <button class="btn btn-info">
+                    <i class="fas fa-plus"></i> Thêm mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Table -->
+        <div class="table-responsive">
+            <table id="kt_invoice_table" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th id="checkbox-header"></th>
+                        <th>Mã hóa đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input row-checkbox" value="1"></td>
+                        <td>INV-001</td>
+                        <td>Nguyễn Văn A</td>
+                        <td>1.000.000 ₫</td>
+                        <td><span class="badge badge-success">Completed</span></td>
+                        <td>01/01/2025</td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input row-checkbox" value="2"></td>
+                        <td>INV-002</td>
+                        <td>Trần Thị B</td>
+                        <td>2.000.000 ₫</td>
+                        <td><span class="badge badge-warning">Processing</span></td>
+                        <td>02/01/2025</td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input row-checkbox" value="3"></td>
+                        <td>INV-003</td>
+                        <td>Lê Văn C</td>
+                        <td>3.000.000 ₫</td>
+                        <td><span class="badge badge-danger">Cancelled</span></td>
+                        <td>03/01/2025</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Debug Log -->
+        <div class="debug-panel">
+            <h3>Debug Log</h3>
+            <div id="debug-log" class="debug-log"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // Debug logging function
+        function debugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('debug-log');
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[DEBUG] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        // Test Functions
+        function testAddHeaderCheckbox() {
+            debugLog('Testing addHeaderCheckbox()...');
+            addHeaderCheckbox();
+        }
+
+        function testInitSelectAll() {
+            debugLog('Testing initSelectAllCheckbox()...');
+            initSelectAllCheckbox();
+        }
+
+        function testInitBulkActions() {
+            debugLog('Testing initBulkActions()...');
+            initBulkActions();
+        }
+
+        function testCheckboxChange() {
+            debugLog('Testing checkbox change event...');
+            // Simulate checking first checkbox
+            const firstCheckbox = document.querySelector('.row-checkbox');
+            if (firstCheckbox) {
+                firstCheckbox.checked = !firstCheckbox.checked;
+                $(firstCheckbox).trigger('change');
+                debugLog(`First checkbox is now: ${firstCheckbox.checked ? 'checked' : 'unchecked'}`);
+            }
+        }
+
+        // Copied functions from invoice-list.js for testing
+        function addHeaderCheckbox() {
+            debugLog('addHeaderCheckbox() called');
+            const firstHeaderCell = $('#kt_invoice_table thead tr:first th:first');
+            debugLog(`Found header cell: ${firstHeaderCell.length > 0}`);
+            debugLog(`Header cell content: "${firstHeaderCell.html()}"`);
+            
+            if (firstHeaderCell.length && firstHeaderCell.html().trim() === '') {
+                firstHeaderCell.html('<input type="checkbox" id="select-all-invoices" class="form-check-input">');
+                debugLog('Header checkbox added successfully');
+            } else {
+                debugLog('Header checkbox not added - cell not empty or not found');
+            }
+        }
+
+        function initSelectAllCheckbox() {
+            debugLog('initSelectAllCheckbox() called');
+            
+            // Handle select all checkbox
+            $(document).off('change', '#select-all-invoices').on('change', '#select-all-invoices', function() {
+                debugLog('Select all checkbox changed');
+                var isChecked = $(this).prop('checked');
+                debugLog(`Select all is: ${isChecked ? 'checked' : 'unchecked'}`);
+                
+                // Check/uncheck all visible row checkboxes
+                $('.row-checkbox').prop('checked', isChecked);
+                debugLog(`Updated ${$('.row-checkbox').length} row checkboxes`);
+                
+                // Update bulk actions visibility
+                updateBulkActionsVisibility();
+            });
+            
+            // Handle individual row checkbox changes
+            $(document).off('change', '.row-checkbox').on('change', '.row-checkbox', function() {
+                debugLog('Row checkbox changed');
+                var totalCheckboxes = $('.row-checkbox').length;
+                var checkedCheckboxes = $('.row-checkbox:checked').length;
+                debugLog(`Checked: ${checkedCheckboxes}/${totalCheckboxes}`);
+                
+                // Update select all checkbox state
+                $('#select-all-invoices').prop('checked', totalCheckboxes === checkedCheckboxes);
+                $('#select-all-invoices').prop('indeterminate', checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes);
+                
+                // Update bulk actions visibility
+                updateBulkActionsVisibility();
+            });
+            
+            debugLog('Select all checkbox events initialized');
+        }
+
+        function initBulkActions() {
+            debugLog('initBulkActions() called');
+            debugLog('Bulk actions container already exists in HTML');
+        }
+
+        function updateBulkActionsVisibility() {
+            debugLog('updateBulkActionsVisibility() called');
+            var checkedCount = $('.row-checkbox:checked').length;
+            debugLog(`Checked count: ${checkedCount}`);
+            
+            if (checkedCount > 0) {
+                $('#bulk-actions-container').show();
+                debugLog('Bulk actions container shown');
+            } else {
+                $('#bulk-actions-container').hide();
+                debugLog('Bulk actions container hidden');
+            }
+        }
+
+        function bulkUpdateDelivery() {
+            debugLog('bulkUpdateDelivery() called');
+            var selectedIds = [];
+            $('.row-checkbox:checked').each(function() {
+                selectedIds.push($(this).val());
+            });
+            
+            debugLog(`Selected IDs: ${selectedIds.join(', ')}`);
+            
+            Swal.fire({
+                title: 'Cập nhật trạng thái giao hàng',
+                text: `Bạn có muốn cập nhật trạng thái giao hàng cho ${selectedIds.length} hóa đơn đã chọn?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Cập nhật',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    debugLog('User confirmed bulk delivery update');
+                    Swal.fire('Thành công', 'Đã cập nhật trạng thái giao hàng', 'success');
+                }
+            });
+        }
+
+        function bulkCancel() {
+            debugLog('bulkCancel() called');
+            var selectedIds = [];
+            $('.row-checkbox:checked').each(function() {
+                selectedIds.push($(this).val());
+            });
+            
+            debugLog(`Selected IDs: ${selectedIds.join(', ')}`);
+            
+            Swal.fire({
+                title: 'Hủy hóa đơn',
+                text: `Bạn có chắc chắn muốn hủy ${selectedIds.length} hóa đơn đã chọn?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Hủy hóa đơn',
+                cancelButtonText: 'Không',
+                confirmButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    debugLog('User confirmed bulk cancel');
+                    Swal.fire('Thành công', 'Đã hủy các hóa đơn đã chọn', 'success');
+                }
+            });
+        }
+
+        // Initialize on page load
+        $(document).ready(function() {
+            debugLog('Page loaded, initializing...');
+            
+            // Initialize DataTable
+            $('#kt_invoice_table').DataTable({
+                pageLength: 10,
+                searching: false,
+                lengthChange: false,
+                info: false
+            });
+            
+            debugLog('DataTable initialized');
+            debugLog('Ready for testing!');
+        });
+    </script>
+</body>
+</html>

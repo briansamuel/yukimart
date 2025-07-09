@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\BranchShop;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\InvoiceService;
 use App\Services\ValidationService;
 use Illuminate\Http\Request;
@@ -134,9 +135,20 @@ class InvoiceController extends Controller
             ['value' => 'insurance', 'label' => 'Phí bảo hiểm'],
         ];
 
-        // Get users for creator and seller filters
-        $creators = \App\Models\User::select('id', 'full_name')->get();
-        $sellers = \App\Models\User::select('id', 'full_name')->get();
+        // Get users for creator and seller filters (only managers and staff)
+        $creators = \App\Models\User::select('id', 'full_name')
+            ->whereHas('roles', function($q) {
+                $q->whereIn('name', ['shop_manager', 'staff']);
+            })
+            ->orderBy('full_name')
+            ->get();
+
+        $sellers = \App\Models\User::select('id', 'full_name')
+            ->whereHas('roles', function($q) {
+                $q->whereIn('name', ['shop_manager', 'staff']);
+            })
+            ->orderBy('full_name')
+            ->get();
 
         return compact(
             'statuses',
@@ -205,9 +217,9 @@ class InvoiceController extends Controller
                     'customer_display' => $invoice->customer_display ?? 'Khách lẻ',
                     'total_amount' => number_format($invoice->total_amount, 0, ',', '.') . ' ₫',
                     'amount_paid' => number_format($invoice->paid_amount ?? 0, 0, ',', '.') . ' ₫',
-                    'payment_status' => $this->getPaymentStatusBadge($invoice->payment_status),
+                    'payment_status' => $this->getStatusBadge($invoice->status),
                     'payment_method' => $this->getPaymentMethodLabel($invoice->payment_method),
-                    'channel' => $this->getInvoiceTypeLabel($invoice->invoice_type ?? 'sale'),
+                    'sales_channel' => $this->getSalesChannelLabel($invoice->sales_channel ?? 'offline'),
                     'created_at' => $invoice->created_at->format('d/m/Y H:i'),
                     'seller' => $invoice->creator->full_name ?? 'N/A', // Người bán (người tạo)
                     'creator' => $invoice->creator->full_name ?? 'N/A', // Người tạo
@@ -549,6 +561,25 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Get status badge HTML
+     */
+    private function getStatusBadge($status)
+    {
+        $badges = [
+            'đang xử lý' => '<span class="badge badge-warning">Đang xử lý</span>',
+            'hoàn thành' => '<span class="badge badge-success">Hoàn thành</span>',
+            'đã huỷ' => '<span class="badge badge-danger">Đã huỷ</span>',
+            'không giao được' => '<span class="badge badge-secondary">Không giao được</span>',
+            'processing' => '<span class="badge badge-warning">Processing</span>',
+            'completed' => '<span class="badge badge-success">Completed</span>',
+            'cancelled' => '<span class="badge badge-danger">Cancelled</span>',
+            'pending' => '<span class="badge badge-info">Pending</span>',
+        ];
+
+        return $badges[$status] ?? '<span class="badge badge-secondary">' . ucfirst($status) . '</span>';
+    }
+
+    /**
      * Get payment status badge HTML
      */
     private function getPaymentStatusBadge($status)
@@ -596,6 +627,64 @@ class InvoiceController extends Controller
     /**
      * Get channel label
      */
+    /**
+     * Get users for filter dropdown
+     */
+    public function getFilterUsers(Request $request)
+    {
+        try {
+            $currentUser = auth()->user();
+            $query = User::with(['branchShops']);
+
+            // Check user role and filter accordingly
+            if ($currentUser->hasRole(['SuperAdmin', 'Admin'])) {
+                // SuperAdmin and Admin can see all users
+                $users = $query->get();
+            } else {
+                // Manager and Staff can only see users from their branch shops
+                $userBranchShopIds = $currentUser->branchShops->pluck('id');
+                $users = $query->whereHas('branchShops', function($q) use ($userBranchShopIds) {
+                    $q->whereIn('branch_shops.id', $userBranchShopIds);
+                })->get();
+            }
+
+            $formattedUsers = $users->map(function($user) {
+                $branchNames = $user->branchShops->pluck('name')->join(', ');
+                $userName = $user->full_name ?? $user->name ?? $user->username;
+                return [
+                    'id' => $user->id,
+                    'text' => $branchNames ? "{$branchNames} - {$userName}" : $userName
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedUsers
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải danh sách người dùng'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get sales channel label
+     */
+    private function getSalesChannelLabel($channel)
+    {
+        $channels = [
+            'offline' => 'Cửa hàng',
+            'online' => 'Website',
+            'marketplace' => 'Marketplace',
+            'social_media' => 'Mạng xã hội',
+            'phone_order' => 'Điện thoại',
+        ];
+
+        return $channels[$channel] ?? ucfirst($channel);
+    }
+
     private function getChannelLabel($channel)
     {
         $channels = [
@@ -701,10 +790,10 @@ class InvoiceController extends Controller
             $query->whereIn('delivery_status', $params['delivery_status']);
         }
 
-        // Sales channel filter - disabled until column is added to invoices table
-        // if (!empty($params['sales_channel'])) {
-        //     $query->where('channel', $params['sales_channel']);
-        // }
+        // Sales channel filter
+        if (!empty($params['sales_channel'])) {
+            $query->whereIn('sales_channel', $params['sales_channel']);
+        }
 
         // Delivery partner filter
         if (!empty($params['delivery_partner'])) {

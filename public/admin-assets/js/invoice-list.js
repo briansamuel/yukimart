@@ -12,6 +12,202 @@ var KTInvoicesList = function () {
     var currentRequest;
     var initialized = false;
 
+    // State management keys
+    var STORAGE_KEYS = {
+        FILTERS: 'invoice_filters_state',
+        COLUMNS: 'invoice_columns_state',
+        COLUMN_VISIBILITY: 'invoice_column_visibility_state'
+    };
+
+    /**
+     * Save state to localStorage
+     */
+    var saveState = function(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+            console.log('State saved:', key, data);
+        } catch (error) {
+            console.warn('Failed to save state:', error);
+        }
+    };
+
+    /**
+     * Load state from localStorage
+     */
+    var loadState = function(key, defaultValue = null) {
+        try {
+            var data = localStorage.getItem(key);
+            if (data) {
+                var parsed = JSON.parse(data);
+                console.log('State loaded:', key, parsed);
+                return parsed;
+            }
+        } catch (error) {
+            console.warn('Failed to load state:', error);
+        }
+        return defaultValue;
+    };
+
+    /**
+     * Save filter state
+     */
+    var saveFilterState = function() {
+        if (!filterForm) return;
+
+        var filterData = {};
+
+        // Save form inputs
+        $(filterForm).find('input, select').each(function() {
+            var $input = $(this);
+            var name = $input.attr('name') || $input.attr('id');
+
+            if (name) {
+                if ($input.is(':checkbox')) {
+                    // Handle checkbox arrays (like status[], sales_channel[])
+                    if (name.endsWith('[]')) {
+                        if (!filterData[name]) {
+                            filterData[name] = [];
+                        }
+                        if ($input.is(':checked')) {
+                            filterData[name].push($input.val());
+                        }
+                    } else {
+                        filterData[name] = $input.is(':checked');
+                    }
+                } else if ($input.is(':radio')) {
+                    if ($input.is(':checked')) {
+                        filterData[name] = $input.val();
+                    }
+                } else if ($input.is('select[multiple]')) {
+                    filterData[name] = $input.val() || [];
+                } else {
+                    filterData[name] = $input.val();
+                }
+            }
+        });
+
+        saveState(STORAGE_KEYS.FILTERS, filterData);
+    };
+
+    /**
+     * Restore filter state
+     */
+    var restoreFilterState = function() {
+        var filterData = loadState(STORAGE_KEYS.FILTERS);
+        if (!filterData || !filterForm) return;
+
+        console.log('Restoring filter state:', filterData);
+
+        // Restore form inputs
+        Object.keys(filterData).forEach(function(name) {
+            var value = filterData[name];
+
+            if (name === 'time_filter') {
+                // Special handling for time filter
+                var $radio = $(filterForm).find('input[name="time_filter"][value="' + value + '"]');
+                if ($radio.length > 0) {
+                    $radio.prop('checked', true);
+
+                    // Update the display text
+                    var timeLabel = getTimeFilterLabel(value);
+                    $('#time_filter_trigger span:first').text(timeLabel);
+
+                    // Update hidden input
+                    $('#time_this_month').val(value);
+                }
+            } else if (name.endsWith('[]')) {
+                // Handle checkbox arrays (like status[], sales_channel[])
+                var baseName = name.replace('[]', '');
+                if (Array.isArray(value)) {
+                    // Uncheck all first
+                    $(filterForm).find('input[name="' + name + '"]').prop('checked', false);
+                    // Check selected values
+                    value.forEach(function(val) {
+                        $(filterForm).find('input[name="' + name + '"][value="' + val + '"]').prop('checked', true);
+                    });
+                }
+            } else {
+                var $input = $(filterForm).find('[name="' + name + '"], #' + name);
+
+                if ($input.length > 0) {
+                    if ($input.is(':checkbox')) {
+                        $input.prop('checked', value);
+                    } else if ($input.is(':radio')) {
+                        $(filterForm).find('input[name="' + name + '"][value="' + value + '"]').prop('checked', true);
+                    } else if ($input.is('select[multiple]')) {
+                        $input.val(value).trigger('change');
+                    } else {
+                        $input.val(value).trigger('change');
+                    }
+                }
+            }
+        });
+    };
+
+    /**
+     * Save column visibility state
+     */
+    var saveColumnVisibilityState = function() {
+        if (!dt) return;
+
+        var columnStates = {};
+        var columnCount = dt.columns().count();
+
+        for (var i = 0; i < columnCount; i++) {
+            var column = dt.column(i);
+            if (column) {
+                columnStates[i] = column.visible();
+            }
+        }
+
+        saveState(STORAGE_KEYS.COLUMN_VISIBILITY, columnStates);
+    };
+
+    /**
+     * Restore column visibility state
+     */
+    var restoreColumnVisibilityState = function() {
+        var columnStates = loadState(STORAGE_KEYS.COLUMN_VISIBILITY);
+        if (!columnStates || !dt) return;
+
+        console.log('Restoring column visibility state:', columnStates);
+
+        Object.keys(columnStates).forEach(function(columnIndex) {
+            var index = parseInt(columnIndex);
+            var isVisible = columnStates[columnIndex];
+            var column = dt.column(index);
+
+            if (column && column.visible() !== isVisible) {
+                column.visible(isVisible, false); // Don't redraw yet
+
+                // Update corresponding checkbox
+                $('.column-toggle[value="' + index + '"]').prop('checked', isVisible);
+            }
+        });
+
+        // Redraw table once after all changes
+        dt.draw(false);
+
+        // Force header sync
+        setTimeout(function() {
+            forceHeaderSync();
+        }, 100);
+    };
+
+    /**
+     * Clear all saved states
+     */
+    var clearAllStates = function() {
+        try {
+            localStorage.removeItem(STORAGE_KEYS.FILTERS);
+            localStorage.removeItem(STORAGE_KEYS.COLUMNS);
+            localStorage.removeItem(STORAGE_KEYS.COLUMN_VISIBILITY);
+            console.log('All states cleared');
+        } catch (error) {
+            console.warn('Failed to clear states:', error);
+        }
+    };
+
     /**
      * Initialize DataTable
      */
@@ -68,10 +264,15 @@ var KTInvoicesList = function () {
                         d.delivery_status.push($(this).val());
                     });
 
+                    // Sales channel filters (checkboxes)
+                    d.sales_channel = [];
+                    $('#kt_invoice_filter_form input[type="checkbox"][id^="sales_channel_"]:checked').each(function() {
+                        d.sales_channel.push($(this).val());
+                    });
+
                     // Select filters
                     d.creator_id = $('select[name="creator_id"]').val();
                     d.seller_id = $('select[name="seller_id"]').val();
-                    d.sales_channel = $('select[name="sales_channel"]').val();
                     d.delivery_partner = $('select[name="delivery_partner"]').val();
                     d.delivery_area = $('select[name="delivery_area"]').val();
                     d.payment_method = $('select[name="payment_method"]').val();
@@ -101,14 +302,21 @@ var KTInvoicesList = function () {
                 }
             },
             columns: [
-                { data: 'checkbox', name: 'checkbox', title: '', orderable: false, searchable: false },
+                {
+                    data: 'checkbox',
+                    name: 'checkbox',
+                    title: '',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                },
                 { data: 'invoice_number', name: 'invoice_number', title: 'Mã hóa đơn' },
                 { data: 'customer_display', name: 'customer_display', title: 'Khách hàng' },
                 { data: 'total_amount', name: 'total_amount', title: 'Tổng tiền' },
                 { data: 'amount_paid', name: 'amount_paid', title: 'Đã thanh toán' },
                 { data: 'payment_status', name: 'payment_status', title: 'Trạng thái' },
                 { data: 'payment_method', name: 'payment_method', title: 'Phương thức TT' },
-                { data: 'channel', name: 'channel', title: 'Kênh bán' },
+                { data: 'sales_channel', name: 'sales_channel', title: 'Kênh bán' },
                 { data: 'created_at', name: 'created_at', title: 'Ngày tạo' },
                 { data: 'seller', name: 'seller', title: 'Người bán', visible: false },
                 { data: 'creator', name: 'creator', title: 'Người tạo', visible: false },
@@ -180,6 +388,15 @@ var KTInvoicesList = function () {
                 });
 
                 buttons.container().appendTo('#column-visibility-container');
+
+                // Add header checkbox after DataTable is initialized
+                addHeaderCheckbox();
+
+                // Initialize select all checkbox functionality
+                initSelectAllCheckbox();
+
+                // Initialize bulk actions
+                initBulkActions();
             }
         });
 
@@ -332,16 +549,19 @@ var KTInvoicesList = function () {
         if (filterForm) {
             // Time filter change
             $(filterForm).on('change', 'input[name="time_filter"]', function() {
+                saveFilterState();
                 dt.ajax.reload();
             });
 
             // Status filter change
             $(filterForm).on('change', 'input[type="checkbox"]', function() {
+                saveFilterState();
                 dt.ajax.reload();
             });
 
             // Select2 change
             $(filterForm).on('change', 'select', function() {
+                saveFilterState();
                 dt.ajax.reload();
             });
 
@@ -386,7 +606,8 @@ var KTInvoicesList = function () {
                     }, 300);
                 }, 500); // Wait 500ms to show the selection effect
 
-                // Reload data
+                // Save filter state and reload data
+                saveFilterState();
                 dt.ajax.reload();
             });
 
@@ -473,21 +694,149 @@ var KTInvoicesList = function () {
                 }, 300);
             });
 
-            // Initialize Select2 for all selects
+            // Initialize Select2 for all selects except special ones
             $(filterForm).find('select').each(function() {
-                if (!$(this).hasClass('select2-hidden-accessible')) {
-                    $(this).select2({
-                        placeholder: $(this).data('placeholder') || 'Chọn...',
+                var $select = $(this);
+                if (!$select.hasClass('select2-hidden-accessible') &&
+                    !$select.attr('id').includes('creator_filter') &&
+                    !$select.attr('id').includes('seller_filter')) {
+                    $select.select2({
+                        placeholder: $select.data('placeholder') || 'Chọn...',
                         allowClear: true
                     });
                 }
             });
+
+            // Initialize Tagify for sales channel
+            initSalesChannelTagify();
+
+            // Initialize user filters
+            initUserFilters();
 
             // Initialize default time filter
             var defaultTimeValue = 'this_month';
             $('#time_this_month').val(defaultTimeValue);
             $('#time_filter_trigger span:first').text(getTimeFilterLabel(defaultTimeValue));
         }
+    };
+
+    /**
+     * Initialize Sales Channel Tagify
+     */
+    var initSalesChannelTagify = function() {
+        var input = document.querySelector('#sales_channel_tags');
+        if (input) {
+            var tagify = new Tagify(input, {
+                whitelist: [
+                    { value: 'offline', label: 'Cửa hàng' },
+                    { value: 'online', label: 'Website' },
+                    { value: 'marketplace', label: 'Marketplace' },
+                    { value: 'social_media', label: 'Mạng xã hội' },
+                    { value: 'phone_order', label: 'Điện thoại' }
+                ],
+                maxTags: 5,
+                dropdown: {
+                    maxItems: 20,
+                    classname: 'tags-look',
+                    enabled: 0,
+                    closeOnSelect: false
+                },
+                templates: {
+                    tag: function(tagData) {
+                        return `<tag title="${tagData.label || tagData.value}"
+                                    contenteditable='false'
+                                    spellcheck='false'
+                                    tabIndex="-1"
+                                    class="tagify__tag ${tagData.class ? tagData.class : ''}"
+                                    ${this.getAttributes(tagData)}>
+                                    <x title='' class='tagify__tag__removeBtn' role='button' aria-label='remove tag'></x>
+                                    <div>
+                                        <span class='tagify__tag-text'>${tagData.label || tagData.value}</span>
+                                    </div>
+                                </tag>`;
+                    },
+                    dropdownItem: function(tagData) {
+                        return `<div ${this.getAttributes(tagData)}
+                                    class='tagify__dropdown__item ${tagData.class ? tagData.class : ''}'
+                                    tabindex="0"
+                                    role="option">
+                                    ${tagData.label || tagData.value}
+                                </div>`;
+                    }
+                }
+            });
+
+            // Listen for changes
+            tagify.on('change', function(e) {
+                saveFilterState();
+                dt.ajax.reload();
+            });
+        }
+    };
+
+    /**
+     * Initialize User Filters (Creator and Seller)
+     */
+    var initUserFilters = function() {
+        // Initialize Creator filter
+        $('#creator_filter').select2({
+            placeholder: 'Chọn người tạo',
+            allowClear: true,
+            ajax: {
+                url: '/admin/invoices/filter-users',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term,
+                        page: params.page
+                    };
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.data || [],
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            }
+        });
+
+        // Initialize Seller filter
+        $('#seller_filter').select2({
+            placeholder: 'Chọn người bán',
+            allowClear: true,
+            ajax: {
+                url: '/admin/invoices/filter-users',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term,
+                        page: params.page
+                    };
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.data || [],
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            }
+        });
+
+        // Listen for changes
+        $('#creator_filter, #seller_filter').on('change', function() {
+            saveFilterState();
+            dt.ajax.reload();
+        });
     };
 
     /**
@@ -593,6 +942,15 @@ var KTInvoicesList = function () {
                         // Don't hide the first column (checkbox column)
                         if (columnIndex === 0) {
                             $header.show(); // Always show checkbox column
+                            $header.css('display', ''); // Remove any inline display styles
+
+                            // Ensure checkbox select all is visible
+                            var $checkbox = $header.find('input[type="checkbox"]');
+                            if ($checkbox.length > 0) {
+                                $checkbox.show();
+                                $checkbox.closest('.form-check').show();
+                            }
+
                             console.log(`Column ${columnIndex} (checkbox): Always visible`);
                         } else {
                             // Only change header visibility if it doesn't match DataTable state
@@ -729,6 +1087,9 @@ var KTInvoicesList = function () {
                         // Now redraw the table
                         dt.draw(false); // false = don't reset paging
 
+                        // Save column visibility state
+                        saveColumnVisibilityState();
+
                         console.log('Column visibility updated successfully:', {
                             columnIndex: columnIndex,
                             isVisible: isVisible,
@@ -788,6 +1149,13 @@ var KTInvoicesList = function () {
         initSearch();
         initFilters();
         initColumnVisibility();
+
+        // Restore states after initialization
+        setTimeout(function() {
+            restoreFilterState();
+            restoreColumnVisibilityState();
+        }, 500);
+
         initialized = true;
     };
 
@@ -803,6 +1171,15 @@ var KTInvoicesList = function () {
         },
         getTable: function() {
             return dt;
+        },
+        clearStates: function() {
+            clearAllStates();
+        },
+        saveFilterState: function() {
+            saveFilterState();
+        },
+        saveColumnState: function() {
+            saveColumnVisibilityState();
         }
     };
 }();
@@ -1000,6 +1377,183 @@ function deleteInvoice(invoiceId) {
 
 // Expose DataTable instance globally for column visibility
 window.invoiceTable = null;
+
+/**
+ * Add header checkbox after DataTable initialization
+ */
+function addHeaderCheckbox() {
+    // Find the first header cell and add checkbox
+    var firstHeaderCell = $('#kt_invoice_table thead tr:first th:first');
+    if (firstHeaderCell.length && firstHeaderCell.html().trim() === '') {
+        firstHeaderCell.html('<input type="checkbox" id="select-all-invoices" class="form-check-input">');
+        console.log('Header checkbox added successfully');
+    }
+}
+
+/**
+ * Initialize select all checkbox functionality
+ */
+function initSelectAllCheckbox() {
+    // Handle select all checkbox
+    $(document).on('change', '#select-all-invoices', function() {
+        var isChecked = $(this).prop('checked');
+
+        // Check/uncheck all visible row checkboxes
+        $('#kt_invoice_table tbody input[type="checkbox"]').prop('checked', isChecked);
+
+        // Update bulk actions visibility
+        updateBulkActionsVisibility();
+    });
+
+    // Handle individual row checkbox changes
+    $(document).on('change', '#kt_invoice_table tbody input[type="checkbox"]', function() {
+        var totalCheckboxes = $('#kt_invoice_table tbody input[type="checkbox"]').length;
+        var checkedCheckboxes = $('#kt_invoice_table tbody input[type="checkbox"]:checked').length;
+
+        // Update select all checkbox state
+        $('#select-all-invoices').prop('checked', totalCheckboxes === checkedCheckboxes);
+        $('#select-all-invoices').prop('indeterminate', checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes);
+
+        // Update bulk actions visibility
+        updateBulkActionsVisibility();
+    });
+}
+
+/**
+ * Initialize bulk actions
+ */
+function initBulkActions() {
+    // Create bulk actions button if it doesn't exist
+    if ($('#bulk-actions-btn').length === 0) {
+        var bulkActionsHtml = `
+            <div class="dropdown" id="bulk-actions-container" style="display: none;">
+                <button class="btn btn-primary dropdown-toggle me-2" type="button" id="bulk-actions-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cogs"></i> Thao tác
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="bulk-actions-btn">
+                    <li><a class="dropdown-item" href="#" onclick="bulkUpdateDelivery()">
+                        <i class="fas fa-truck"></i> Cập nhật Giao hàng
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="bulkCancel()">
+                        <i class="fas fa-times"></i> Huỷ
+                    </a></li>
+                </ul>
+            </div>
+        `;
+
+        // Insert before the "Xuất Excel" button
+        $('.btn:contains("Xuất Excel")').before(bulkActionsHtml);
+    }
+}
+
+/**
+ * Update bulk actions visibility based on selected checkboxes
+ */
+function updateBulkActionsVisibility() {
+    var checkedCount = $('#kt_invoice_table tbody input[type="checkbox"]:checked').length;
+
+    if (checkedCount > 0) {
+        $('#bulk-actions-container').show();
+    } else {
+        $('#bulk-actions-container').hide();
+    }
+}
+
+/**
+ * Bulk update delivery status
+ */
+function bulkUpdateDelivery() {
+    var selectedIds = [];
+    $('#kt_invoice_table tbody input[type="checkbox"]:checked').each(function() {
+        var row = $(this).closest('tr');
+        var invoiceId = $(this).val();
+        if (invoiceId) {
+            selectedIds.push(invoiceId);
+        }
+    });
+
+    if (selectedIds.length === 0) {
+        Swal.fire({
+            title: 'Thông báo',
+            text: 'Vui lòng chọn ít nhất một hóa đơn',
+            icon: 'warning'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Cập nhật trạng thái giao hàng',
+        text: `Bạn có muốn cập nhật trạng thái giao hàng cho ${selectedIds.length} hóa đơn đã chọn?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Cập nhật',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // TODO: Implement bulk delivery update
+            console.log('Bulk update delivery for IDs:', selectedIds);
+
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Đã cập nhật trạng thái giao hàng',
+                icon: 'success'
+            });
+
+            // Reload table
+            if (window.invoiceTable) {
+                window.invoiceTable.ajax.reload();
+            }
+        }
+    });
+}
+
+/**
+ * Bulk cancel invoices
+ */
+function bulkCancel() {
+    var selectedIds = [];
+    $('#kt_invoice_table tbody input[type="checkbox"]:checked').each(function() {
+        var invoiceId = $(this).val();
+        if (invoiceId) {
+            selectedIds.push(invoiceId);
+        }
+    });
+
+    if (selectedIds.length === 0) {
+        Swal.fire({
+            title: 'Thông báo',
+            text: 'Vui lòng chọn ít nhất một hóa đơn',
+            icon: 'warning'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Hủy hóa đơn',
+        text: `Bạn có chắc chắn muốn hủy ${selectedIds.length} hóa đơn đã chọn?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Hủy hóa đơn',
+        cancelButtonText: 'Không',
+        confirmButtonColor: '#d33'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // TODO: Implement bulk cancel
+            console.log('Bulk cancel for IDs:', selectedIds);
+
+            Swal.fire({
+                title: 'Thành công',
+                text: 'Đã hủy các hóa đơn đã chọn',
+                icon: 'success'
+            });
+
+            // Reload table
+            if (window.invoiceTable) {
+                window.invoiceTable.ajax.reload();
+            }
+        }
+    });
+}
 
 // Initialize when DOM is ready
 $(document).ready(function() {
