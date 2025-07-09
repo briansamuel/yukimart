@@ -262,4 +262,17 @@ return [
     'this_week' => 'Tuần này',
     'this_month' => 'Tháng này',
     'this_year' => 'Năm này',
+
+    // Validation Messages
+    'customer_code_unique' => 'Mã khách hàng đã tồn tại',
+    'name_required' => 'Tên khách hàng là bắt buộc',
+    'email_required' => 'Email là bắt buộc',
+    'email_invalid' => 'Email không hợp lệ',
+    'email_unique' => 'Email đã tồn tại',
+    'phone_invalid' => 'Số điện thoại không hợp lệ',
+    'type_required' => 'Loại khách hàng là bắt buộc',
+    'status_required' => 'Trạng thái là bắt buộc',
+    'birthday_invalid' => 'Ngày sinh phải trước ngày hiện tại',
+    'points_invalid' => 'Điểm tích lũy phải là số dương',
+    'validation_failed' => 'Dữ liệu không hợp lệ',
 ];

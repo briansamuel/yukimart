@@ -11,11 +11,34 @@ class Customer extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'customer_code',
+        'name',
+        'phone',
+        'email',
+        'facebook',
+        'address',
+        'area',
+        'customer_type',
+        'customer_group',
+        'tax_code',
+        'status',
+        'notes',
+        'birthday',
+        'points',
+        'created_by',
+        'updated_by'
+    ];
+
+    protected $hidden = [
+        'deleted_by'
+    ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'birthday' => 'date',
+        'points' => 'integer',
     ];
 
     /**
@@ -94,60 +117,96 @@ class Customer extends Model
     }
 
     /**
-     * Get customer statistics.
+     * Scope for business customers.
+     */
+    public function scopeBusiness($query)
+    {
+        return $query->where('customer_type', 'business');
+    }
+
+    /**
+     * Scope for individual customers.
+     */
+    public function scopeIndividual($query)
+    {
+        return $query->where('customer_type', 'individual');
+    }
+
+    /**
+     * Scope for customers with orders.
+     */
+    public function scopeWithOrders($query)
+    {
+        return $query->has('orders');
+    }
+
+    /**
+     * Generate unique customer code.
+     */
+    public static function generateCustomerCode()
+    {
+        $prefix = 'KH';
+
+        // Use a more reliable method to get the next number
+        $maxNumber = self::where('customer_code', 'like', $prefix . '%')
+                        ->selectRaw('MAX(CAST(SUBSTRING(customer_code, 3) AS UNSIGNED)) as max_number')
+                        ->value('max_number');
+
+        $newNumber = ($maxNumber ?? 0) + 1;
+
+        // Ensure uniqueness by checking if code already exists
+        do {
+            $code = $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+            $exists = self::where('customer_code', $code)->exists();
+            if ($exists) {
+                $newNumber++;
+            }
+        } while ($exists);
+
+        return $code;
+    }
+
+    /**
+     * Get customer statistics with optimized queries.
      */
     public function getStats()
     {
         try {
-            // Kiểm tra xem bảng orders có tồn tại không
-            if (!$this->relationLoaded('orders')) {
-                // Load orders relationship nếu chưa có
-                $this->load('orders');
-            }
+            // Use optimized queries instead of loading all orders
+            $orderStats = $this->orders()
+                ->selectRaw('
+                    COUNT(*) as total_orders,
+                    COUNT(CASE WHEN status = "completed" THEN 1 END) as completed_orders,
+                    COALESCE(SUM(CASE WHEN status = "completed" THEN final_amount END), 0) as total_sales,
+                    COALESCE(SUM(CASE WHEN status = "returned" THEN final_amount END), 0) as total_returns,
+                    COALESCE(SUM(CASE WHEN payment_status IN ("unpaid", "partial") AND status NOT IN ("cancelled", "returned") THEN (final_amount - COALESCE(amount_paid, 0)) END), 0) as total_debt,
+                    COALESCE(AVG(CASE WHEN status = "completed" THEN final_amount END), 0) as avg_order_value
+                ')
+                ->first();
 
-            // Tính tổng đơn hàng đã hoàn thành (chỉ tính completed orders)
-            $completedOrders = $this->orders()->where('status', 'completed');
-            $totalSales = $completedOrders->sum('final_amount') ?? 0;
+            // Get last order date efficiently
+            $lastOrderDate = $this->orders()
+                ->latest()
+                ->value('created_at');
 
-            // Tính tổng trả hàng (orders với status = 'returned')
-            $returnedOrders = $this->orders()->where('status', 'returned');
-            $totalReturns = $returnedOrders->sum('final_amount') ?? 0;
-
-            // Tính nợ hiện tại - chỉ tính các đơn chưa thanh toán hoặc thanh toán một phần
-            $unpaidOrders = $this->orders()
-                ->whereIn('payment_status', ['unpaid', 'partial'])
-                ->whereNotIn('status', ['cancelled', 'returned']) // Không tính đơn đã hủy hoặc trả hàng
-                ->get();
-
-            $totalDebt = 0;
-            foreach ($unpaidOrders as $order) {
-                $remaining = $order->final_amount - ($order->amount_paid ?? 0);
-                $totalDebt += max(0, $remaining); // Chỉ tính nợ dương
-            }
-
-            // Tính điểm tích lũy
+            // Calculate derived values from optimized query
+            $totalSales = $orderStats->total_sales ?? 0;
+            $totalReturns = $orderStats->total_returns ?? 0;
+            $totalDebt = $orderStats->total_debt ?? 0;
+            $netSales = $totalSales - $totalReturns;
             $totalPoints = $this->points ?? 0;
 
-            // Số lần mua = số đơn hàng hoàn thành (không tính trả hàng)
-            // Chỉ tính đơn có status = 'completed' và không phải là đơn trả hàng
-            $purchaseCount = $this->orders()
-                ->where('status', 'completed')
-                ->count() ?? 0;
-
-            // Tổng bán trừ trả hàng = Tổng đơn hoàn thành - Tổng đơn trả hàng
-            $netSales = $totalSales - $totalReturns;
-
             return [
-                'total_orders' => $this->orders()->count() ?? 0,
-                'completed_orders' => $completedOrders->count() ?? 0,
+                'total_orders' => $orderStats->total_orders ?? 0,
+                'completed_orders' => $orderStats->completed_orders ?? 0,
                 'total_spent' => $totalSales,
                 'total_returns' => $totalReturns,
                 'net_sales' => $netSales,
-                'total_debt' => max(0, $totalDebt), // Không cho phép nợ âm
+                'total_debt' => max(0, $totalDebt),
                 'total_points' => $totalPoints,
-                'purchase_count' => $purchaseCount,
-                'average_order_value' => $completedOrders->avg('final_amount') ?? 0,
-                'last_order_date' => $this->orders()->latest()->first()?->created_at,
+                'purchase_count' => $orderStats->completed_orders ?? 0,
+                'average_order_value' => $orderStats->avg_order_value ?? 0,
+                'last_order_date' => $lastOrderDate,
             ];
         } catch (\Exception $e) {
             Log::error('Customer::getStats - Error calculating stats', [

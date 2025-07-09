@@ -123,27 +123,31 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'customer_code' => 'nullable|string|max:50|unique:customers,customer_code',
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:customers,email',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'district' => 'nullable|string|max:100',
-            'ward' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
+            'email' => 'required|email|max:255|unique:customers,email',
+            'phone' => 'nullable|string|max:20|regex:/^[0-9+\-\s()]+$/',
+            'facebook' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:1000',
+            'area' => 'nullable|string|max:255',
             'customer_type' => 'required|in:individual,business',
+            'customer_group' => 'nullable|string|max:100',
+            'tax_code' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
-            'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:male,female,other',
-            'notes' => 'nullable|string|max:1000',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'birthday' => 'nullable|date|before:today',
+            'notes' => 'nullable|string|max:2000',
+            'points' => 'nullable|integer|min:0',
         ], [
+            'customer_code.unique' => __('customer.customer_code_unique'),
             'name.required' => __('customer.name_required'),
             'email.required' => __('customer.email_required'),
             'email.email' => __('customer.email_invalid'),
             'email.unique' => __('customer.email_unique'),
+            'phone.regex' => __('customer.phone_invalid'),
             'customer_type.required' => __('customer.type_required'),
             'status.required' => __('customer.status_required'),
+            'birthday.before' => __('customer.birthday_invalid'),
+            'points.min' => __('customer.points_invalid'),
         ]);
 
         if ($validator->fails()) {
@@ -155,7 +159,15 @@ class CustomerController extends Controller
         }
 
         try {
-            $data = $request->all();
+            $data = $request->validated();
+
+            // Auto-generate customer code if not provided
+            if (empty($data['customer_code'])) {
+                $data['customer_code'] = Customer::generateCustomerCode();
+            }
+
+            // Set created_by
+            $data['created_by'] = auth()->id();
 
             // Handle avatar upload
             if ($request->hasFile('avatar')) {
@@ -230,27 +242,31 @@ class CustomerController extends Controller
     public function update(Request $request, Customer $customer)
     {
         $validator = Validator::make($request->all(), [
+            'customer_code' => 'nullable|string|max:50|unique:customers,customer_code,' . $customer->id,
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:customers,email,' . $customer->id,
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'district' => 'nullable|string|max:100',
-            'ward' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
+            'email' => 'required|email|max:255|unique:customers,email,' . $customer->id,
+            'phone' => 'nullable|string|max:20|regex:/^[0-9+\-\s()]+$/',
+            'facebook' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:1000',
+            'area' => 'nullable|string|max:255',
             'customer_type' => 'required|in:individual,business',
+            'customer_group' => 'nullable|string|max:100',
+            'tax_code' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
-            'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:male,female,other',
-            'notes' => 'nullable|string|max:1000',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'birthday' => 'nullable|date|before:today',
+            'notes' => 'nullable|string|max:2000',
+            'points' => 'nullable|integer|min:0',
         ], [
+            'customer_code.unique' => __('customer.customer_code_unique'),
             'name.required' => __('customer.name_required'),
             'email.required' => __('customer.email_required'),
             'email.email' => __('customer.email_invalid'),
             'email.unique' => __('customer.email_unique'),
+            'phone.regex' => __('customer.phone_invalid'),
             'customer_type.required' => __('customer.type_required'),
             'status.required' => __('customer.status_required'),
+            'birthday.before' => __('customer.birthday_invalid'),
+            'points.min' => __('customer.points_invalid'),
         ]);
 
         if ($validator->fails()) {
@@ -262,7 +278,10 @@ class CustomerController extends Controller
         }
 
         try {
-            $data = $request->all();
+            $data = $request->validated();
+
+            // Set updated_by
+            $data['updated_by'] = auth()->id();
 
             // Handle avatar upload
             if ($request->hasFile('avatar')) {
@@ -270,7 +289,7 @@ class CustomerController extends Controller
                 if ($customer->avatar) {
                     Storage::delete('public/' . $customer->avatar);
                 }
-                
+
                 $avatar = $request->file('avatar');
                 $avatarName = time() . '_' . Str::slug($data['name']) . '.' . $avatar->getClientOriginalExtension();
                 $avatar->storeAs('public/customers', $avatarName);
