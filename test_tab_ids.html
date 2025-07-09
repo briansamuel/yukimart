@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Tab IDs</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Test Tab ID Replacement</h1>
+    
+    <div id="template" style="display: none;">
+        <div id="TAB_ID_channelToggle">Channel Toggle</div>
+        <div id="TAB_ID_channelMenu">Channel Menu</div>
+        <div id="TAB_ID_sellerToggle">Seller Toggle</div>
+    </div>
+    
+    <div id="result"></div>
+    
+    <button onclick="testReplacement()">Test Replacement</button>
+    
+    <script>
+        function testReplacement() {
+            const tabId = 'tab_123';
+            
+            // Method 1: Clone and replace IDs
+            let tabContent = $('#template').clone();
+            tabContent.attr('id', tabId + '_content');
+            tabContent.show();
+            
+            // Replace TAB_ID placeholders with actual tab ID using find and replace
+            tabContent.find('[id*="TAB_ID_"]').each(function() {
+                const oldId = $(this).attr('id');
+                const newId = oldId.replace('TAB_ID_', tabId + '_');
+                $(this).attr('id', newId);
+                console.log('Replaced:', oldId, '->', newId);
+            });
+            
+            $('#result').append('<h3>Method 1 Result:</h3>');
+            $('#result').append(tabContent);
+            
+            // Method 2: String replacement
+            let template2 = $('#template').clone();
+            let htmlContent = template2.html();
+            htmlContent = htmlContent.replace(/TAB_ID_/g, tabId + '_');
+            template2.html(htmlContent);
+            template2.attr('id', tabId + '_content2');
+            template2.show();
+            
+            $('#result').append('<h3>Method 2 Result:</h3>');
+            $('#result').append(template2);
+        }
+    </script>
+</body>
+</html>
