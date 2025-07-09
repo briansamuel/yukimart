@@ -326,7 +326,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/order/{order_id}/get', [OrderController::class, 'getOrder'])->name('order.get');
         Route::get('/order/{order_id}/detail-modal', [OrderController::class, 'getOrderDetail'])->name('order.detail.modal');
         Route::post('/order/bulk-delete', [OrderController::class, 'bulkDelete'])->name('order.bulk.delete');
-        Route::get('/order/print/{order_id}', [OrderController::class, 'print'])->name('order.print');
+        Route::get('/order/print/{order_id}', [OrderController::class, 'print'])->name('order.print.simple');
         Route::get('/order/export/{order_id}', [OrderController::class, 'exportOrder'])->name('order.export.single');
 
         // Icon showcase route
