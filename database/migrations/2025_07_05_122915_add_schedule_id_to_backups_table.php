@@ -13,9 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('backups', function (Blueprint $table) {
-            $table->foreignId('schedule_id')->nullable()->after('completed_at')->constrained('backup_schedules')->onDelete('set null');
-        });
+        // The schedule_id column and foreign key constraint already exist from the create_backups_table migration
+        // This migration is redundant and should be a no-op
+        if (!Schema::hasColumn('backups', 'schedule_id')) {
+            Schema::table('backups', function (Blueprint $table) {
+                $table->foreignId('schedule_id')->nullable()->after('completed_at')->constrained('backup_schedules')->onDelete('set null');
+            });
+        }
     }
 
     /**
@@ -25,9 +29,7 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('backups', function (Blueprint $table) {
-            $table->dropForeign(['schedule_id']);
-            $table->dropColumn('schedule_id');
-        });
+        // Do not drop the schedule_id column as it was created by the create_backups_table migration
+        // This migration is redundant and should be a no-op
     }
 };

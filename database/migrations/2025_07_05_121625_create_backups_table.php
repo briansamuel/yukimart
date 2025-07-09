@@ -26,7 +26,6 @@ return new class extends Migration
             $table->text('error_message')->nullable(); // Thông báo lỗi nếu có
             $table->timestamp('started_at')->nullable(); // Thời gian bắt đầu
             $table->timestamp('completed_at')->nullable(); // Thời gian hoàn thành
-            $table->foreignId('schedule_id')->nullable()->constrained('backup_schedules')->nullOnDelete(); // Lịch backup (nếu có)
             $table->foreignId('created_by')->nullable()->constrained('users'); // Người tạo
             $table->timestamps();
 
