@@ -629,6 +629,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         //Route::get('/invoices', [InvoiceController::class, 'index'])->name('admin.invoice.list'); // Alias for header menu
 
         Route::get('/invoices/ajax', [InvoiceController::class, 'getInvoicesAjax'])->name('invoice.ajax');
+        Route::get('/invoices/filter-users', [InvoiceController::class, 'getFilterUsers'])->name('invoice.filter-users');
         Route::get('/invoices/{id}/detail-panel', [InvoiceController::class, 'getDetailPanel'])->name('invoice.detail-panel');
         Route::get('/invoices/test-detail/{id}', function($id) {
             return response()->json([
