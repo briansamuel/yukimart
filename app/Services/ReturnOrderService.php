@@ -46,11 +46,9 @@ class ReturnOrderService
                 'created_by' => Auth::id(),
             ]);
 
-            // Create return order items
+            // Create return order items with grouping
             if (isset($data['items']) && is_array($data['items'])) {
-                foreach ($data['items'] as $index => $itemData) {
-                    $this->createReturnOrderItem($returnOrder, $itemData, $index);
-                }
+                $this->createReturnOrderItems($returnOrder, $data['items']);
             }
 
             // Calculate totals
@@ -74,6 +72,50 @@ class ReturnOrderService
                 'success' => false,
                 'message' => 'Không thể tạo đơn trả hàng: ' . $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Create return order items with grouping logic.
+     */
+    private function createReturnOrderItems(ReturnOrder $returnOrder, array $items)
+    {
+        // Group items by product_id and unit_price to merge duplicates
+        $groupedItems = [];
+
+        foreach ($items as $itemData) {
+            $invoiceItem = InvoiceItem::findOrFail($itemData['invoice_item_id']);
+            $unitPrice = $itemData['unit_price'] ?? $invoiceItem->unit_price;
+
+            // Create grouping key based on product_id and unit_price
+            $groupKey = $invoiceItem->product_id . '_' . $unitPrice;
+
+            if (!isset($groupedItems[$groupKey])) {
+                $groupedItems[$groupKey] = [
+                    'invoice_item_id' => $invoiceItem->id,
+                    'product_id' => $invoiceItem->product_id,
+                    'product_name' => $itemData['product_name'] ?? $invoiceItem->product_name,
+                    'product_sku' => $itemData['product_sku'] ?? $invoiceItem->product_sku,
+                    'unit_price' => $unitPrice,
+                    'quantity_returned' => 0,
+                    'condition' => $itemData['condition'] ?? 'new',
+                    'notes' => $itemData['notes'] ?? null,
+                ];
+            }
+
+            // Add quantity to grouped item
+            $groupedItems[$groupKey]['quantity_returned'] += $itemData['quantity_returned'];
+
+            // Merge notes if different
+            if (!empty($itemData['notes']) && $groupedItems[$groupKey]['notes'] !== $itemData['notes']) {
+                $groupedItems[$groupKey]['notes'] = trim($groupedItems[$groupKey]['notes'] . '; ' . $itemData['notes'], '; ');
+            }
+        }
+
+        // Create return order items from grouped data
+        $sortOrder = 0;
+        foreach ($groupedItems as $groupedItem) {
+            $this->createReturnOrderItem($returnOrder, $groupedItem, $sortOrder++);
         }
     }
 
@@ -103,14 +145,18 @@ class ReturnOrderService
             throw new Exception('Số lượng trả vượt quá số lượng đã mua');
         }
 
+        $unitPrice = $itemData['unit_price'] ?? $invoiceItem->unit_price;
+        $lineTotal = $quantityReturned * $unitPrice;
+
         return ReturnOrderItem::create([
             'return_order_id' => $returnOrder->id,
-            'invoice_item_id' => $invoiceItem->id,
-            'product_id' => $invoiceItem->product_id,
+            'invoice_item_id' => $itemData['invoice_item_id'] ?? $invoiceItem->id,
+            'product_id' => $itemData['product_id'] ?? $invoiceItem->product_id,
             'product_name' => $itemData['product_name'] ?? $invoiceItem->product_name,
             'product_sku' => $itemData['product_sku'] ?? $invoiceItem->product_sku,
             'quantity_returned' => $quantityReturned,
-            'unit_price' => $itemData['unit_price'] ?? $invoiceItem->unit_price,
+            'unit_price' => $unitPrice,
+            'line_total' => $lineTotal,
             'condition' => $itemData['condition'] ?? 'new',
             'notes' => $itemData['notes'] ?? null,
             'sort_order' => $sortOrder,
@@ -298,6 +344,54 @@ class ReturnOrderService
                 'success' => false,
                 'message' => 'Không thể từ chối đơn trả hàng: ' . $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Copy return order
+     */
+    public function copyReturnOrder(ReturnOrder $originalReturnOrder)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Load original return order with items
+            $originalReturnOrder->load(['returnOrderItems.product']);
+
+            // Create new return order
+            $newReturnOrder = ReturnOrder::create([
+                'return_order_code' => $this->generateReturnOrderCode(),
+                'invoice_id' => $originalReturnOrder->invoice_id,
+                'customer_id' => $originalReturnOrder->customer_id,
+                'branch_shop_id' => $originalReturnOrder->branch_shop_id,
+                'return_date' => now(),
+                'total_amount' => $originalReturnOrder->total_amount,
+                'status' => 'pending',
+                'reason' => $originalReturnOrder->reason,
+                'notes' => 'Sao chép từ: ' . $originalReturnOrder->return_order_code,
+                'created_by' => auth()->id(),
+                'receiver_id' => auth()->id()
+            ]);
+
+            // Copy return order items
+            foreach ($originalReturnOrder->returnOrderItems as $item) {
+                $newReturnOrder->returnOrderItems()->create([
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'total_amount' => $item->total_amount,
+                    'discount_amount' => $item->discount_amount,
+                    'reason' => $item->reason
+                ]);
+            }
+
+            DB::commit();
+
+            return $newReturnOrder;
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error copying return order: ' . $e->getMessage());
+            throw $e;
         }
     }
 }

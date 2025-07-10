@@ -47,6 +47,14 @@ class Payment extends Model
     }
 
     /**
+     * Relationship with bank account.
+     */
+    public function bankAccount()
+    {
+        return $this->belongsTo(BankAccount::class, 'bank_account_id');
+    }
+
+    /**
      * Relationship with creator.
      */
     public function creator()
@@ -149,41 +157,50 @@ class Payment extends Model
     /**
      * Generate unique payment number.
      */
-    public static function generatePaymentNumber($type = 'receipt', $referenceNumber = null)
+    public static function generatePaymentNumber($type = 'receipt', $referenceNumber = null, $referenceType = null)
     {
+        // Special case for invoice payments: TT{invoice_id}
+        if ($referenceType === 'invoice' && $referenceNumber) {
+            // Extract invoice ID from invoice number (HD20250709001 -> extract ID from database)
+            $invoice = \App\Models\Invoice::where('invoice_number', $referenceNumber)->first();
+            if ($invoice) {
+                return 'TT' . $invoice->id;
+            }
+        }
+
         $prefix = $type === 'receipt' ? 'TTH' : 'TTC'; // Thu/Chi
         $date = date('Ymd');
-        
-        if ($referenceNumber) {
-            // Base on reference number (e.g., INV20250709001 -> TTH20250709001)
-            $baseNumber = str_replace(['INV', 'RTN', 'ORD'], $prefix, $referenceNumber);
+
+        if ($referenceNumber && $referenceType !== 'invoice') {
+            // Base on reference number (e.g., TH20250709001 -> TTH20250709001)
+            $baseNumber = str_replace(['HD', 'TH', 'ORD'], $prefix, $referenceNumber);
         } else {
             // Generate new number
             $baseNumber = $prefix . $date;
         }
-        
+
         // Check if payment number already exists
         $count = self::where('payment_number', 'like', $baseNumber . '%')
                     ->count();
-                    
+
         if ($count > 0) {
             $baseNumber .= '-' . ($count + 1);
-        } else if (!$referenceNumber) {
+        } else if (!$referenceNumber || $referenceType === 'manual') {
             // Add sequence for manual payments
             $lastPayment = self::where('payment_number', 'like', $prefix . $date . '%')
                              ->orderBy('payment_number', 'desc')
                              ->first();
-            
+
             if ($lastPayment) {
                 $lastNumber = intval(substr($lastPayment->payment_number, -4));
                 $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
             } else {
                 $newNumber = '0001';
             }
-            
+
             $baseNumber .= $newNumber;
         }
-        
+
         return $baseNumber;
     }
 

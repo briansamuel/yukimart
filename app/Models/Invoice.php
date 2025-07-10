@@ -277,19 +277,19 @@ class Invoice extends Model
      */
     public static function generateInvoiceNumber()
     {
-        $prefix = 'INV';
+        $prefix = 'HD';
         $date = date('Ymd');
         $lastInvoice = self::where('invoice_number', 'like', $prefix . $date . '%')
                           ->orderBy('invoice_number', 'desc')
                           ->first();
-        
+
         if ($lastInvoice) {
             $lastNumber = intval(substr($lastInvoice->invoice_number, -4));
             $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
         } else {
             $newNumber = '0001';
         }
-        
+
         return $prefix . $date . $newNumber;
     }
 

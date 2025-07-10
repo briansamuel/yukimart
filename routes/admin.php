@@ -667,6 +667,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::post('/{returnOrder}/reject', [ReturnOrderController::class, 'reject'])->name('reject');
             Route::post('/{returnOrder}/complete', [ReturnOrderController::class, 'complete'])->name('complete');
             Route::get('/{returnOrder}/details', [ReturnOrderController::class, 'getDetails'])->name('details');
+            Route::get('/{returnOrder}/detail', [ReturnOrderController::class, 'getDetailPanel'])->name('detail.panel');
+            // New action routes
+            Route::put('/{returnOrder}/cancel', [ReturnOrderController::class, 'cancel'])->name('cancel');
+            Route::post('/{returnOrder}/copy', [ReturnOrderController::class, 'copy'])->name('copy');
+            Route::get('/{returnOrder}/export', [ReturnOrderController::class, 'export'])->name('export');
+            Route::get('/{returnOrder}/print', [ReturnOrderController::class, 'print'])->name('print');
         });
 
         // Payment routes

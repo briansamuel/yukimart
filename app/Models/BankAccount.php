@@ -28,6 +28,14 @@ class BankAccount extends Model
     ];
 
     /**
+     * Relationship with payments.
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * Get active bank accounts
      */
     public static function getActive()

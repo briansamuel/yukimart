@@ -12,6 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check if paid_amount column still exists
+        if (!Schema::hasColumn('invoices', 'paid_amount')) {
+            return; // Migration already completed or column doesn't exist
+        }
+
         // Migrate existing payment data from invoices to payments table
         $invoices = DB::table('invoices')
             ->where('paid_amount', '>', 0)

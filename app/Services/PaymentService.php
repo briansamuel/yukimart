@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\Invoice;
 use App\Models\ReturnOrder;
 use App\Models\Order;
+use App\Models\BankAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -21,13 +22,33 @@ class PaymentService
         try {
             DB::beginTransaction();
 
+            // Validate bank account if provided
+            if (isset($data['bank_account_id']) && $data['bank_account_id']) {
+                $bankAccount = BankAccount::find($data['bank_account_id']);
+                if (!$bankAccount) {
+                    throw new Exception('Tài khoản ngân hàng không tồn tại');
+                }
+
+                if (!$bankAccount->is_active) {
+                    throw new Exception('Tài khoản ngân hàng không hoạt động');
+                }
+            }
+
+            // Auto-select bank account for transfer/card payments if not provided
+            if (!isset($data['bank_account_id']) && in_array($data['payment_method'], ['transfer', 'card'])) {
+                $defaultBankAccount = BankAccount::getDefault();
+                if ($defaultBankAccount) {
+                    $data['bank_account_id'] = $defaultBankAccount->id;
+                }
+            }
+
             // Generate payment number if not provided
             if (!isset($data['payment_number'])) {
                 $referenceNumber = null;
                 if (isset($data['reference_type']) && isset($data['reference_id'])) {
                     $referenceNumber = $this->getReferenceNumber($data['reference_type'], $data['reference_id']);
                 }
-                $data['payment_number'] = Payment::generatePaymentNumber($data['payment_type'], $referenceNumber);
+                $data['payment_number'] = Payment::generatePaymentNumber($data['payment_type'], $referenceNumber, $data['reference_type'] ?? null);
             }
 
             // Create payment
@@ -38,6 +59,7 @@ class PaymentService
                 'reference_id' => $data['reference_id'] ?? null,
                 'customer_id' => $data['customer_id'] ?? null,
                 'branch_shop_id' => $data['branch_shop_id'] ?? null,
+                'bank_account_id' => $data['bank_account_id'] ?? null,
                 'payment_date' => $data['payment_date'] ?? now(),
                 'amount' => $data['amount'],
                 'payment_method' => $data['payment_method'] ?? 'cash',
@@ -58,7 +80,7 @@ class PaymentService
             return [
                 'success' => true,
                 'message' => 'Phiếu thu/chi đã được tạo thành công',
-                'data' => $payment->load(['customer', 'branchShop', 'creator'])
+                'data' => $payment->load(['customer', 'branchShop', 'bankAccount', 'creator'])
             ];
 
         } catch (Exception $e) {
@@ -226,15 +248,15 @@ class PaymentService
             case 'invoice':
                 $invoice = Invoice::find($referenceId);
                 return $invoice ? $invoice->invoice_number : null;
-            
+
             case 'return_order':
                 $returnOrder = ReturnOrder::find($referenceId);
                 return $returnOrder ? $returnOrder->return_number : null;
-            
+
             case 'order':
                 $order = Order::find($referenceId);
                 return $order ? $order->order_code : null;
-            
+
             default:
                 return null;
         }

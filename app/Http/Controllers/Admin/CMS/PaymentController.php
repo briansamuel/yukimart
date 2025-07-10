@@ -69,6 +69,12 @@ class PaymentController extends Controller
             ->addColumn('branch_name', function ($payment) {
                 return $payment->branchShop->name ?? 'N/A';
             })
+            ->addColumn('bank_account_info', function ($payment) {
+                if ($payment->bankAccount) {
+                    return $payment->bankAccount->bank_name . '<br><small>' . $payment->bankAccount->account_number . '</small>';
+                }
+                return 'N/A';
+            })
             ->addColumn('creator_name', function ($payment) {
                 return $payment->creator->name ?? 'N/A';
             })
@@ -115,7 +121,7 @@ class PaymentController extends Controller
                 $actions .= '</div>';
                 return $actions;
             })
-            ->rawColumns(['status_badge', 'actions'])
+            ->rawColumns(['status_badge', 'bank_account_info', 'actions'])
             ->make(true);
     }
 
@@ -156,6 +162,7 @@ class PaymentController extends Controller
             'reference_id' => 'nullable|integer',
             'customer_id' => 'nullable|exists:customers,id',
             'branch_shop_id' => 'nullable|exists:branch_shops,id',
+            'bank_account_id' => 'nullable|exists:bank_accounts,id',
         ]);
 
         if ($validator->fails()) {

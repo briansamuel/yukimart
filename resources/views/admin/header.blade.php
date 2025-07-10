@@ -140,7 +140,7 @@
                     </div>
                     <!--end:Menu item-->
                     <!--begin:Menu item-->
-                    <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" class="menu-item {{ request()->routeIs('admin.order.*', 'admin.invoice.*', 'admin.quick-order.*') ? 'here show menu-here-bg' : '' }} me-0 me-lg-2" data-kt-menu-offset="0,0">
+                    <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" class="menu-item {{ request()->routeIs('admin.order.*', 'admin.invoice.*', 'admin.quick-order.*', 'admin.return-order.*', 'admin.payment.*') ? 'here show menu-here-bg' : '' }} me-0 me-lg-2" data-kt-menu-offset="0,0">
                         <!--begin:Menu link-->
                         <span class="menu-link">
                             <span class="menu-title">Giao dịch</span>
@@ -190,6 +190,30 @@
                                                 </i>
                                             </span>
                                             <span class="menu-title">Bán hàng nhanh</span>
+                                        </a>
+                                    </div>
+                                    <div class="menu-item">
+                                        <a class="menu-link py-3 {{ request()->routeIs('admin.return-order.*') ? 'active' : '' }}" href="{{ route('admin.return-order.list') }}">
+                                            <span class="menu-icon">
+                                                <i class="ki-duotone ki-arrow-left fs-2">
+                                                    <span class="path1"></span>
+                                                    <span class="path2"></span>
+                                                </i>
+                                            </span>
+                                            <span class="menu-title">Trả hàng</span>
+                                        </a>
+                                    </div>
+                                    <div class="menu-item">
+                                        <a class="menu-link py-3 {{ request()->routeIs('admin.payment.*') ? 'active' : '' }}" href="{{ route('admin.payment.list') }}">
+                                            <span class="menu-icon">
+                                                <i class="ki-duotone ki-wallet fs-2">
+                                                    <span class="path1"></span>
+                                                    <span class="path2"></span>
+                                                    <span class="path3"></span>
+                                                    <span class="path4"></span>
+                                                </i>
+                                            </span>
+                                            <span class="menu-title">Phiếu thu/chi</span>
                                         </a>
                                     </div>
                                 </div>

@@ -73,6 +73,14 @@ class ReturnOrder extends Model
     }
 
     /**
+     * Relationship with receiver.
+     */
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
+    /**
      * Relationship with return order items.
      */
     public function returnOrderItems()
@@ -165,19 +173,19 @@ class ReturnOrder extends Model
      */
     public static function generateReturnNumber()
     {
-        $prefix = 'RTN';
+        $prefix = 'TH';
         $date = date('Ymd');
         $lastReturn = self::where('return_number', 'like', $prefix . $date . '%')
                          ->orderBy('return_number', 'desc')
                          ->first();
-        
+
         if ($lastReturn) {
             $lastNumber = intval(substr($lastReturn->return_number, -4));
             $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
         } else {
             $newNumber = '0001';
         }
-        
+
         return $prefix . $date . $newNumber;
     }
 
