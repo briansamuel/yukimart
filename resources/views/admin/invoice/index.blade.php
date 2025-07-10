@@ -151,27 +151,27 @@
                         </div>
                         <!--end::Card header-->
 
-                        @if($barcodeSearch)
-                        <!--begin::Barcode search info-->
+                        @if($invoiceCodeSearch)
+                        <!--begin::Invoice code search info-->
                         <div class="card-body border-bottom py-4">
                             <div class="d-flex align-items-center">
                                 <div class="d-flex align-items-center flex-wrap">
                                     <div class="me-5">
-                                        <i class="fas fa-barcode text-primary fs-2 me-2"></i>
-                                        <span class="fw-bold text-gray-800">Tìm kiếm theo mã vạch:</span>
-                                        <span class="badge badge-light-primary fs-7 ms-2">{{ $barcodeSearch }}</span>
+                                        <i class="fas fa-file-invoice text-primary fs-2 me-2"></i>
+                                        <span class="fw-bold text-gray-800">Tìm kiếm theo mã hóa đơn:</span>
+                                        <span class="badge badge-light-primary fs-7 ms-2">{{ $invoiceCodeSearch }}</span>
                                     </div>
-                                    @if($searchedProduct)
+                                    @if($searchedInvoice)
                                         <div class="d-flex align-items-center">
-                                            <span class="text-muted me-2">Sản phẩm:</span>
-                                            <span class="fw-bold text-success">{{ $searchedProduct->name }}</span>
-                                            <span class="text-muted ms-2">({{ $searchedProduct->sku }})</span>
+                                            <span class="text-muted me-2">Hóa đơn:</span>
+                                            <span class="fw-bold text-success">{{ $searchedInvoice->customer_name }}</span>
+                                            <span class="text-muted ms-2">({{ number_format($searchedInvoice->total_amount) }} ₫)</span>
                                         </div>
                                     @else
                                         <div class="d-flex align-items-center">
                                             <span class="text-danger">
                                                 <i class="fas fa-exclamation-triangle me-1"></i>
-                                                Không tìm thấy sản phẩm với mã vạch này
+                                                Không tìm thấy hóa đơn với mã này
                                             </span>
                                         </div>
                                     @endif

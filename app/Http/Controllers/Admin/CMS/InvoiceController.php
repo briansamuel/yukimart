@@ -40,28 +40,28 @@ class InvoiceController extends Controller
         // Prepare filter data
         $filterData = $this->getFilterData();
 
-        // Handle barcode search via Code parameter
-        $barcodeSearch = null;
-        $searchedProduct = null;
+        // Handle invoice code search via Code parameter
+        $invoiceCodeSearch = null;
+        $searchedInvoice = null;
         if ($request->has('Code') && !empty($request->get('Code'))) {
-            $barcode = $request->get('Code');
-            $barcodeSearch = $barcode;
+            $invoiceCode = $request->get('Code');
+            $invoiceCodeSearch = $invoiceCode;
 
-            // Find product by barcode
-            $searchedProduct = Product::where('barcode', $barcode)->first();
+            // Find invoice by invoice_number
+            $searchedInvoice = Invoice::where('invoice_number', $invoiceCode)->first();
 
-            if ($searchedProduct) {
-                Log::info('Barcode search in invoices', [
-                    'barcode' => $barcode,
-                    'product_id' => $searchedProduct->id,
-                    'product_name' => $searchedProduct->name
+            if ($searchedInvoice) {
+                Log::info('Invoice code search in invoices', [
+                    'invoice_code' => $invoiceCode,
+                    'invoice_id' => $searchedInvoice->id,
+                    'customer_name' => $searchedInvoice->customer_name
                 ]);
             } else {
-                Log::warning('Barcode not found in invoices search', ['barcode' => $barcode]);
+                Log::warning('Invoice code not found in invoices search', ['invoice_code' => $invoiceCode]);
             }
         }
 
-        return view('admin.invoice.index', compact('branchShops', 'barcodeSearch', 'searchedProduct') + $filterData);
+        return view('admin.invoice.index', compact('branchShops', 'invoiceCodeSearch', 'searchedInvoice') + $filterData);
     }
 
     /**
@@ -794,12 +794,10 @@ class InvoiceController extends Controller
      */
     private function applyFilters($query, $params)
     {
-        // Barcode filter (Code parameter)
+        // Invoice code filter (Code parameter)
         if (!empty($params['Code'])) {
-            $barcode = $params['Code'];
-            $query->whereHas('invoiceItems.product', function($q) use ($barcode) {
-                $q->where('barcode', $barcode);
-            });
+            $invoiceCode = $params['Code'];
+            $query->where('invoice_number', $invoiceCode);
         }
 
         // Time filter
