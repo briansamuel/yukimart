@@ -496,6 +496,11 @@ var KTInvoicesList = function () {
                                 // Update the row content
                                 row.child(response.html).show();
                                 console.log('Detail panel loaded successfully');
+
+                                // Initialize Bootstrap tabs for the loaded detail panel
+                                setTimeout(function() {
+                                    initDetailPanelTabs(tr);
+                                }, 100);
                             } else {
                                 console.error('Server returned error:', response);
                                 row.child('<div class="alert alert-danger">Không thể tải thông tin chi tiết: ' + (response.message || 'Unknown error') + '</div>').show();
@@ -1730,8 +1735,50 @@ function getSelectedInvoiceIds() {
     return selectedIds;
 }
 
+/**
+ * Initialize Bootstrap tabs for detail panel
+ */
+function initDetailPanelTabs(rowElement) {
+    console.log('Initializing detail panel tabs for row:', rowElement);
 
+    // Find all tab links in the detail panel
+    var $detailPanel = $(rowElement).next('tr').find('.card-body');
+    var $tabLinks = $detailPanel.find('a[data-bs-toggle="tab"]');
 
+    console.log('Found tab links:', $tabLinks.length);
+
+    if ($tabLinks.length > 0) {
+        // Remove any existing event handlers to prevent duplicates
+        $tabLinks.off('click.detailTab');
+
+        // Add click handler for each tab
+        $tabLinks.on('click.detailTab', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $clickedTab = $(this);
+            var targetId = $clickedTab.attr('href');
+
+            console.log('Detail panel tab clicked:', targetId);
+
+            // Remove active class from all tabs in this detail panel
+            $detailPanel.find('.nav-link').removeClass('active');
+            $clickedTab.addClass('active');
+
+            // Hide all tab panes in this detail panel
+            $detailPanel.find('.tab-pane').removeClass('show active');
+
+            // Show the target tab pane
+            $detailPanel.find(targetId).addClass('show active');
+
+            console.log('Tab switched to:', targetId);
+        });
+
+        console.log('Detail panel tabs initialized successfully');
+    } else {
+        console.log('No tabs found in detail panel');
+    }
+}
 // Initialize when DOM is ready
 $(document).ready(function() {
     KTInvoicesList.init();

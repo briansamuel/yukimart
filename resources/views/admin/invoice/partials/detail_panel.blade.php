@@ -1,208 +1,277 @@
-<div class="invoice-detail-panel p-4 bg-light-primary border-start border-primary border-5">
-    <div class="row">
-        <!-- Invoice Information -->
-        <div class="col-md-6">
-            <div class="card card-flush h-100">
-                <div class="card-header">
-                    <h6 class="card-title fw-bold text-primary">Thông tin hóa đơn</h6>
-                </div>
-                <div class="card-body pt-0">
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Mã hóa đơn:</div>
-                        <div class="col-7 fw-bold">{{ $invoice->invoice_number }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Ngày tạo:</div>
-                        <div class="col-7">{{ $invoice->created_at->format('d/m/Y H:i') }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Kênh bán:</div>
-                        <div class="col-7">
-                            @if($invoice->channel === 'online')
-                                <span class="badge badge-light-info">Online</span>
-                            @elseif($invoice->channel === 'pos')
-                                <span class="badge badge-light-success">POS</span>
-                            @else
-                                <span class="badge badge-light-primary">Trực tiếp</span>
-                            @endif
+<div class="invoice-detail-panel">
+    <div class="card card-flush border-0 shadow-none">
+        <div class="card-body p-0">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs nav-line-tabs nav-line-tabs-2x border-0 fs-4 fw-semibold mb-5" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#kt_invoice_info_{{ $invoice->id }}" aria-selected="true" role="tab">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" data-bs-toggle="tab" href="#kt_invoice_payment_{{ $invoice->id }}" aria-selected="false" role="tab" tabindex="-1">
+                        <i class="fas fa-credit-card me-2"></i>Lịch sử thanh toán
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Tab 1: Thông tin -->
+                <div class="tab-pane fade show active" id="kt_invoice_info_{{ $invoice->id }}" role="tabpanel">
+                    <!-- Customer Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-6">
+                        <div>
+                            <h3 class="fw-bold text-gray-800 mb-1">
+                                @if($invoice->customer_id > 0 && $invoice->customer)
+                                    {{ $invoice->customer->name }}
+                                @else
+                                    Khách lẻ
+                                @endif
+                            </h3>
+                            <span class="badge badge-light-success fs-7">{{ ucfirst($invoice->status) }}</span>
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Chi nhánh:</div>
-                        <div class="col-7">{{ $invoice->branchShop->name ?? 'N/A' }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Customer Information -->
-        <div class="col-md-6">
-            <div class="card card-flush h-100">
-                <div class="card-header">
-                    <h6 class="card-title fw-bold text-success">Thông tin khách hàng</h6>
-                </div>
-                <div class="card-body pt-0">
+                    <!-- Invoice Information Row -->
+                    <div class="row g-5 mb-6">
+                        <div class="col-md-4">
+                            <div class="fw-semibold text-gray-600 mb-1">Người tạo:</div>
+                            <div class="fw-bold">{{ $invoice->creator->name ?? 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fw-semibold text-gray-600 mb-1">Ngày tạo:</div>
+                            <div class="fw-bold">{{ $invoice->created_at->format('d/m/Y H:i') }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fw-semibold text-gray-600 mb-1">Kênh bán:</div>
+                            <div class="fw-bold">
+                                @if($invoice->channel === 'online')
+                                    Online
+                                @elseif($invoice->channel === 'pos')
+                                    POS
+                                @else
+                                    Trực tiếp
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-5 mb-6">
+                        <div class="col-md-4">
+                            <div class="fw-semibold text-gray-600 mb-1">Mã hóa đơn:</div>
+                            <div class="fw-bold text-primary">{{ $invoice->invoice_number }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fw-semibold text-gray-600 mb-1">Chi nhánh:</div>
+                            <div class="fw-bold">{{ $invoice->branchShop->name ?? 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fw-semibold text-gray-600 mb-1">Bảng giá:</div>
+                            <div class="fw-bold">Sale</div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Information -->
                     @if($invoice->customer_id > 0 && $invoice->customer)
-                        <div class="row mb-3">
-                            <div class="col-4 fw-semibold text-gray-600">Tên:</div>
-                            <div class="col-8 fw-bold">{{ $invoice->customer->name }}</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-4 fw-semibold text-gray-600">Điện thoại:</div>
-                            <div class="col-8">{{ $invoice->customer->phone ?? 'N/A' }}</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-4 fw-semibold text-gray-600">Email:</div>
-                            <div class="col-8">{{ $invoice->customer->email ?? 'N/A' }}</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-4 fw-semibold text-gray-600">Địa chỉ:</div>
-                            <div class="col-8">{{ $invoice->customer->address ?? 'N/A' }}</div>
-                        </div>
-                    @else
-                        <div class="text-center text-muted">
-                            <i class="fas fa-user-slash fs-2x mb-3"></i>
-                            <p class="fw-bold">Khách lẻ</p>
+                        <div class="row g-5 mb-6">
+                            <div class="col-md-4">
+                                <div class="fw-semibold text-gray-600 mb-1">Điện thoại:</div>
+                                <div class="fw-bold">{{ $invoice->customer->phone ?? 'N/A' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="fw-semibold text-gray-600 mb-1">Email:</div>
+                                <div class="fw-bold">{{ $invoice->customer->email ?? 'N/A' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="fw-semibold text-gray-600 mb-1">Địa chỉ:</div>
+                                <div class="fw-bold">{{ $invoice->customer->address ?? 'N/A' }}</div>
+                            </div>
                         </div>
                     @endif
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row mt-4">
-        <!-- Payment Information -->
-        <div class="col-md-6">
-            <div class="card card-flush h-100">
-                <div class="card-header">
-                    <h6 class="card-title fw-bold text-warning">Thông tin thanh toán</h6>
+                    <!-- Products Table -->
+                    <div class="separator my-6"></div>
+                    <div class="table-responsive">
+                        <table class="table table-row-dashed table-row-gray-300 gy-4">
+                            <thead>
+                                <tr class="fw-bold fs-6 text-gray-800 border-bottom border-gray-200">
+                                    <th>Mã hàng</th>
+                                    <th>Tên hàng</th>
+                                    <th class="text-end">Số lượng</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-end">Giảm giá</th>
+                                    <th class="text-end">Giá bán</th>
+                                    <th class="text-end">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($invoice->invoiceItems ?? [] as $item)
+                                <tr>
+                                    <td class="fw-bold text-gray-600">{{ $item->product_sku ?? 'N/A' }}</td>
+                                    <td class="fw-bold text-gray-800">{{ $item->product_name }}</td>
+                                    <td class="text-end fw-bold">{{ number_format($item->quantity, 0, ',', '.') }}</td>
+                                    <td class="text-end">{{ number_format($item->unit_price, 0, ',', '.') }}₫</td>
+                                    <td class="text-end text-danger">{{ number_format($item->discount_amount ?? 0, 0, ',', '.') }}₫</td>
+                                    <td class="text-end fw-bold">{{ number_format($item->selling_price, 0, ',', '.') }}₫</td>
+                                    <td class="text-end fw-bold text-primary">{{ number_format($item->total_amount, 0, ',', '.') }}₫</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">Không có sản phẩm nào</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="d-flex justify-content-end">
+                        <div class="mw-300px">
+                            <div class="d-flex flex-stack mb-3">
+                                <div class="fw-semibold pe-10 text-gray-600 fs-7">Tổng tiền hàng:</div>
+                                <div class="text-end fw-bold fs-6">{{ number_format($invoice->subtotal ?? 0, 0, ',', '.') }}₫</div>
+                            </div>
+                            <div class="d-flex flex-stack mb-3">
+                                <div class="fw-semibold pe-10 text-gray-600 fs-7">Giảm giá:</div>
+                                <div class="text-end fw-bold fs-6 text-danger">{{ number_format($invoice->discount_amount ?? 0, 0, ',', '.') }}₫</div>
+                            </div>
+                            <div class="d-flex flex-stack mb-3">
+                                <div class="fw-semibold pe-10 text-gray-600 fs-7">Khách cần trả:</div>
+                                <div class="text-end fw-bold fs-6">{{ number_format($invoice->total_amount, 0, ',', '.') }}₫</div>
+                            </div>
+                            <div class="d-flex flex-stack">
+                                <div class="fw-semibold pe-10 text-gray-600 fs-7">Khách đã trả:</div>
+                                <div class="text-end fw-bold fs-6 text-success">{{ number_format($invoice->amount_paid, 0, ',', '.') }}₫</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body pt-0">
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Tổng tiền:</div>
-                        <div class="col-7 fw-bold text-primary">{{ number_format($invoice->total_amount, 0, ',', '.') }}đ</div>
+
+                <!-- Tab 2: Lịch sử thanh toán -->
+                <div class="tab-pane fade" id="kt_invoice_payment_{{ $invoice->id }}" role="tabpanel">
+                    <!-- Payment Summary -->
+                    <div class="card bg-light-primary mb-5">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="text-muted fs-7">Tổng tiền hàng</div>
+                                    <div class="fw-bold fs-5">{{ number_format($invoice->subtotal ?? 0, 0, ',', '.') }}₫</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted fs-7">Giảm giá</div>
+                                    <div class="fw-bold fs-5 text-danger">{{ number_format($invoice->discount_amount ?? 0, 0, ',', '.') }}₫</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted fs-7">Tổng cộng</div>
+                                    <div class="fw-bold fs-5 text-primary">{{ number_format($invoice->total_amount, 0, ',', '.') }}₫</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted fs-7">Đã thanh toán</div>
+                                    <div class="fw-bold fs-5 text-success">{{ number_format($invoice->amount_paid, 0, ',', '.') }}₫</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Đã thanh toán:</div>
-                        <div class="col-7 fw-bold text-success">{{ number_format($invoice->amount_paid, 0, ',', '.') }}đ</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Phương thức:</div>
-                        <div class="col-7">
-                            @if($invoice->payment_method === 'cash')
-                                <span class="badge badge-light-success">Tiền mặt</span>
-                            @elseif($invoice->payment_method === 'transfer')
-                                <span class="badge badge-light-info">Chuyển khoản</span>
-                            @elseif($invoice->payment_method === 'card')
-                                <span class="badge badge-light-primary">Thẻ</span>
-                            @else
-                                <span class="badge badge-light-secondary">Khác</span>
+
+                    <!-- Payment Method -->
+                    <div class="card mb-5">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-5">
+                                <div class="d-flex align-items-center flex-grow-1">
+                                    <div class="symbol symbol-45px me-5">
+                                        @if($invoice->payment_method === 'cash')
+                                            <span class="symbol-label bg-light-success">
+                                                <i class="fas fa-money-bill text-success fs-2x"></i>
+                                            </span>
+                                        @elseif($invoice->payment_method === 'transfer')
+                                            <span class="symbol-label bg-light-primary">
+                                                <i class="fas fa-university text-primary fs-2x"></i>
+                                            </span>
+                                        @elseif($invoice->payment_method === 'card')
+                                            <span class="symbol-label bg-light-info">
+                                                <i class="fas fa-credit-card text-info fs-2x"></i>
+                                            </span>
+                                        @else
+                                            <span class="symbol-label bg-light-warning">
+                                                <i class="fas fa-wallet text-warning fs-2x"></i>
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-gray-800 fw-bold fs-6">
+                                            @if($invoice->payment_method === 'cash')
+                                                Tiền mặt
+                                            @elseif($invoice->payment_method === 'transfer')
+                                                Chuyển khoản
+                                            @elseif($invoice->payment_method === 'card')
+                                                Thẻ
+                                            @else
+                                                Khác
+                                            @endif
+                                        </span>
+                                        <span class="text-muted fw-semibold">Phương thức thanh toán</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    @if($invoice->payment_status === 'paid')
+                                        <span class="badge badge-light-success">Đã thanh toán</span>
+                                    @elseif($invoice->payment_status === 'partial')
+                                        <span class="badge badge-light-warning">Thanh toán một phần</span>
+                                    @else
+                                        <span class="badge badge-light-danger">Chưa thanh toán</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @if($invoice->payment_method === 'transfer')
+                                <!-- Bank Transfer Information -->
+                                <div class="separator separator-dashed my-5"></div>
+                                <div class="mb-5">
+                                    <h3 class="fw-bold text-gray-800 mb-3">Thông tin chuyển khoản</h3>
+                                    <div class="row g-5">
+                                        <div class="col-md-6">
+                                            <div class="fw-semibold text-gray-600 mb-1">Ngân hàng:</div>
+                                            <div class="fw-bold d-flex align-items-center">
+                                                <i class="fas fa-university text-primary me-2"></i>
+                                                Vietcombank
+                                                <span class="text-muted fs-7 ms-2">(Chi nhánh Hà Nội)</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="fw-semibold text-gray-600 mb-1">Số tài khoản:</div>
+                                            <div class="fw-bold d-flex align-items-center">
+                                                <span class="text-dark">1234567890</span>
+                                                <button class="btn btn-sm btn-icon btn-light-primary ms-2" onclick="copyToClipboard('1234567890')" title="Copy số tài khoản">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="fw-semibold text-gray-600 mb-1">Chủ tài khoản:</div>
+                                            <div class="fw-bold">CONG TY YUKIMART</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="fw-semibold text-gray-600 mb-1">Nội dung CK:</div>
+                                            <div class="bg-light-info p-2 rounded">
+                                                <span class="fw-semibold text-info">{{ $invoice->invoice_number }} {{ $invoice->customer->name ?? 'Khach le' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($invoice->notes)
+                                <div class="separator separator-dashed my-5"></div>
+                                <div>
+                                    <h3 class="fw-bold text-gray-800 mb-3">Ghi chú</h3>
+                                    <div class="bg-light-warning p-4 rounded">
+                                        {{ $invoice->notes }}
+                                    </div>
+                                </div>
                             @endif
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Trạng thái:</div>
-                        <div class="col-7">
-                            @if($invoice->payment_status === 'paid')
-                                <span class="badge badge-light-success">Đã thanh toán</span>
-                            @elseif($invoice->payment_status === 'partial')
-                                <span class="badge badge-light-warning">Thanh toán một phần</span>
-                            @else
-                                <span class="badge badge-light-danger">Chưa thanh toán</span>
-                            @endif
-                        </div>
-                    </div>
-
-                    @if($invoice->payment_method === 'transfer')
-                        <!-- Bank Transfer Information -->
-                        <div class="separator separator-dashed my-3"></div>
-                        <div class="row mb-2">
-                            <div class="col-12">
-                                <h6 class="fw-bold text-info mb-3">
-                                    <i class="fas fa-university me-2"></i>Thông tin chuyển khoản
-                                </h6>
-                            </div>
-                        </div>
-
-                        @if($invoice->reference_number)
-                            <div class="row mb-3">
-                                <div class="col-5 fw-semibold text-gray-600">Mã giao dịch:</div>
-                                <div class="col-7 fw-bold text-info">{{ $invoice->reference_number }}</div>
-                            </div>
-                        @endif
-
-                        <div class="row mb-3">
-                            <div class="col-5 fw-semibold text-gray-600">Ngân hàng:</div>
-                            <div class="col-7">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-university text-primary me-2"></i>
-                                    <span class="fw-semibold">Vietcombank</span>
-                                </div>
-                                <div class="text-muted fs-7">Chi nhánh Hà Nội</div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-5 fw-semibold text-gray-600">Số tài khoản:</div>
-                            <div class="col-7">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold text-dark">1234567890</span>
-                                    <button class="btn btn-sm btn-light-primary ms-2" onclick="copyToClipboard('1234567890')" title="Copy số tài khoản">
-                                        <i class="fas fa-copy fs-8"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-5 fw-semibold text-gray-600">Chủ tài khoản:</div>
-                            <div class="col-7 fw-semibold">CONG TY YUKIMART</div>
-                        </div>
-
-                        @if($invoice->paid_at)
-                            <div class="row mb-3">
-                                <div class="col-5 fw-semibold text-gray-600">Thời gian CK:</div>
-                                <div class="col-7">
-                                    <span class="fw-semibold text-success">{{ $invoice->paid_at->format('d/m/Y H:i') }}</span>
-                                </div>
-                            </div>
-                        @endif
-
-                        <div class="row mb-3">
-                            <div class="col-5 fw-semibold text-gray-600">Nội dung CK:</div>
-                            <div class="col-7">
-                                <div class="bg-light-info p-2 rounded">
-                                    <span class="fw-semibold text-info">{{ $invoice->invoice_number }} {{ $invoice->customer->name ?? 'Khach le' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <!-- Additional Information -->
-        <div class="col-md-6">
-            <div class="card card-flush h-100">
-                <div class="card-header">
-                    <h6 class="card-title fw-bold text-info">Thông tin bổ sung</h6>
-                </div>
-                <div class="card-body pt-0">
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Người tạo:</div>
-                        <div class="col-7">{{ $invoice->creator->name ?? 'N/A' }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-5 fw-semibold text-gray-600">Cập nhật:</div>
-                        <div class="col-7">{{ $invoice->updated_at->format('d/m/Y H:i') }}</div>
-                    </div>
-                    @if($invoice->notes)
-                        <div class="row mb-3">
-                            <div class="col-5 fw-semibold text-gray-600">Ghi chú:</div>
-                            <div class="col-7">{{ $invoice->notes }}</div>
-                        </div>
-                    @endif
-                    
                 </div>
             </div>
         </div>
@@ -484,4 +553,41 @@ function showPrintModal(invoiceId) {
         }
     });
 }
+
+// Initialize Bootstrap tabs for this detail panel
+$(document).ready(function() {
+    // Initialize tabs for this specific invoice detail panel
+    var invoiceId = '{{ $invoice->id }}';
+    var tabContainer = '#kt_invoice_info_' + invoiceId;
+
+    // Initialize Bootstrap tab functionality
+    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        console.log('Tab switched:', e.target.getAttribute('href'));
+    });
+
+    // Ensure tabs work properly
+    setTimeout(function() {
+        $('a[data-bs-toggle="tab"]').each(function() {
+            var $this = $(this);
+            var target = $this.attr('href');
+
+            $this.off('click.invoiceTab').on('click.invoiceTab', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Remove active class from all tabs in this panel
+                $this.closest('.nav-tabs').find('.nav-link').removeClass('active');
+                $this.addClass('active');
+
+                // Hide all tab panes in this panel
+                $this.closest('.card-body').find('.tab-pane').removeClass('show active');
+
+                // Show target tab pane
+                $(target).addClass('show active');
+
+                console.log('Invoice tab clicked:', target);
+            });
+        });
+    }, 100);
+});
 </script>
