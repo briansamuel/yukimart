@@ -1,0 +1,358 @@
+/**
+ * Quick Order Tabs CSS
+ * Styles for the quick order tab system
+ */
+
+/* Tab Container */
+.quick-order-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    min-height: 48px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.quick-order-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.quick-order-tabs::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.quick-order-tabs::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+.quick-order-tabs::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Individual Tab */
+.quick-order-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    min-width: 120px;
+    position: relative;
+}
+
+.quick-order-tab:hover {
+    background: #f8f9fa;
+    border-color: #009ef7;
+}
+
+.quick-order-tab.active {
+    background: #009ef7;
+    border-color: #009ef7;
+    color: #ffffff;
+}
+
+.quick-order-tab.active .tab-title {
+    color: #ffffff;
+}
+
+.quick-order-tab.active .tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.quick-order-tab.active .tab-close {
+    color: #ffffff;
+    opacity: 0.8;
+}
+
+.quick-order-tab.active .tab-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Tab Elements */
+.tab-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.tab-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #3f4254;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tab-count {
+    background: #e9ecef;
+    color: #7e8299;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.tab-close {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7e8299;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.tab-close:hover {
+    background: #e9ecef;
+    color: #3f4254;
+}
+
+/* Add Tab Button */
+.add-tab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #7e8299;
+    flex-shrink: 0;
+}
+
+.add-tab-btn:hover {
+    background: #009ef7;
+    border-color: #009ef7;
+    color: #ffffff;
+}
+
+/* Tab Actions Dropdown */
+.tab-actions {
+    position: relative;
+}
+
+.tab-actions-btn {
+    width: 36px;
+    height: 36px;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #7e8299;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tab-actions-btn:hover,
+.tab-actions-btn.active {
+    background: #f8f9fa;
+    border-color: #009ef7;
+    color: #009ef7;
+}
+
+.tab-actions-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 180px;
+    margin-top: 4px;
+    display: none;
+}
+
+.tab-actions-dropdown.show {
+    display: block;
+}
+
+.tab-actions-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    color: #3f4254;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tab-actions-dropdown .dropdown-item:hover {
+    background: #f8f9fa;
+}
+
+.tab-actions-dropdown .dropdown-item:first-child {
+    border-radius: 6px 6px 0 0;
+}
+
+.tab-actions-dropdown .dropdown-item:last-child {
+    border-radius: 0 0 6px 6px;
+}
+
+.tab-actions-dropdown .dropdown-divider {
+    height: 1px;
+    background: #e9ecef;
+    margin: 4px 0;
+}
+
+/* Return Order Tab Styles */
+.quick-order-tab.return-order {
+    border-color: #f1416c;
+}
+
+.quick-order-tab.return-order:hover {
+    background: #fef8f8;
+    border-color: #f1416c;
+}
+
+.quick-order-tab.return-order.active {
+    background: #f1416c;
+    border-color: #f1416c;
+}
+
+.quick-order-tab.return-order .tab-icon {
+    color: #f1416c;
+}
+
+.quick-order-tab.return-order.active .tab-icon {
+    color: #ffffff;
+}
+
+/* Invoice Tab Styles */
+.quick-order-tab.invoice {
+    border-color: #50cd89;
+}
+
+.quick-order-tab.invoice:hover {
+    background: #f8fdf9;
+    border-color: #50cd89;
+}
+
+.quick-order-tab.invoice.active {
+    background: #50cd89;
+    border-color: #50cd89;
+}
+
+.quick-order-tab.invoice .tab-icon {
+    color: #50cd89;
+}
+
+.quick-order-tab.invoice.active .tab-icon {
+    color: #ffffff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .quick-order-tabs {
+        padding: 0 8px;
+        min-height: 44px;
+    }
+    
+    .quick-order-tab {
+        min-width: 100px;
+        padding: 6px 8px;
+    }
+    
+    .tab-title {
+        font-size: 13px;
+    }
+    
+    .tab-count {
+        font-size: 11px;
+        padding: 1px 4px;
+    }
+    
+    .add-tab-btn,
+    .tab-actions-btn {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* Animation for tab switching */
+.tab-content {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+}
+
+.tab-content.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Loading state for tabs */
+.quick-order-tab.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.quick-order-tab.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Accessibility */
+.quick-order-tab:focus {
+    outline: 2px solid #009ef7;
+    outline-offset: 2px;
+}
+
+.add-tab-btn:focus,
+.tab-actions-btn:focus {
+    outline: 2px solid #009ef7;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .quick-order-tabs,
+    .add-tab-btn,
+    .tab-actions {
+        display: none !important;
+    }
+}

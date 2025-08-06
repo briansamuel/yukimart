@@ -49,6 +49,7 @@ class InventoryTransaction extends Model
     const TYPE_IMPORT = 'import';      // Nhập kho
     const TYPE_EXPORT = 'export';      // Xuất kho
     const TYPE_SALE = 'sale';          // Bán hàng
+    const TYPE_RETURN = 'return';      // Trả hàng
     const TYPE_TRANSFER = 'transfer';  // Chuyển kho
     const TYPE_ADJUSTMENT = 'adjustment'; // Điều chỉnh
     const TYPE_INITIAL = 'initial';    // Tồn đầu kỳ
@@ -62,6 +63,7 @@ class InventoryTransaction extends Model
             self::TYPE_IMPORT => 'Nhập kho',
             self::TYPE_EXPORT => 'Xuất kho',
             self::TYPE_SALE => 'Bán hàng',
+            self::TYPE_RETURN => 'Trả hàng',
             self::TYPE_TRANSFER => 'Chuyển kho',
             self::TYPE_ADJUSTMENT => 'Điều chỉnh',
             self::TYPE_INITIAL => 'Tồn đầu kỳ',

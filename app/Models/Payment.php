@@ -27,7 +27,7 @@ class Payment extends Model
      */
     public function reference()
     {
-        return $this->morphTo();
+        return $this->morphTo('reference', 'reference_type', 'reference_id');
     }
 
     /**
@@ -76,6 +76,14 @@ class Payment extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Relationship with collector.
+     */
+    public function collector()
+    {
+        return $this->belongsTo(User::class, 'collector_id');
     }
 
     /**
@@ -159,12 +167,12 @@ class Payment extends Model
      */
     public static function generatePaymentNumber($type = 'receipt', $referenceNumber = null, $referenceType = null)
     {
-        // Special case for invoice payments: TT{invoice_id}
+        // Special case for invoice payments: TTHD{invoice_id}
         if ($referenceType === 'invoice' && $referenceNumber) {
             // Extract invoice ID from invoice number (HD20250709001 -> extract ID from database)
-            $invoice = \App\Models\Invoice::where('invoice_number', $referenceNumber)->first();
+            $invoice = Invoice::where('invoice_number', $referenceNumber)->first();
             if ($invoice) {
-                return 'TT' . $invoice->id;
+                return \App\Services\PrefixGeneratorService::generatePaymentCode('invoice', $invoice->id);
             }
         }
 
@@ -173,7 +181,7 @@ class Payment extends Model
 
         if ($referenceNumber && $referenceType !== 'invoice') {
             // Base on reference number (e.g., TH20250709001 -> TTH20250709001)
-            $baseNumber = str_replace(['HD', 'TH', 'ORD'], $prefix, $referenceNumber);
+            $baseNumber = str_replace(['HD', 'TH', 'DH'], $prefix, $referenceNumber);
         } else {
             // Generate new number
             $baseNumber = $prefix . $date;

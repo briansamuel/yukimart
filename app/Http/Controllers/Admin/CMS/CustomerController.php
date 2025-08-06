@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin\CMS;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\CustomerPointTransaction;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -244,29 +246,25 @@ class CustomerController extends Controller
         $validator = Validator::make($request->all(), [
             'customer_code' => 'nullable|string|max:50|unique:customers,customer_code,' . $customer->id,
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:customers,email,' . $customer->id,
-            'phone' => 'nullable|string|max:20|regex:/^[0-9+\-\s()]+$/',
+            'email' => 'nullable|email|max:255|unique:customers,email,' . $customer->id,
+            'phone' => 'required|string|max:20|regex:/^[0-9+\-\s()]+$/',
             'facebook' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:1000',
             'area' => 'nullable|string|max:255',
-            'customer_type' => 'required|in:individual,business',
+            'customer_type' => 'nullable|in:individual,business',
             'customer_group' => 'nullable|string|max:100',
             'tax_code' => 'nullable|string|max:50',
-            'status' => 'required|in:active,inactive',
             'birthday' => 'nullable|date|before:today',
             'notes' => 'nullable|string|max:2000',
-            'points' => 'nullable|integer|min:0',
         ], [
             'customer_code.unique' => __('customer.customer_code_unique'),
             'name.required' => __('customer.name_required'),
-            'email.required' => __('customer.email_required'),
             'email.email' => __('customer.email_invalid'),
             'email.unique' => __('customer.email_unique'),
+            'phone.required' => __('customer.phone_required'),
             'phone.regex' => __('customer.phone_invalid'),
-            'customer_type.required' => __('customer.type_required'),
-            'status.required' => __('customer.status_required'),
+            'customer_type.in' => __('customer.type_invalid'),
             'birthday.before' => __('customer.birthday_invalid'),
-            'points.min' => __('customer.points_invalid'),
         ]);
 
         if ($validator->fails()) {
@@ -278,7 +276,7 @@ class CustomerController extends Controller
         }
 
         try {
-            $data = $request->validated();
+            $data = $validator->validated();
 
             // Set updated_by
             $data['updated_by'] = auth()->id();
@@ -540,5 +538,339 @@ class CustomerController extends Controller
                 ] : null
             ], 500);
         }
+    }
+
+    /**
+     * Get customer info with branch shops for Quick Order modal
+     */
+    public function getCustomerInfo(Customer $customer)
+    {
+        try {
+            // Load customer with branch shop relationship
+            $customer->load('branchShop');
+
+            // Get customer statistics
+            $stats = $customer->getStats();
+
+            // Get branch shop where customer was created
+            $displayBranchShop = $customer->branchShop;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'customer' => [
+                        'id' => $customer->id,
+                        'customer_code' => $customer->customer_code,
+                        'name' => $customer->name,
+                        'phone' => $customer->phone,
+                        'email' => $customer->email,
+                        'address' => $customer->address,
+                        'customer_type' => $customer->customer_type,
+                        'customer_group' => $customer->customer_group,
+                        'tax_code' => $customer->tax_code,
+                        'facebook' => $customer->facebook,
+                        'area' => $customer->area,
+                        'birthday' => $customer->birthday,
+                        'points' => $customer->points,
+                        'notes' => $customer->notes,
+                        'status' => $customer->status,
+                        'created_at' => $customer->created_at,
+                    ],
+                    'branch_shop' => $displayBranchShop ? [
+                        'id' => $displayBranchShop->id,
+                        'name' => $displayBranchShop->name,
+                        'address' => $displayBranchShop->address,
+                        'created_at' => $customer->created_at,
+                        'is_primary' => true, // Always primary since it's where customer was created
+                    ] : null,
+                    'statistics' => $stats,
+                    'order_history' => $customer->getOrderHistory(),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting customer info: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải thông tin khách hàng',
+                'error' => config('app.debug') ? [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ] : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Get customer order history (invoices and return orders)
+     */
+    public function orderHistory(Customer $customer, Request $request)
+    {
+        try {
+            $perPage = 7; // As requested
+            $page = $request->get('page', 1);
+
+            // Get invoices with seller information
+            $invoices = $customer->invoices()
+                ->with(['seller', 'creator']) // Load seller relationships
+                ->select('id', 'invoice_number', 'total_amount', 'status', 'created_at', 'sold_by', 'created_by')
+                ->get()
+                ->map(function ($invoice) {
+                    // Determine seller name - prioritize sold_by, fallback to created_by
+                    $sellerName = 'N/A';
+                    if ($invoice->seller) {
+                        $sellerName = $invoice->seller->name;
+                    } elseif ($invoice->creator) {
+                        $sellerName = $invoice->creator->name;
+                    }
+
+                    return [
+                        'id' => $invoice->id,
+                        'type' => 'invoice',
+                        'code' => $invoice->invoice_number,
+                        'amount' => $invoice->total_amount,
+                        'status' => $invoice->status,
+                        'date' => $invoice->created_at,
+                        'seller' => $sellerName,
+                        'formatted_amount' => number_format($invoice->total_amount, 0, ',', '.'),
+                        'formatted_date' => $invoice->created_at->format('d/m/Y H:i'),
+                        'status_text' => $this->getInvoiceStatusText($invoice->status)
+                    ];
+                });
+
+            // Get return orders (if table exists)
+            $returnOrders = collect();
+            if (Schema::hasTable('return_orders')) {
+                $returnOrders = $customer->returnOrders()
+                    ->with(['seller', 'creator']) // Load seller relationships
+                    ->select('id', 'return_number', 'total_amount', 'status', 'created_at', 'sold_by', 'created_by')
+                    ->get()
+                    ->map(function ($returnOrder) {
+                        // Determine seller name - prioritize sold_by, fallback to created_by
+                        $sellerName = 'N/A';
+                        if ($returnOrder->seller) {
+                            $sellerName = $returnOrder->seller->name;
+                        } elseif ($returnOrder->creator) {
+                            $sellerName = $returnOrder->creator->name;
+                        }
+
+                        return [
+                            'id' => $returnOrder->id,
+                            'type' => 'return_order',
+                            'code' => $returnOrder->return_number,
+                            'amount' => $returnOrder->total_amount,
+                            'status' => $returnOrder->status,
+                            'date' => $returnOrder->created_at,
+                            'seller' => $sellerName,
+                            'formatted_amount' => number_format($returnOrder->total_amount, 0, ',', '.'),
+                            'formatted_date' => $returnOrder->created_at->format('d/m/Y H:i'),
+                            'status_text' => $this->getReturnOrderStatusText($returnOrder->status)
+                        ];
+                    });
+            }
+
+            // Combine and sort by date
+            $allOrders = $invoices->concat($returnOrders)
+                ->sortByDesc('date')
+                ->values();
+
+            // Manual pagination
+            $total = $allOrders->count();
+            $offset = ($page - 1) * $perPage;
+            $items = $allOrders->slice($offset, $perPage)->values();
+
+            $pagination = [
+                'current_page' => (int) $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage),
+                'from' => $offset + 1,
+                'to' => min($offset + $perPage, $total),
+                'has_more_pages' => $page < ceil($total / $perPage)
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'items' => $items,
+                    'pagination' => $pagination
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể lấy lịch sử đơn hàng: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get customer point history
+     */
+    public function pointHistory(Customer $customer, Request $request)
+    {
+        try {
+            $perPage = 7; // As requested
+            $page = $request->get('page', 1);
+
+            // Get point transactions
+            $pointTransactions = CustomerPointTransaction::where('customer_id', $customer->id)
+                ->orderBy('transaction_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($transaction) {
+                    // Determine transaction code based on type and reference
+                    $transactionCode = $this->getTransactionCode($transaction);
+
+                    // Determine transaction type text for display
+                    $transactionType = $this->getPointTransactionTypeText($transaction->type);
+
+                    // Determine transaction value (invoice amount or point value)
+                    $transactionValue = $this->getTransactionValue($transaction);
+
+                    return [
+                        'id' => $transaction->id,
+                        'code' => $transactionCode, // Mã phiếu (HD039940, TTHD036669)
+                        'date' => $transaction->transaction_date,
+                        'type' => $transaction->type,
+                        'type_text' => $transactionType, // Loại (Bán hàng, Thanh toán bằng điểm)
+                        'value' => $transactionValue, // Giá trị (353,000)
+                        'points' => $transaction->points, // Điểm GD (4180, -5000)
+                        'balance_after' => $transaction->balance_after, // Điểm sau GD (57,270)
+                        'notes' => $transaction->notes,
+                        'amount' => $transaction->amount,
+                        'reference_type' => $transaction->reference_type,
+                        'reference_id' => $transaction->reference_id,
+                        'formatted_date' => $transaction->transaction_date->format('d/m/Y H:i'),
+                        'formatted_value' => number_format($transactionValue, 0, ',', '.'),
+                        'formatted_points' => $transaction->points > 0 ? '+' . number_format($transaction->points) : number_format($transaction->points),
+                        'formatted_balance' => number_format($transaction->balance_after, 0, ',', '.'),
+                        'points_class' => $transaction->points > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'
+                    ];
+                });
+
+            // Manual pagination
+            $total = $pointTransactions->count();
+            $offset = ($page - 1) * $perPage;
+            $items = $pointTransactions->slice($offset, $perPage)->values();
+
+            $pagination = [
+                'current_page' => (int) $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage),
+                'from' => $offset + 1,
+                'to' => min($offset + $perPage, $total),
+                'has_more_pages' => $page < ceil($total / $perPage)
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'items' => $items,
+                    'pagination' => $pagination
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể lấy lịch sử điểm: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get invoice status text
+     */
+    private function getInvoiceStatusText($status)
+    {
+        $statusMap = [
+            'draft' => 'Nháp',
+            'pending' => 'Chờ xử lý',
+            'processing' => 'Đang xử lý',
+            'paid' => 'Đã thanh toán',
+            'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy',
+            'refunded' => 'Đã hoàn tiền'
+        ];
+
+        return $statusMap[$status] ?? ucfirst($status);
+    }
+
+    /**
+     * Get return order status text
+     */
+    private function getReturnOrderStatusText($status)
+    {
+        $statusMap = [
+            'pending' => 'Chờ xử lý',
+            'processing' => 'Đang xử lý',
+            'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy'
+        ];
+
+        return $statusMap[$status] ?? ucfirst($status);
+    }
+
+    /**
+     * Get point transaction type text
+     */
+    private function getPointTransactionTypeText($type)
+    {
+        $typeMap = [
+            'purchase' => 'Bán hàng',
+            'return' => 'Hoàn điểm trả hàng',
+            'adjustment' => 'Điều chỉnh điểm',
+            'redeem' => 'Thanh toán bằng điểm',
+            'bonus' => 'Điểm thưởng'
+        ];
+
+        return $typeMap[$type] ?? ucfirst($type);
+    }
+
+    /**
+     * Get transaction code based on type and reference
+     */
+    private function getTransactionCode($transaction)
+    {
+        if ($transaction->reference_type === 'invoice' && $transaction->reference_id) {
+            // Try to get invoice number
+            $invoice = \App\Models\Invoice::find($transaction->reference_id);
+            if ($invoice && $invoice->invoice_number) {
+                return $invoice->invoice_number;
+            }
+            return 'HD' . str_pad($transaction->reference_id, 6, '0', STR_PAD_LEFT);
+        }
+
+        if ($transaction->type === 'redeem') {
+            return 'TTHD' . str_pad($transaction->id, 6, '0', STR_PAD_LEFT);
+        }
+
+        // Default format
+        return 'PT' . str_pad($transaction->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Get transaction value (invoice amount or point value)
+     */
+    private function getTransactionValue($transaction)
+    {
+        // For purchase transactions, return the invoice amount
+        if ($transaction->reference_type === 'invoice' && $transaction->reference_id) {
+            $invoice = \App\Models\Invoice::find($transaction->reference_id);
+            if ($invoice) {
+                return $invoice->total_amount;
+            }
+        }
+
+        // For redeem transactions, return the point value as amount
+        if ($transaction->type === 'redeem') {
+            return abs($transaction->points) * 1000; // Assuming 1 point = 1000 VND
+        }
+
+        // For other transactions, return the amount if available
+        return $transaction->amount ?? abs($transaction->points) * 1000;
     }
 }

@@ -89,11 +89,35 @@ class ReturnOrder extends Model
     }
 
     /**
+     * Scope for search by return number or customer.
+     */
+    public function scopeSearch($query, $search)
+    {
+        return $query->where(function($q) use ($search) {
+            // Search by return number
+            $q->where('return_number', 'like', "%{$search}%");
+
+            // Search by customer info (when customer_id > 0)
+            $q->orWhereHas('customer', function($customerQuery) use ($search) {
+                $customerQuery->where('name', 'like', "%{$search}%")
+                             ->orWhere('phone', 'like', "%{$search}%")
+                             ->orWhere('email', 'like', "%{$search}%");
+            });
+
+            // Search for "Khách lẻ" when customer_id = 0
+            if (stripos($search, 'khách lẻ') !== false || stripos($search, 'khach le') !== false) {
+                $q->orWhere('customer_id', 0);
+            }
+        });
+    }
+
+    /**
      * Relationship with payments.
      */
     public function payments()
     {
-        return $this->morphMany(Payment::class, 'reference');
+        return $this->morphMany(Payment::class, 'reference', 'reference_type', 'reference_id')
+                    ->where('reference_type', 'return_order');
     }
 
     /**
@@ -109,6 +133,7 @@ class ReturnOrder extends Model
                     'approved' => '<span class="badge badge-info">Đã duyệt</span>',
                     'rejected' => '<span class="badge badge-danger">Từ chối</span>',
                     'completed' => '<span class="badge badge-success">Hoàn thành</span>',
+                    'cancelled' => '<span class="badge badge-secondary">Đã hủy</span>',
                     default => '<span class="badge badge-secondary">Không xác định</span>',
                 };
             }
@@ -175,18 +200,33 @@ class ReturnOrder extends Model
     {
         $prefix = 'TH';
         $date = date('Ymd');
-        $lastReturn = self::where('return_number', 'like', $prefix . $date . '%')
-                         ->orderBy('return_number', 'desc')
-                         ->first();
 
-        if ($lastReturn) {
-            $lastNumber = intval(substr($lastReturn->return_number, -4));
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
+        // Retry up to 10 times to generate unique number
+        for ($i = 0; $i < 10; $i++) {
+            $lastReturn = self::where('return_number', 'like', $prefix . $date . '%')
+                             ->orderBy('return_number', 'desc')
+                             ->first();
+
+            if ($lastReturn) {
+                $lastNumber = intval(substr($lastReturn->return_number, -4));
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '0001';
+            }
+
+            $returnNumber = $prefix . $date . $newNumber;
+
+            // Check if this number already exists
+            if (!self::where('return_number', $returnNumber)->exists()) {
+                return $returnNumber;
+            }
+
+            // If exists, wait a bit and try again
+            usleep(100000); // 0.1 second
         }
 
-        return $prefix . $date . $newNumber;
+        // Fallback: use timestamp if all retries failed
+        return $prefix . $date . str_pad(time() % 10000, 4, '0', STR_PAD_LEFT);
     }
 
     /**

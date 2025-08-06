@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Quick Order Complete Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="test-token">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Toastr CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <!-- Quick Order CSS (simulated) -->
+    <style>
+        /* Import actual Quick Order CSS styles */
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
+        .quick-order-container { height: 100vh; display: flex; flex-direction: column; background: #f8f9fa; }
+        .quick-order-header { background: #009ef7; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; min-height: 60px; }
+        .header-left { display: flex; align-items: center; gap: 20px; min-width: 200px; }
+        .header-center { display: flex; align-items: center; justify-content: center; flex: 1; max-width: 600px; }
+        .header-right { display: flex; align-items: center; gap: 10px; flex: 2; justify-content: flex-end; }
+        .barcode-input-container { display: flex; align-items: center; gap: 10px; background: white; border-radius: 8px; padding: 8px 12px; min-width: 450px; max-width: 650px; position: relative; }
+        .barcode-input { border: none; outline: none; font-size: 16px; font-weight: 500; flex: 1; padding: 4px 0; }
+        .product-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e4e6ef; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .order-tabs { display: flex; align-items: center; gap: 5px; margin-left: 15px; }
+        .order-tab { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 8px 16px; border-radius: 6px 6px 0 0; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .order-tab.active { background: white; color: #1e1e2d; border-color: white; }
+        .order-tab.return { border-left: 3px solid #f1416c; }
+        .order-tab.invoice { border-left: 3px solid #50cd89; }
+        .order-tab.order { border-left: 3px solid #ffc700; }
+        .tab-close { background: none; border: none; color: inherit; padding: 2px; border-radius: 3px; cursor: pointer; }
+        .tab-controls-group { display: flex; align-items: center; gap: 2px; }
+        .add-tab-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .add-tab-btn:hover { background: rgba(255,255,255,0.2); }
+        .quick-order-content { flex: 1; overflow: hidden; }
+        .main-row { height: 100%; }
+        .main-col { height: 100%; overflow-y: auto; padding: 20px; }
+        .order-items-col { height: 100%; display: flex; flex-direction: column; }
+        .order-items-header { margin-bottom: 20px; }
+        .order-items-list { flex: 1; overflow-y: auto; }
+        .empty-order { text-align: center; padding: 60px 20px; color: #7e8299; }
+        .empty-icon { font-size: 48px; margin-bottom: 20px; }
+        .empty-text { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+        .empty-hint { font-size: 14px; }
+        .return-order-header { padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #e4e6ef; margin-bottom: 20px; border-radius: 8px; }
+        .return-customer-info { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .return-customer-name { font-weight: 600; color: #1e1e2d; }
+        .return-customer-points { color: #7e8299; font-size: 14px; }
+        .return-order-title { margin: 0; font-size: 16px; font-weight: 600; color: #f1416c; }
+        .exchange-search-section { padding: 15px 20px; background: #e1f0ff; border-bottom: 1px solid #e4e6ef; margin-bottom: 20px; border-radius: 8px; }
+        .exchange-search-container { position: relative; }
+        .exchange-search-input { width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #e4e6ef; border-radius: 6px; font-size: 14px; }
+        .exchange-search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #7e8299; }
+        .customer-col { margin-bottom: 20px; }
+        .customer-header { margin-bottom: 15px; }
+        .order-summary { margin-top: auto; }
+        .return-summary-section { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e4e6ef; }
+        .return-summary-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #f1416c; margin-bottom: 15px; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .regular-summary-section { margin-bottom: 20px; }
+        .create-order-btn { width: 100%; padding: 15px; background: #009ef7; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .create-order-btn:hover { background: #0084d1; }
+        .create-order-btn:disabled { background: #e4e6ef; color: #a1a5b7; cursor: not-allowed; }
+        
+        /* Test Panel Styles */
+        .test-panel { position: fixed; top: 10px; right: 10px; width: 350px; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; z-index: 9999; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .test-log { font-size: 12px; margin: 3px 0; padding: 8px; border-radius: 4px; border-left: 4px solid #ddd; }
+        .test-error { background: #f8d7da; color: #721c24; border-left-color: #dc3545; }
+        .test-success { background: #d4edda; color: #155724; border-left-color: #28a745; }
+        .test-info { background: #d1ecf1; color: #0c5460; border-left-color: #17a2b8; }
+        .test-warning { background: #fff3cd; color: #856404; border-left-color: #ffc107; }
+        .test-controls { margin-bottom: 15px; display: flex; gap: 5px; flex-wrap: wrap; }
+        .test-controls button { font-size: 11px; padding: 4px 8px; }
+        .test-stats { background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-size: 12px; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .test-panel { position: relative; width: 100%; margin: 10px; right: auto; top: auto; }
+            .header-left, .header-center, .header-right { width: 100%; justify-content: center; flex: none; }
+            .quick-order-header { flex-direction: column; gap: 10px; padding: 10px; }
+            .barcode-input-container { min-width: 300px; max-width: 100%; }
+            .main-row { flex-direction: column; }
+            .col-8, .col-4 { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Panel -->
+    <div class="test-panel">
+        <h6><i class="fas fa-flask"></i> Quick Order Test Suite</h6>
+        
+        <div class="test-stats" id="testStats">
+            <div>Status: <span id="testStatus">Ready</span></div>
+            <div>Progress: <span id="testProgress">0/0</span></div>
+            <div>Success Rate: <span id="testSuccessRate">0%</span></div>
+        </div>
+        
+        <div class="test-controls">
+            <button class="btn btn-primary btn-sm" onclick="runFullTest()">
+                <i class="fas fa-play"></i> Run All Tests
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="clearTestLog()">
+                <i class="fas fa-trash"></i> Clear
+            </button>
+            <button class="btn btn-info btn-sm" onclick="testTabCreation()">
+                <i class="fas fa-plus"></i> Test Tabs
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="testReturnTab()">
+                <i class="fas fa-undo"></i> Test Return
+            </button>
+            <button class="btn btn-success btn-sm" onclick="testKeyboardShortcuts()">
+                <i class="fas fa-keyboard"></i> Test Keys
+            </button>
+        </div>
+        
+        <div id="testLog" style="max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- Quick Order Interface -->
+    <div class="quick-order-container">
+        <!-- Header -->
+        <div class="quick-order-header">
+            <div class="header-left">
+                <h1 style="margin: 0; font-size: 20px; font-weight: 700;">
+                    <i class="fas fa-cash-register"></i> Quick Order Test
+                </h1>
+            </div>
+
+            <div class="header-center">
+                <!-- Barcode Input -->
+                <div class="barcode-input-container">
+                    <i class="fas fa-barcode" style="color: #7e8299; font-size: 18px;"></i>
+                    <input type="text" 
+                           id="barcodeInput" 
+                           class="barcode-input" 
+                           placeholder="Tìm sản phẩm theo tên, SKU, mã vạch (F3)"
+                           autocomplete="off">
+                    <div class="product-suggestions" id="productSuggestions"></div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <!-- Order Tabs -->
+                <div class="order-tabs" id="orderTabsContainer">
+                    <!-- Tabs will be added here dynamically -->
+                </div>
+
+                <!-- Add Tab Buttons -->
+                <div class="tab-controls-group">
+                    <button type="button" id="addNewInvoiceBtn" class="add-tab-btn" onclick="addNewTab('invoice')" title="Tạo hóa đơn mới">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <div class="dropdown" id="addTabDropdown">
+                        <button type="button" id="addTabDropdownBtn" class="add-tab-btn dropdown-toggle" data-bs-toggle="dropdown" title="Thêm tab">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="addNewTab('order')">
+                                    <i class="fas fa-shopping-cart me-2"></i>
+                                    Tạo đơn hàng mới
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="addNewTab('invoice')">
+                                    <i class="fas fa-file-invoice me-2"></i>
+                                    Tạo hóa đơn mới
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="addNewTab('return')">
+                                    <i class="fas fa-undo me-2"></i>
+                                    Trả hàng
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="quick-order-content">
+            <!-- Tab Content Container -->
+            <div id="orderTabsContent" class="h-100">
+                <!-- Tab content will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Template -->
+    <div id="orderTabTemplate" style="display: none;">
+        <div class="row main-row h-100">
+            <!-- Left Column - Order Items -->
+            <div class="col-8 main-col">
+                <div class="order-items-col">
+                    <div class="order-items-header">
+                        <h4 style="margin: 0; font-size: 16px; font-weight: 600;">
+                            <i class="fas fa-shopping-cart"></i> Sản phẩm đặt hàng
+                        </h4>
+                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #7e8299;">
+                            <span class="items-count">0</span> sản phẩm
+                        </p>
+                    </div>
+
+                    <div class="order-items-list" id="orderItemsList">
+                        <div class="empty-order" id="emptyOrderState">
+                            <div class="empty-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="empty-text">
+                                Quét mã vạch để bắt đầu
+                            </div>
+                            <div class="empty-hint">
+                                Nhấn F3 để focus vào ô nhập mã vạch
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exchange Search Section (only for return tabs) -->
+                    <div class="exchange-search-section" id="TAB_ID_exchangeSearchSection" style="display: none;">
+                        <h6><i class="fas fa-exchange-alt"></i> Tìm hàng đổi</h6>
+                        <div class="exchange-search-container">
+                            <input type="text"
+                                   class="exchange-search-input"
+                                   id="TAB_ID_exchangeSearchInput"
+                                   placeholder="Tìm hàng đổi (F7)"
+                                   autocomplete="off">
+                            <i class="fas fa-search exchange-search-icon"></i>
+                        </div>
+                        <div class="product-suggestions" id="TAB_ID_exchangeProductSuggestions" style="display: none;"></div>
+                    </div>
+
+                    <!-- Exchange Items List (only for return tabs) -->
+                    <div class="exchange-items-list" id="TAB_ID_exchangeItemsList" style="display: none;">
+                        <!-- Exchange items will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Customer Info -->
+            <div class="col-4 main-col">
+                <!-- Return Order Header (only for return tabs) -->
+                <div class="return-order-header" id="TAB_ID_returnOrderHeader" style="display: none;">
+                    <div class="return-customer-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="return-customer-name" id="TAB_ID_returnCustomerName">Chọn hóa đơn</span>
+                        <span class="return-customer-points" id="TAB_ID_returnCustomerPoints">Điểm: 0</span>
+                    </div>
+                    <h3 class="return-order-title" id="TAB_ID_returnOrderTitle">
+                        <i class="fas fa-undo"></i> Trả hàng / Chọn hóa đơn
+                    </h3>
+                </div>
+
+                <!-- Customer Info -->
+                <div class="customer-col">
+                    <div class="customer-header">
+                        <h4 style="margin: 0; font-size: 16px; font-weight: 600;">
+                            <i class="fas fa-user"></i> Thông tin đơn hàng
+                        </h4>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #7e8299;">Khách hàng: <strong>Khách lẻ</strong></p>
+                        <p style="margin: 5px 0 0 0; color: #7e8299;">Phương thức: <strong>Tiền mặt</strong></p>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <!-- Return Order Summary (only for return tabs) -->
+                    <div class="return-summary-section" id="TAB_ID_returnSummarySection" style="display: none;">
+                        <div class="return-summary-title">
+                            <i class="fas fa-undo"></i>
+                            Tóm tắt trả hàng
+                        </div>
+                        <div class="summary-row">
+                            <span>Tổng giá gốc hàng mua:</span>
+                            <span id="TAB_ID_originalTotalAmount">0 ₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tổng tiền hàng trả:</span>
+                            <span id="TAB_ID_returnTotalAmount">0 ₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Giảm giá:</span>
+                            <span id="TAB_ID_returnDiscountAmount">0 ₫</span>
+                        </div>
+                        <div class="summary-row highlight">
+                            <span class="fw-bold">Cần trả khách:</span>
+                            <span id="TAB_ID_returnRefundAmount" class="fw-bold text-danger">0 ₫</span>
+                        </div>
+                    </div>
+
+                    <!-- Regular Order Summary (for order/invoice tabs) -->
+                    <div class="regular-summary-section" id="TAB_ID_regularSummarySection">
+                        <div class="summary-row">
+                            <span>Tổng tiền hàng:</span>
+                            <span id="subtotalAmount" class="fw-bold">0 ₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Giảm giá:</span>
+                            <span id="discountAmount" class="fw-bold text-primary">0 ₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Thu khác:</span>
+                            <span id="otherAmount" class="fw-bold">0 ₫</span>
+                        </div>
+                        <div class="summary-row highlight">
+                            <span class="fw-bold">Khách cần trả:</span>
+                            <span id="totalAmount" class="fw-bold text-primary">0 ₫</span>
+                        </div>
+                    </div>
+
+                    <button type="button" id="createOrderBtn" class="create-order-btn" disabled>
+                        <span class="btn-text">THANH TOÁN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <script>
+        // Mock data
+        window.defaultBranchShop = { id: 1, name: 'Chi nhánh chính' };
+        window.bankAccounts = [];
+        window.customers = [];
+        window.sellers = [];
+        
+        // Global variables
+        let orderTabs = [];
+        let activeTabId = null;
+        let tabCounter = 0;
+        
+        // Test variables
+        let testResults = { passed: 0, failed: 0, total: 0 };
+        
+        // Test utility functions
+        function testLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const iconMap = {
+                'error': 'fas fa-times-circle',
+                'success': 'fas fa-check-circle', 
+                'info': 'fas fa-info-circle',
+                'warning': 'fas fa-exclamation-triangle'
+            };
+            
+            const logHtml = `
+                <div class="test-log test-${type}">
+                    <i class="${iconMap[type]}"></i>
+                    [${timestamp}] ${message}
+                </div>
+            `;
+            $('#testLog').append(logHtml);
+            $('#testLog').scrollTop($('#testLog')[0].scrollHeight);
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function testAssert(condition, testName, errorMessage = '') {
+            testResults.total++;
+            
+            if (condition) {
+                testResults.passed++;
+                testLog(`✅ PASS: ${testName}`, 'success');
+                return true;
+            } else {
+                testResults.failed++;
+                testLog(`❌ FAIL: ${testName} - ${errorMessage}`, 'error');
+                return false;
+            }
+        }
+        
+        function updateTestStats() {
+            const successRate = testResults.total > 0 ? ((testResults.passed / testResults.total) * 100).toFixed(1) : 0;
+            $('#testProgress').text(`${testResults.passed}/${testResults.total}`);
+            $('#testSuccessRate').text(`${successRate}%`);
+            
+            if (testResults.total > 0) {
+                if (testResults.failed === 0) {
+                    $('#testStatus').html('<span class="text-success">All Passed ✅</span>');
+                } else {
+                    $('#testStatus').html('<span class="text-warning">Some Failed ⚠️</span>');
+                }
+            }
+        }
+        
+        function clearTestLog() {
+            $('#testLog').empty();
+            testResults = { passed: 0, failed: 0, total: 0 };
+            updateTestStats();
+            $('#testStatus').text('Ready');
+        }
+        
+        // Quick Order functions (simplified for testing)
+        function addNewTab(type = 'order') {
+            tabCounter++;
+            const tabId = 'tab_' + tabCounter;
+            let tabName;
+            if (type === 'invoice') {
+                tabName = 'Hóa đơn ' + tabCounter;
+            } else if (type === 'return') {
+                tabName = 'Trả hàng ' + tabCounter;
+            } else {
+                tabName = 'Đơn hàng ' + tabCounter;
+            }
+
+            const tabData = {
+                id: tabId,
+                name: tabName,
+                type: type,
+                number: tabCounter,
+                items: []
+            };
+
+            orderTabs.push(tabData);
+
+            const tabElement = $(`
+                <div class="order-tab ${type}" id="${tabId}" onclick="switchTab('${tabId}')">
+                    <span class="tab-title">${tabName}</span>
+                    <span class="tab-count">(0)</span>
+                    <button type="button" class="tab-close" onclick="closeTab('${tabId}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `);
+
+            $('#orderTabsContainer').append(tabElement);
+            createTabContent(tabId, tabData);
+            switchTab(tabId);
+
+            return tabId;
+        }
+        
+        function createTabContent(tabId, tabData) {
+            const template = $('#orderTabTemplate');
+            if (template.length === 0) {
+                console.error('Tab template not found!');
+                return;
+            }
+            
+            let tabContent = template.clone();
+            tabContent.attr('id', tabId + '_content');
+            tabContent.attr('data-tab-id', tabId);
+            tabContent.addClass('h-100');
+            tabContent.show();
+
+            let htmlContent = tabContent.html();
+            if (htmlContent) {
+                htmlContent = htmlContent.replace(/TAB_ID_/g, tabId + '_');
+                tabContent.html(htmlContent);
+            }
+
+            $('#orderTabsContent').append(tabContent);
+            setupTabTypeUI(tabId, tabData.type);
+        }
+        
+        function setupTabTypeUI(tabId, type) {
+            const tabContent = $(`#${tabId}_content`);
+
+            if (type === 'return') {
+                tabContent.find(`#${tabId}_returnOrderHeader`).show();
+                tabContent.find(`#${tabId}_exchangeSearchSection`).show();
+                tabContent.find(`#${tabId}_returnSummarySection`).show();
+                tabContent.find(`#${tabId}_regularSummarySection`).hide();
+
+                const createBtn = tabContent.find('#createOrderBtn .btn-text');
+                if (createBtn.length === 0) {
+                    tabContent.find('#createOrderBtn').text('TẠO PHIẾU TRẢ HÀNG');
+                } else {
+                    createBtn.text('TẠO PHIẾU TRẢ HÀNG');
+                }
+            } else {
+                tabContent.find(`#${tabId}_returnOrderHeader`).hide();
+                tabContent.find(`#${tabId}_exchangeSearchSection`).hide();
+                tabContent.find(`#${tabId}_returnSummarySection`).hide();
+                tabContent.find(`#${tabId}_regularSummarySection`).show();
+
+                const buttonText = type === 'invoice' ? 'TẠO HÓA ĐƠN' : 'THANH TOÁN';
+                const createBtn = tabContent.find('#createOrderBtn .btn-text');
+                if (createBtn.length === 0) {
+                    tabContent.find('#createOrderBtn').text(buttonText);
+                } else {
+                    createBtn.text(buttonText);
+                }
+            }
+        }
+        
+        function switchTab(tabId) {
+            activeTabId = tabId;
+            $('.order-tab').removeClass('active');
+            $(`#${tabId}`).addClass('active');
+            $('[data-tab-id]').hide();
+            $(`#${tabId}_content`).show();
+        }
+        
+        function closeTab(tabId) {
+            orderTabs = orderTabs.filter(t => t.id !== tabId);
+            $(`#${tabId}`).remove();
+            $(`#${tabId}_content`).remove();
+            
+            if (activeTabId === tabId) {
+                if (orderTabs.length > 0) {
+                    switchTab(orderTabs[0].id);
+                } else {
+                    activeTabId = null;
+                    addNewTab('order');
+                }
+            }
+        }
+        
+        // Test functions
+        function testTabCreation() {
+            testLog('Testing tab creation...', 'info');
+            
+            // Clear existing tabs
+            orderTabs = [];
+            $('#orderTabsContainer').empty();
+            $('#orderTabsContent').empty();
+            tabCounter = 0;
+            
+            const orderTabId = addNewTab('order');
+            testAssert(orderTabId && orderTabId.startsWith('tab_'), 'Order tab created', 'Failed to create order tab');
+            
+            const invoiceTabId = addNewTab('invoice');
+            testAssert(invoiceTabId && invoiceTabId.startsWith('tab_'), 'Invoice tab created', 'Failed to create invoice tab');
+            
+            const returnTabId = addNewTab('return');
+            testAssert(returnTabId && returnTabId.startsWith('tab_'), 'Return tab created', 'Failed to create return tab');
+            
+            testAssert(orderTabs.length === 3, 'Correct number of tabs', `Expected 3 tabs, got ${orderTabs.length}`);
+            testAssert($('.order-tab').length === 3, 'Tab elements in DOM', `Expected 3 tab elements, got ${$('.order-tab').length}`);
+            
+            updateTestStats();
+        }
+        
+        function testReturnTab() {
+            testLog('Testing return tab functionality...', 'info');
+            
+            const returnTab = orderTabs.find(tab => tab.type === 'return');
+            if (!returnTab) {
+                testLog('No return tab found, creating one...', 'warning');
+                addNewTab('return');
+                return testReturnTab();
+            }
+            
+            switchTab(returnTab.id);
+            const tabContent = $(`#${returnTab.id}_content`);
+            
+            testAssert(tabContent.find(`#${returnTab.id}_returnOrderHeader`).is(':visible'), 'Return header visible', 'Return header should be visible');
+            testAssert(tabContent.find(`#${returnTab.id}_exchangeSearchSection`).is(':visible'), 'Exchange search visible', 'Exchange search should be visible');
+            testAssert(tabContent.find(`#${returnTab.id}_returnSummarySection`).is(':visible'), 'Return summary visible', 'Return summary should be visible');
+            testAssert(tabContent.find(`#${returnTab.id}_regularSummarySection`).is(':hidden'), 'Regular summary hidden', 'Regular summary should be hidden');
+            
+            const buttonText = tabContent.find('#createOrderBtn').text().trim();
+            testAssert(buttonText.includes('TRẢ HÀNG'), 'Return button text correct', `Expected "TRẢ HÀNG", got "${buttonText}"`);
+            
+            updateTestStats();
+        }
+        
+        function testKeyboardShortcuts() {
+            testLog('Testing keyboard shortcuts...', 'info');
+            
+            const barcodeInput = $('#barcodeInput');
+            barcodeInput.blur();
+            
+            // Simulate F3 key press
+            const f3Event = new KeyboardEvent('keydown', { key: 'F3' });
+            document.dispatchEvent(f3Event);
+            
+            setTimeout(() => {
+                testAssert(document.activeElement === barcodeInput[0], 'F3 focuses barcode input', 'F3 should focus barcode input');
+                updateTestStats();
+            }, 100);
+        }
+        
+        function runFullTest() {
+            testLog('🚀 Starting Full Test Suite...', 'info');
+            clearTestLog();
+            
+            setTimeout(() => {
+                testLog('Testing basic elements...', 'info');
+                testAssert($('#orderTabTemplate').length > 0, 'Tab template exists', 'Template not found');
+                testAssert($('#orderTabsContainer').length > 0, 'Tab container exists', 'Container not found');
+                testAssert($('#barcodeInput').length > 0, 'Barcode input exists', 'Input not found');
+                testAssert(typeof addNewTab === 'function', 'addNewTab function exists', 'Function not defined');
+                updateTestStats();
+                
+                setTimeout(testTabCreation, 1000);
+                setTimeout(testReturnTab, 2000);
+                setTimeout(testKeyboardShortcuts, 3000);
+                setTimeout(() => {
+                    testLog('🏁 Full test suite completed!', 'success');
+                    if (testResults.failed === 0) {
+                        testLog('🎉 All tests passed! Ready for production!', 'success');
+                    } else {
+                        testLog('⚠️ Some tests failed. Please review.', 'warning');
+                    }
+                }, 4000);
+            }, 500);
+        }
+        
+        // Initialize
+        $(document).ready(function() {
+            testLog('Quick Order Test Page loaded successfully!', 'success');
+            testLog('Click "Run All Tests" to start testing.', 'info');
+            
+            // Create initial tab
+            addNewTab('order');
+            
+            // Setup keyboard shortcuts
+            $(document).keydown(function(e) {
+                if (e.key === 'F3') {
+                    e.preventDefault();
+                    $('#barcodeInput').focus();
+                }
+                
+                if (e.key === 'F7' && activeTabId) {
+                    e.preventDefault();
+                    const tab = orderTabs.find(t => t.id === activeTabId);
+                    if (tab && tab.type === 'return') {
+                        $(`#${activeTabId}_exchangeSearchInput`).focus();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

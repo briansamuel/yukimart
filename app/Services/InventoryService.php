@@ -656,10 +656,16 @@ class InventoryService
             DB::beginTransaction();
 
             // Always reduce inventory for invoices (immediate sale)
-            $this->reduceInventoryForInvoice($invoice);
+            $warnings = $this->reduceInventoryForInvoice($invoice);
 
             DB::commit();
-            return ['success' => true];
+
+            $result = ['success' => true];
+            if (!empty($warnings)) {
+                $result['warnings'] = $warnings;
+            }
+
+            return $result;
 
         } catch (Exception $e) {
             DB::rollBack();
@@ -700,9 +706,10 @@ class InventoryService
     private function reduceInventoryForInvoice(Invoice $invoice)
     {
         $warehouseId = $this->getWarehouseForBranchShop($invoice->branchShop);
+        $warnings = [];
 
         foreach ($invoice->invoiceItems as $item) {
-            $this->reduceProductInventory(
+            $warning = $this->reduceProductInventory(
                 $item->product_id,
                 $item->quantity,
                 $warehouseId,
@@ -710,7 +717,13 @@ class InventoryService
                 $invoice->id,
                 "Bán hàng - Hóa đơn #{$invoice->invoice_number}"
             );
+
+            if ($warning) {
+                $warnings[] = $warning;
+            }
         }
+
+        return $warnings;
     }
 
     /**
@@ -733,24 +746,54 @@ class InventoryService
     }
 
     /**
-     * Reduce product inventory.
+     * Reduce product inventory with atomic operation to prevent race conditions.
      */
     private function reduceProductInventory($productId, $quantity, $warehouseId, $type, $referenceId, $notes)
     {
-        // Find or create inventory record
-        $inventory = Inventory::firstOrCreate([
-            'product_id' => $productId,
-            'warehouse_id' => $warehouseId,
-        ], [
-            'quantity' => 0,
-        ]);
+        // Find or create inventory record with lock to prevent race conditions
+        $inventory = Inventory::where('product_id', $productId)
+                             ->where('warehouse_id', $warehouseId)
+                             ->lockForUpdate()
+                             ->first();
 
-        // Check if enough stock available
-        if ($inventory->quantity < $quantity) {
-            throw new Exception("Không đủ tồn kho cho sản phẩm ID: {$productId}. Tồn kho hiện tại: {$inventory->quantity}, yêu cầu: {$quantity}");
+        if (!$inventory) {
+            // Create new inventory record if not exists
+            $inventory = Inventory::create([
+                'product_id' => $productId,
+                'warehouse_id' => $warehouseId,
+                'quantity' => 0,
+            ]);
         }
 
-        // Update inventory
+        $warning = null;
+
+        // Check if enough stock available - allow negative inventory but return warning
+        if ($inventory->quantity < $quantity) {
+            // Get product name for user-friendly warning
+            $product = \App\Models\Product::find($productId);
+            $productName = $product ? $product->product_name : "Sản phẩm ID: {$productId}";
+
+            $warning = [
+                'product_id' => $productId,
+                'product_name' => $productName,
+                'current_quantity' => $inventory->quantity,
+                'requested_quantity' => $quantity,
+                'shortage' => $quantity - $inventory->quantity,
+                'message' => "Sản phẩm '{$productName}' không đủ tồn kho. Hiện có: {$inventory->quantity}, yêu cầu: {$quantity}"
+            ];
+
+            Log::warning("Tồn kho âm cho sản phẩm ID: {$productId}", [
+                'product_id' => $productId,
+                'product_name' => $productName,
+                'current_quantity' => $inventory->quantity,
+                'requested_quantity' => $quantity,
+                'warehouse_id' => $warehouseId,
+                'type' => $type,
+                'reference_id' => $referenceId
+            ]);
+        }
+
+        // Update inventory atomically
         $inventory->quantity -= $quantity;
         $inventory->save();
 
@@ -771,6 +814,8 @@ class InventoryService
             'notes' => $notes,
             'created_by_user' => auth()->id(),
         ]);
+
+        return $warning;
     }
 
     /**

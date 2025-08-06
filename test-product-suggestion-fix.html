@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Test Product Suggestion Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="test-token">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Toastr CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        .test-container { padding: 20px; }
+        .debug-panel { background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .debug-log { font-size: 12px; margin: 3px 0; padding: 5px; background: white; border-radius: 4px; border-left: 4px solid #007bff; }
+        .debug-error { border-left-color: #dc3545; background: #f8d7da; }
+        .debug-success { border-left-color: #28a745; background: #d4edda; }
+        
+        /* Quick Order Styles */
+        .quick-order-container { height: 80vh; display: flex; flex-direction: column; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; }
+        .quick-order-header { background: #009ef7; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+        .barcode-input-container { display: flex; align-items: center; gap: 10px; background: white; border-radius: 8px; padding: 8px 12px; min-width: 400px; position: relative; }
+        .barcode-input { border: none; outline: none; font-size: 16px; font-weight: 500; flex: 1; padding: 4px 0; }
+        .product-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e4e6ef; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .product-suggestions.show { display: block; }
+        .product-suggestion { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f1f1; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+        .product-suggestion:hover { background: #f8f9fa; }
+        .product-suggestion-image { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f1f1f1; }
+        .product-suggestion-info { flex: 1; }
+        .product-suggestion-name { font-weight: 600; font-size: 14px; color: #1e1e2d; }
+        .product-suggestion-details { font-size: 12px; color: #7e8299; }
+        .product-suggestion-price { font-weight: 600; font-size: 14px; color: #009ef7; }
+        
+        .order-tabs { display: flex; align-items: center; gap: 5px; }
+        .order-tab { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 8px 16px; border-radius: 6px 6px 0 0; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .order-tab.active { background: white; color: #1e1e2d; }
+        .tab-close { background: none; border: none; color: inherit; padding: 2px; border-radius: 3px; cursor: pointer; }
+        .add-tab-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        .quick-order-content { flex: 1; overflow: hidden; }
+        .main-row { height: 100%; display: flex; }
+        .main-col { height: 100%; overflow-y: auto; padding: 20px; }
+        .order-items-col { height: 100%; display: flex; flex-direction: column; }
+        .order-items-list { flex: 1; overflow-y: auto; border: 1px solid #e4e6ef; border-radius: 8px; padding: 15px; }
+        .empty-order { text-align: center; padding: 40px 20px; color: #7e8299; }
+        .empty-icon { font-size: 48px; margin-bottom: 20px; }
+        
+        .order-item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e4e6ef; border-radius: 8px; margin-bottom: 10px; background: white; }
+        .item-image { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
+        .item-info { flex: 1; }
+        .item-name { font-weight: 600; font-size: 14px; }
+        .item-sku { font-size: 12px; color: #7e8299; }
+        .item-unit-price { font-size: 12px; color: #7e8299; }
+        .item-quantity { display: flex; align-items: center; gap: 5px; }
+        .qty-btn { width: 30px; height: 30px; border: 1px solid #e4e6ef; background: white; border-radius: 4px; cursor: pointer; }
+        .qty-input { width: 60px; text-align: center; border: 1px solid #e4e6ef; border-radius: 4px; padding: 5px; }
+        .item-price { font-weight: 600; color: #009ef7; min-width: 80px; text-align: right; }
+        .item-remove { background: #f1416c; color: white; border: none; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2><i class="fas fa-bug"></i> Test Product Suggestion Fix</h2>
+        
+        <!-- Debug Panel -->
+        <div class="debug-panel">
+            <h5>Debug Console</h5>
+            <button class="btn btn-sm btn-primary" onclick="testProductSuggestion()">Test Product Suggestion</button>
+            <button class="btn btn-sm btn-secondary" onclick="clearDebugLog()">Clear Log</button>
+            <button class="btn btn-sm btn-info" onclick="showCurrentState()">Show State</button>
+            <div id="debugLog" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></div>
+        </div>
+
+        <!-- Quick Order Interface -->
+        <div class="quick-order-container">
+            <!-- Header -->
+            <div class="quick-order-header">
+                <div>
+                    <h4 style="margin: 0;">Quick Order Test</h4>
+                </div>
+                
+                <div>
+                    <!-- Barcode Input -->
+                    <div class="barcode-input-container">
+                        <i class="fas fa-barcode" style="color: #7e8299; font-size: 18px;"></i>
+                        <input type="text" 
+                               id="barcodeInput" 
+                               class="barcode-input" 
+                               placeholder="Tìm sản phẩm..."
+                               autocomplete="off">
+                        <div class="product-suggestions" id="productSuggestions"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Order Tabs -->
+                    <div class="order-tabs" id="orderTabsContainer">
+                        <!-- Tabs will be added here -->
+                    </div>
+                    <button class="add-tab-btn" onclick="addNewTab('order')" title="Thêm tab">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="quick-order-content">
+                <div id="orderTabsContent" class="h-100">
+                    <!-- Tab content will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Template -->
+    <div id="orderTabTemplate" style="display: none;">
+        <div class="main-row h-100">
+            <div class="main-col" style="flex: 2;">
+                <div class="order-items-col">
+                    <h5>Sản phẩm đặt hàng (<span class="items-count">0</span> sản phẩm)</h5>
+                    <div class="order-items-list" id="TAB_ID_orderItemsList">
+                        <div class="empty-order" id="TAB_ID_emptyOrderState">
+                            <div class="empty-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="empty-text">
+                                Chưa có sản phẩm nào
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="main-col" style="flex: 1;">
+                <h5>Thông tin đơn hàng</h5>
+                <div style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <p>Khách hàng: <strong>Khách lẻ</strong></p>
+                    <p>Tổng tiền: <strong id="TAB_ID_totalAmount">0 ₫</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <script>
+        // Mock data
+        const mockProducts = [
+            { id: 1, name: 'Sản phẩm A', sku: 'SP001', price: 100000, stock_quantity: 50, image: null },
+            { id: 2, name: 'Sản phẩm B', sku: 'SP002', price: 200000, stock_quantity: 30, image: null },
+            { id: 3, name: 'Sản phẩm C', sku: 'SP003', price: 150000, stock_quantity: 0, image: null }
+        ];
+        
+        // Global variables (copied from main file)
+        let orderTabs = [];
+        let activeTabId = null;
+        let tabCounter = 0;
+        let currentProductSuggestions = [];
+        
+        // Debug functions
+        function debugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logClass = type === 'error' ? 'debug-error' : type === 'success' ? 'debug-success' : 'debug-log';
+            const html = `<div class="${logClass}">[${timestamp}] ${message}</div>`;
+            $('#debugLog').append(html);
+            $('#debugLog').scrollTop($('#debugLog')[0].scrollHeight);
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function clearDebugLog() {
+            $('#debugLog').empty();
+        }
+        
+        function showCurrentState() {
+            debugLog(`Order tabs: ${orderTabs.length}`, 'info');
+            debugLog(`Active tab: ${activeTabId}`, 'info');
+            debugLog(`Current suggestions: ${currentProductSuggestions.length}`, 'info');
+            if (activeTabId) {
+                const tab = orderTabs.find(t => t.id === activeTabId);
+                debugLog(`Active tab items: ${tab ? tab.items.length : 'N/A'}`, 'info');
+            }
+        }
+        
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
+        
+        // Product suggestion functions
+        function displayProductSuggestions(products) {
+            currentProductSuggestions = products;
+            debugLog(`Displaying ${products.length} product suggestions`, 'info');
+            
+            let html = '';
+            products.forEach(product => {
+                const stockText = product.stock_quantity > 0 ? `Tồn: ${product.stock_quantity}` : 'Hết hàng';
+                
+                html += `
+                    <div class="product-suggestion" data-product-id="${product.id}" onclick="addProductFromSuggestion(${product.id})">
+                        <img src="${product.image || '/admin/media/svg/files/blank-image.svg'}" class="product-suggestion-image" alt="">
+                        <div class="product-suggestion-info">
+                            <div class="product-suggestion-name">${product.name}</div>
+                            <div class="product-suggestion-details">SKU: ${product.sku || 'N/A'}</div>
+                            <div style="font-size: 12px; color: #50cd89;">${stockText}</div>
+                        </div>
+                        <div class="product-suggestion-price">${formatCurrency(product.price)}</div>
+                    </div>
+                `;
+            });
+            
+            $('#productSuggestions').html(html).addClass('show');
+        }
+        
+        function addProductFromSuggestion(productId) {
+            debugLog(`Adding product from suggestion: ${productId}`, 'info');
+            debugLog(`Current suggestions: ${JSON.stringify(currentProductSuggestions)}`, 'info');
+            debugLog(`Active tab ID: ${activeTabId}`, 'info');
+            
+            const productData = currentProductSuggestions.find(p => p.id == productId);
+            
+            if (!productData) {
+                debugLog(`Product not found in suggestions: ${productId}`, 'error');
+                toastr.error('Không tìm thấy sản phẩm');
+                return;
+            }
+            
+            if (!activeTabId) {
+                debugLog('No active tab', 'error');
+                toastr.error('Vui lòng tạo tab trước');
+                return;
+            }
+            
+            debugLog(`Adding product to tab: ${JSON.stringify(productData)}`, 'info');
+            addProductToTab(activeTabId, productData);
+            
+            $('#barcodeInput').val('');
+            $('#productSuggestions').removeClass('show');
+            $('#barcodeInput').focus();
+        }
+        
+        function addProductToTab(tabId, productData) {
+            debugLog(`addProductToTab called with: ${tabId}, ${JSON.stringify(productData)}`, 'info');
+            
+            const tab = orderTabs.find(t => t.id === tabId);
+            if (!tab) {
+                debugLog(`Tab not found: ${tabId}`, 'error');
+                return;
+            }
+            
+            debugLog(`Found tab: ${JSON.stringify(tab)}`, 'info');
+
+            const existingItemIndex = tab.items.findIndex(item => item.id === productData.id);
+            debugLog(`Existing item index: ${existingItemIndex}`, 'info');
+
+            if (existingItemIndex !== -1) {
+                tab.items[existingItemIndex].quantity += 1;
+                debugLog('Increased quantity for existing item', 'success');
+            } else {
+                const newItem = {
+                    id: productData.id,
+                    name: productData.name,
+                    sku: productData.sku,
+                    price: productData.price,
+                    quantity: 1,
+                    stock_quantity: productData.stock_quantity,
+                    image: productData.image
+                };
+                tab.items.push(newItem);
+                debugLog(`Added new item: ${JSON.stringify(newItem)}`, 'success');
+            }
+            
+            debugLog(`Tab items after update: ${JSON.stringify(tab.items)}`, 'info');
+            updateTabDisplay(tabId);
+            toastr.success(`Đã thêm ${productData.name} vào ${tab.name}`);
+        }
+        
+        function updateTabDisplay(tabId) {
+            debugLog(`updateTabDisplay called for tab: ${tabId}`, 'info');
+            
+            const tab = orderTabs.find(t => t.id === tabId);
+            if (!tab) {
+                debugLog(`Tab not found in updateTabDisplay: ${tabId}`, 'error');
+                return;
+            }
+            
+            // Update tab count
+            $(`#${tabId} .tab-count`).text(`(${tab.items.length})`);
+            
+            // Update items list
+            updateItemsList(tabId);
+        }
+        
+        function updateItemsList(tabId) {
+            debugLog(`updateItemsList called for tab: ${tabId}`, 'info');
+            
+            const tab = orderTabs.find(t => t.id === tabId);
+            if (!tab) {
+                debugLog(`Tab not found in updateItemsList: ${tabId}`, 'error');
+                return;
+            }
+            
+            debugLog(`Tab found, items count: ${tab.items.length}`, 'info');
+
+            let itemsList = $(`#${tabId}_orderItemsList`);
+            if (itemsList.length === 0) {
+                itemsList = $(`#${tabId}_content .order-items-list`);
+            }
+            
+            debugLog(`Items list element found: ${itemsList.length}`, 'info');
+            
+            if (itemsList.length === 0) {
+                debugLog(`Items list element not found for tab: ${tabId}`, 'error');
+                return;
+            }
+
+            if (tab.items.length === 0) {
+                itemsList.html(`
+                    <div class="empty-order">
+                        <div class="empty-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="empty-text">
+                            Chưa có sản phẩm nào
+                        </div>
+                    </div>
+                `);
+            } else {
+                let itemsHtml = '';
+                tab.items.forEach((item, index) => {
+                    itemsHtml += `
+                        <div class="order-item">
+                            <img src="${item.image || '/admin/media/svg/files/blank-image.svg'}" class="item-image" alt="">
+                            <div class="item-info">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-sku">${item.sku}</div>
+                                <div class="item-unit-price">Đơn giá: ${formatCurrency(item.price)}</div>
+                            </div>
+                            <div class="item-quantity">
+                                <button type="button" class="qty-btn" onclick="updateQuantity('${tabId}', ${index}, -1)">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" class="qty-input" value="${item.quantity}">
+                                <button type="button" class="qty-btn" onclick="updateQuantity('${tabId}', ${index}, 1)">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="item-price">${formatCurrency(item.price * item.quantity)}</div>
+                            <button type="button" class="item-remove" onclick="removeItem('${tabId}', ${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                itemsList.html(itemsHtml);
+                debugLog(`Updated items list with ${tab.items.length} items`, 'success');
+            }
+        }
+        
+        function updateQuantity(tabId, itemIndex, change) {
+            const tab = orderTabs.find(t => t.id === tabId);
+            if (!tab || !tab.items[itemIndex]) return;
+            
+            const newQuantity = tab.items[itemIndex].quantity + change;
+            if (newQuantity <= 0) {
+                removeItem(tabId, itemIndex);
+            } else {
+                tab.items[itemIndex].quantity = newQuantity;
+                updateTabDisplay(tabId);
+            }
+        }
+        
+        function removeItem(tabId, itemIndex) {
+            const tab = orderTabs.find(t => t.id === tabId);
+            if (!tab || !tab.items[itemIndex]) return;
+            
+            tab.items.splice(itemIndex, 1);
+            updateTabDisplay(tabId);
+        }
+        
+        // Tab management
+        function addNewTab(type = 'order') {
+            tabCounter++;
+            const tabId = 'tab_' + tabCounter;
+            const tabName = 'Đơn hàng ' + tabCounter;
+
+            const tabData = {
+                id: tabId,
+                name: tabName,
+                type: type,
+                items: []
+            };
+
+            orderTabs.push(tabData);
+
+            const tabElement = $(`
+                <div class="order-tab" id="${tabId}" onclick="switchTab('${tabId}')">
+                    <span class="tab-title">${tabName}</span>
+                    <span class="tab-count">(0)</span>
+                    <button type="button" class="tab-close" onclick="closeTab('${tabId}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `);
+
+            $('#orderTabsContainer').append(tabElement);
+            createTabContent(tabId, tabData);
+            switchTab(tabId);
+            
+            debugLog(`Created tab: ${tabId}`, 'success');
+            return tabId;
+        }
+        
+        function createTabContent(tabId, tabData) {
+            const template = $('#orderTabTemplate');
+            let tabContent = template.clone();
+            tabContent.attr('id', tabId + '_content');
+            tabContent.attr('data-tab-id', tabId);
+            tabContent.addClass('h-100');
+            tabContent.show();
+
+            let htmlContent = tabContent.html();
+            if (htmlContent) {
+                htmlContent = htmlContent.replace(/TAB_ID_/g, tabId + '_');
+                tabContent.html(htmlContent);
+            }
+
+            $('#orderTabsContent').append(tabContent);
+        }
+        
+        function switchTab(tabId) {
+            activeTabId = tabId;
+            $('.order-tab').removeClass('active');
+            $(`#${tabId}`).addClass('active');
+            $('[data-tab-id]').hide();
+            $(`#${tabId}_content`).show();
+            debugLog(`Switched to tab: ${tabId}`, 'info');
+        }
+        
+        function closeTab(tabId) {
+            orderTabs = orderTabs.filter(t => t.id !== tabId);
+            $(`#${tabId}`).remove();
+            $(`#${tabId}_content`).remove();
+            
+            if (activeTabId === tabId) {
+                if (orderTabs.length > 0) {
+                    switchTab(orderTabs[0].id);
+                } else {
+                    activeTabId = null;
+                    addNewTab('order');
+                }
+            }
+        }
+        
+        // Test functions
+        function testProductSuggestion() {
+            debugLog('Starting product suggestion test...', 'info');
+            
+            // Display mock products
+            displayProductSuggestions(mockProducts);
+            
+            debugLog('Product suggestions displayed. Click on a product to test adding to cart.', 'success');
+        }
+        
+        // Initialize
+        $(document).ready(function() {
+            debugLog('Test page loaded successfully!', 'success');
+            
+            // Create initial tab
+            addNewTab('order');
+            
+            // Setup barcode input
+            $('#barcodeInput').on('input', function() {
+                const query = $(this).val().trim();
+                if (query.length >= 2) {
+                    const filteredProducts = mockProducts.filter(p => 
+                        p.name.toLowerCase().includes(query.toLowerCase()) ||
+                        p.sku.toLowerCase().includes(query.toLowerCase())
+                    );
+                    if (filteredProducts.length > 0) {
+                        displayProductSuggestions(filteredProducts);
+                    }
+                } else {
+                    $('#productSuggestions').removeClass('show');
+                }
+            });
+            
+            // Hide suggestions when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.barcode-input-container').length) {
+                    $('#productSuggestions').removeClass('show');
+                }
+            });
+            
+            debugLog('Ready to test! Type in the search box or click "Test Product Suggestion".', 'info');
+        });
+    </script>
+</body>
+</html>

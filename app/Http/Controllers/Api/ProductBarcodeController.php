@@ -65,7 +65,7 @@ class ProductBarcodeController extends Controller
                 'stock_quantity' => $stockQuantity,
                 'is_available' => $isAvailable,
                 'category' => $product->category ? $product->category->name : null,
-                'image' => $product->product_thumbnail ? asset('storage/' . $product->product_thumbnail) : null,
+                'image' => $product->product_thumbnail ? asset($product->product_thumbnail) : null,
                 'formatted_price' => number_format($product->sale_price, 0, ',', '.') . ' VND',
                 'stock_status' => $this->getStockStatus($stockQuantity, $product->reorder_point ?? 0),
                 'can_order' => $isAvailable && $product->canOrder(1),

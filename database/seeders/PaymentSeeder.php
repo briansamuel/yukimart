@@ -15,6 +15,10 @@ class PaymentSeeder extends Seeder
      */
     public function run(): void
     {
+        // Clear existing payment data
+        $this->command->info('Clearing existing payment data...');
+        Payment::truncate();
+
         // Get all invoices that have been paid
         $invoices = Invoice::whereIn('status', ['completed', 'processing'])
                           ->where('total_amount', '>', 0)
@@ -24,20 +28,35 @@ class PaymentSeeder extends Seeder
         $defaultBankAccount = BankAccount::getDefault();
         $bankAccounts = BankAccount::getActive();
 
+        // Get branch employees for creator and collector assignment
+        $branchEmployees = \App\Models\User::whereHas('branchShops')->get();
+
+        if ($branchEmployees->isEmpty()) {
+            $this->command->error('No branch employees found. Please ensure users are assigned to branch shops.');
+            return;
+        }
+
         $this->command->info('Creating payments for ' . $invoices->count() . ' invoices...');
 
         foreach ($invoices as $invoice) {
-            // Skip if payment already exists for this invoice
-            if (Payment::where('reference_type', 'invoice')
-                      ->where('reference_id', $invoice->id)
-                      ->exists()) {
-                continue;
+            // Get employees from the same branch as the invoice
+            $branchEmployeesForInvoice = $branchEmployees->filter(function($user) use ($invoice) {
+                return $user->branchShops->contains('id', $invoice->branch_shop_id);
+            });
+
+            // If no employees in the same branch, use any branch employee
+            if ($branchEmployeesForInvoice->isEmpty()) {
+                $branchEmployeesForInvoice = $branchEmployees;
             }
+
+            // Select random creator and collector (can be the same person)
+            $creator = $branchEmployeesForInvoice->random();
+            $collector = $branchEmployeesForInvoice->random();
 
             // Determine payment method and bank account
             $paymentMethods = ['cash', 'transfer', 'card'];
             $paymentMethod = $paymentMethods[array_rand($paymentMethods)];
-            
+
             $bankAccountId = null;
             if (in_array($paymentMethod, ['transfer', 'card']) && $bankAccounts->count() > 0) {
                 $bankAccountId = $bankAccounts->random()->id;
@@ -58,8 +77,9 @@ class PaymentSeeder extends Seeder
                 'status' => 'completed',
                 'actual_amount' => $invoice->total_amount,
                 'description' => 'Thanh toán hóa đơn ' . $invoice->invoice_number,
-                'notes' => 'Tự động tạo từ seeder',
-                'created_by' => 1, // Admin user
+                'notes' => 'Phiếu thu từ hóa đơn',
+                'created_by' => $creator->id, // Branch employee as creator
+                'collector_id' => $collector->id, // Branch employee as collector
                 'created_at' => $invoice->created_at,
                 'updated_at' => $invoice->updated_at,
             ]);

@@ -1,0 +1,1139 @@
+/**
+ * Invoice Table Manager
+ * Extends BaseTableManager for invoice-specific functionality
+ * Consolidated from invoice-list.js functionality
+ */
+
+class InvoiceTableManager extends BaseTableManager {
+    constructor() {
+        super({
+            tableId: 'kt_invoices_table',
+            containerId: 'kt_invoices_table_container',
+            ajaxUrl: window.invoiceAjaxUrl || '/admin/invoices/ajax',
+            module: 'invoices',
+            storageKey: 'invoice_column_visibility',
+            defaultFilters: {
+                page: 1,
+                per_page: 10,
+                search: '',
+                time_filter_display: 'this_month',
+                date_from: '',
+                date_to: '',
+                status: ['processing', 'completed'],
+                delivery_status: '',
+                created_by: '',
+                sold_by: '',
+                sale_channel: '',
+                payment_method: '',
+                delivery_partner: '',
+                delivery_area: '',
+                price_list: ''
+            },
+            defaultPerPage: 10
+        });
+
+        // Use parent's selectedItems instead of selectedInvoices
+        this.initialized = false;
+        this.currentPage = 1;
+        this.perPage = 10;
+
+        // Enhanced search properties
+        this.searchHistory = JSON.parse(localStorage.getItem('invoice_search_history') || '[]');
+        this.currentSearchTerm = '';
+        this.searchSuggestions = [];
+    }
+    
+    initSearch() {
+        console.log('Initializing invoice search...');
+
+        const searchInput = document.querySelector('input[data-kt-invoice-table-filter="search"]');
+        if (searchInput) {
+            this.initEnhancedSearch();
+
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.currentFilters.search = e.target.value.trim();
+                    this.currentFilters.page = 1; // Reset to first page
+                    this.loadData();
+                }, 300);
+            });
+        }
+    }
+
+
+
+
+    // ===== COLUMN VISIBILITY =====
+
+    initColumnVisibility() {
+        console.log('Initializing column visibility...');
+
+        if (typeof window.KTColumnVisibility !== 'undefined') {
+            this.columnVisibility = window.KTColumnVisibility.init({
+                storageKey: this.config.storageKey,
+                defaultVisibility: {
+                    0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true,
+                    7: true, 8: true, 9: true, 10: true, 11: false, 12: true,
+                    13: false, 14: false, 15: true, 16: false
+                }
+            });
+        }
+    }
+    
+    // Override parent's abstract methods
+    getSelectAllId() {
+        return 'select-all-invoices';
+    }
+
+    getRowCheckboxes() {
+        return document.querySelectorAll('#invoices-table-body input[type="checkbox"]');
+    }
+
+    getItemName() {
+        return 'hóa đơn';
+    }
+    
+    // Use parent's initBulkActions - no need to override
+    
+    loadData() {
+        console.log('Loading invoices with filters:', this.currentFilters);
+
+        // Cancel previous request
+        if (this.currentRequest) {
+            this.currentRequest.abort();
+        }
+
+        const filterData = this.getFilterData();
+        console.log('Loading invoices with filters:', filterData);
+
+        // Show loading state
+        this.showLoading('table', 'Đang tải dữ liệu...');
+        this.showLoadingState();
+
+        this.currentRequest = $.ajax({
+            url: this.config.ajaxUrl,
+            type: 'GET',
+            data: filterData,
+            success: (response) => {
+                console.log('Invoice data loaded:', response);
+
+                if (response.data && Array.isArray(response.data)) {
+                    this.renderData(response.data);
+                    this.updatePagination(response);
+
+                    // Auto expand row if Code param exists and only 1 result
+                    this.handleAutoExpansion(response.data);
+
+                    // Update search results count if search is active
+                    if (this.currentSearchTerm) {
+                        this.updateSearchResultsCount(response.total || response.data.length);
+                    }
+                } else {
+                    this.showErrorState('Có lỗi xảy ra khi tải dữ liệu');
+                }
+            },
+            error: (xhr, status, error) => {
+                if (status !== 'abort') {
+                    console.error('AJAX Error:', error);
+
+                    // Show user-friendly error message
+                    let errorMessage = 'Không thể tải dữ liệu. Vui lòng thử lại.';
+
+                    if (xhr.status === 0) {
+                        errorMessage = 'Không có kết nối mạng. Vui lòng kiểm tra kết nối internet.';
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'Không tìm thấy dữ liệu. Vui lòng liên hệ quản trị viên.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
+                    } else if (xhr.status === 403) {
+                        errorMessage = 'Bạn không có quyền truy cập dữ liệu này.';
+                    }
+
+                    this.showErrorState(errorMessage);
+                    this.showErrorToast(errorMessage, 'Lỗi tải dữ liệu');
+                }
+            },
+            complete: () => {
+                this.currentRequest = null;
+                this.hideLoading('table');
+                this.hideLoading('search');
+                this.hideLoading('filter');
+                this.hideLoading('pagination');
+            }
+        });
+    }
+
+    // ===== FILTER DATA MANAGEMENT =====
+
+    getFilterData() {
+        console.log('getFilterData() called');
+
+        // Get per_page value from selector
+        const perPageSelect = document.getElementById('kt_invoices_per_page');
+        const currentPerPage = perPageSelect ? parseInt(perPageSelect.value) : this.perPage;
+
+        const data = {
+            page: this.currentPage,
+            per_page: currentPerPage
+        };
+
+        const filterForm = document.getElementById('kt_invoice_filter_form');
+        if (filterForm) {
+            // Initialize status array
+            data.status = [];
+
+            $(filterForm).find('input, select').each(function() {
+                const $input = $(this);
+                const name = $input.attr('name') || $input.attr('id');
+
+                if (name) {
+                    if ($input.is(':checkbox')) {
+                        if (name === 'status[]') {
+                            // Handle status checkboxes - collect into status array
+                            if ($input.is(':checked')) {
+                                data.status.push($input.val());
+                            }
+                        } else if (name.endsWith('[]')) {
+                            // Handle other array checkboxes
+                            if (!data[name]) {
+                                data[name] = [];
+                            }
+                            if ($input.is(':checked')) {
+                                data[name].push($input.val());
+                            }
+                        } else {
+                            if ($input.is(':checked')) {
+                                data[name] = $input.val();
+                            }
+                        }
+                    } else if ($input.is(':radio')) {
+                        if ($input.is(':checked')) {
+                            data[name] = $input.val();
+                        }
+                    } else if ($input.is('select[multiple]')) {
+                        data[name] = $input.val() || [];
+                    } else {
+                        const value = $input.val();
+                        if (value) {
+                            // Handle Tagify inputs
+                            if (name.endsWith('_tags')) {
+                                try {
+                                    const tagifyData = JSON.parse(value);
+                                    if (Array.isArray(tagifyData) && tagifyData.length > 0) {
+                                        const fieldName = name.replace('_tags', '');
+                                        data[fieldName] = tagifyData.map(tag => tag.value || tag.id || tag);
+                                    }
+                                } catch (e) {
+                                    data[name] = value;
+                                }
+                            } else {
+                                data[name] = value;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Add search term
+        const searchInput = document.querySelector('input[data-kt-invoice-table-filter="search"]');
+        if (searchInput && searchInput.value) {
+            data.search_term = searchInput.value;
+        }
+
+        console.log('Filter data collected:', data);
+        return data;
+    }
+    
+    // ===== ERROR AND EMPTY STATES =====
+
+    showErrorState(message) {
+        const tbody = document.querySelector('#invoices-table-body');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="17">
+                        <div class="table-error-state">
+                            <div class="table-error-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="table-error-title">Có lỗi xảy ra</div>
+                            <div class="table-error-message">${message}</div>
+                            <div class="table-error-actions">
+                                <button class="btn btn-sm btn-primary" onclick="window.invoiceTableManager.loadData()">
+                                    <i class="fas fa-redo"></i> Thử lại
+                                </button>
+                                <button class="btn btn-sm btn-light" onclick="location.reload()">
+                                    <i class="fas fa-refresh"></i> Tải lại trang
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    showEmptyState(message) {
+        const tbody = document.querySelector('#invoices-table-body');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="17">
+                        <div class="table-empty-state">
+                            <div class="table-empty-icon">
+                                <i class="fas fa-inbox"></i>
+                            </div>
+                            <div class="table-empty-title">Không có dữ liệu</div>
+                            <div class="table-empty-message">${message || 'Không tìm thấy hóa đơn nào phù hợp với bộ lọc hiện tại.'}</div>
+                            <div class="table-error-actions">
+                                <button class="btn btn-sm btn-primary" onclick="window.invoiceTableManager.clearAllFilters()">
+                                    <i class="fas fa-filter"></i> Xóa bộ lọc
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    clearAllFilters() {
+        // Clear search
+        const searchInput = document.querySelector('input[data-kt-invoice-table-filter="search"]');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        // Reset filters
+        const filterForm = document.getElementById('kt_invoice_filter_form');
+        if (filterForm) {
+            filterForm.reset();
+        }
+
+        // Reload data
+        this.currentPage = 1;
+        this.loadData();
+
+        this.showInfoToast('Đã xóa tất cả bộ lọc', 'Thông tin');
+    }
+
+    renderData(invoices) {
+        console.log('Rendering invoices:', invoices.length);
+
+        if (invoices.length === 0) {
+            this.showEmptyState();
+            return;
+        }
+
+        // Use renderInvoices from invoice-list.js if available
+        if (window.invoiceListRenderFunctions && typeof window.invoiceListRenderFunctions.renderInvoices === 'function') {
+            console.log('Using renderInvoices from invoice-list.js');
+            window.invoiceListRenderFunctions.renderInvoices(invoices);
+        } else {
+            console.log('Fallback to local renderInvoices');
+            this.renderInvoices(invoices);
+        }
+
+        // Bind row events
+        this.bindRowEvents();
+    }
+
+    renderInvoices(invoices) {
+        const tbody = this.table.querySelector('tbody');
+        if (!tbody) {
+            console.error('Table tbody not found');
+            return;
+        }
+
+        const rows = invoices.map(invoice => this.renderInvoiceRow(invoice)).join('');
+        tbody.innerHTML = rows;
+
+        // Apply column visibility
+        if (typeof window.KTColumnVisibility !== 'undefined') {
+            window.KTColumnVisibility.apply({
+                tableSelector: '#kt_invoices_table'
+            }, this.columnVisibility || {});
+        }
+    }
+    
+    renderInvoiceRow(invoice) {
+        // Use renderInvoiceRow from invoice-list.js if available
+        if (window.invoiceListRenderFunctions && typeof window.invoiceListRenderFunctions.renderInvoiceRow === 'function') {
+            return window.invoiceListRenderFunctions.renderInvoiceRow(invoice);
+        }
+
+        // Fallback to local implementation
+        const customerName = invoice.customer_display || invoice.customer_name || 'Khách lẻ';
+        const statusBadge = this.getStatusBadge(invoice.status);
+        const paymentMethodDisplay = this.getPaymentMethodDisplay(invoice.payment_method);
+        const salesChannelDisplay = this.getSalesChannelDisplay(invoice.sales_channel);
+
+        return `
+            <tr data-invoice-id="${invoice.id}" class="invoice-row" style="cursor: pointer;">
+                
+                <td>
+                
+                    <div class="form-check form-check-sm form-check-custom form-check-solid">
+                        <input class="form-check-input" type="checkbox" value="${invoice.id}" />
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex flex-column">
+                        <span class="text-gray-800 text-hover-primary mb-1 fw-bold">${invoice.invoice_number || invoice.invoice_code || 'N/A'}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex flex-column">
+                        <span class="text-gray-800 mb-1">${customerName}</span>
+                    </div>
+                </td>
+                <td class="text-end">
+                    <span class="text-gray-800 fw-bold">${this.formatCurrency(invoice.total_amount)}</span>
+                </td>
+                <td class="text-end">
+                    <span class="text-gray-800">${this.formatCurrency(invoice.amount_paid || invoice.paid_amount || 0)}</span>
+                </td>
+                <td>
+                    ${statusBadge}
+                </td>
+                <td>
+                    <span class="text-gray-800">${paymentMethodDisplay}</span>
+                </td>
+                <td>
+                    <span class="text-gray-800">${salesChannelDisplay}</span>
+                </td>
+                <td>
+                    <div class="d-flex flex-column">
+                        <span class="text-gray-800 mb-1">${this.formatDate(invoice.created_at)}</span>
+                        <span class="text-muted fs-7">${this.formatTime(invoice.created_at)}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="text-gray-800">${invoice.seller || invoice.seller_name || ''}</span>
+                </td>
+                <td>
+                    <span class="text-gray-800">${invoice.creator || invoice.creator_name || ''}</span>
+                </td>
+                <td class="text-end">
+                    <span class="text-gray-800">${this.formatCurrency(invoice.discount || 0)}</span>
+                </td>
+                <td>
+                    <span class="text-gray-800">${invoice.email || invoice.customer_email || ''}</span>
+                </td>
+                <td>
+                    <span class="text-gray-800">${invoice.phone || invoice.customer_phone || ''}</span>
+                </td>
+                <td>
+                    <span class="text-gray-800">${invoice.address || invoice.customer_address || ''}</span>
+                </td>
+                <td>
+                    <span class="text-gray-800">${invoice.branch_shop || invoice.branch_name || ''}</span>
+                </td>
+                <td>
+                    <span class="text-gray-800">${invoice.notes || ''}</span>
+                </td>
+            </tr>
+        `;
+    }
+    
+    getStatusBadge(status) {
+        const badges = {
+            'processing': '<span class="badge badge-warning">Đang xử lý</span>',
+            'completed': '<span class="badge badge-success">Hoàn thành</span>',
+            'cancelled': '<span class="badge badge-dark">Đã hủy</span>',
+            'undeliverable': '<span class="badge badge-danger">Không giao được</span>'
+        };
+        return badges[status] || '<span class="badge badge-secondary">Đang xử lý</span>';
+    }
+
+    getPaymentMethodDisplay(method) {
+        const methods = {
+            'cash': 'Tiền mặt',
+            'card': 'Thẻ',
+            'transfer': 'Chuyển khoản',
+            'check': 'Séc',
+            'other': 'Khác'
+        };
+        return methods[method] || 'N/A';
+    }
+
+    getSalesChannelDisplay(channel) {
+        const channels = {
+            'offline': 'Cửa hàng',
+            'marketplace': 'Marketplace',
+            'online': 'Online',
+            'direct': 'Direct',
+            'phone': 'Điện thoại',
+            'social': 'Mạng xã hội'
+        };
+        return channels[channel] || 'N/A';
+    }
+
+    getPaymentStatusBadge(status) {
+        const badges = {
+            'paid': '<span class="badge badge-success">Đã thanh toán</span>',
+            'partial': '<span class="badge badge-warning">Thanh toán một phần</span>',
+            'unpaid': '<span class="badge badge-danger">Chưa thanh toán</span>'
+        };
+        return badges[status] || '<span class="badge badge-danger">Chưa thanh toán</span>';
+    }
+
+    getDeliveryStatusBadge(status) {
+        const badges = {
+            'pending': '<span class="badge badge-secondary">Chờ xử lý</span>',
+            'picking': '<span class="badge badge-info">Lấy hàng</span>',
+            'shipping': '<span class="badge badge-primary">Giao hàng</span>',
+            'delivered': '<span class="badge badge-success">Đã giao hàng</span>',
+            'failed': '<span class="badge badge-danger">Giao thất bại</span>',
+            'returned': '<span class="badge badge-warning">Hoàn trả</span>'
+        };
+        return badges[status] || '<span class="badge badge-secondary">Chờ xử lý</span>';
+    }
+    
+    getPaymentMethodBadge(method) {
+        const badges = {
+            'cash': '<span class="badge badge-success">Tiền mặt</span>',
+            'bank_transfer': '<span class="badge badge-info">Chuyển khoản</span>',
+            'credit_card': '<span class="badge badge-primary">Thẻ tín dụng</span>',
+            'e_wallet': '<span class="badge badge-warning">Ví điện tử</span>',
+            'cod': '<span class="badge badge-secondary">COD</span>'
+        };
+        return badges[method] || '<span class="badge badge-light">N/A</span>';
+    }
+    
+    bindRowEvents() {
+        // Bind checkbox events - use correct selector matching invoice-list.js
+        const checkboxes = document.querySelectorAll('#invoices-table-body input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const invoiceId = e.target.value;
+
+                if (e.target.checked) {
+                    this.selectedItems.add(invoiceId);
+                } else {
+                    this.selectedItems.delete(invoiceId);
+                }
+
+                this.updateBulkActionsVisibility();
+                this.updateSelectedCount();
+                this.updateSelectAllState();
+            });
+        });
+        
+        // Bind row click events for expansion
+        const rows = document.querySelectorAll('.invoice-row');
+        rows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                // Don't trigger on checkbox clicks or action buttons
+                if (e.target.type === 'checkbox' || e.target.closest('.btn')) return;
+                
+                const invoiceId = row.dataset.invoiceId;
+                this.toggleInvoiceExpansion(invoiceId);
+            });
+        });
+    }
+    
+    toggleInvoiceExpansion(invoiceId) {
+        console.log('Toggling invoice expansion for:', invoiceId);
+        // Implementation for invoice detail expansion
+        // This will show invoice details below the clicked row
+    }
+    
+    // Use parent's updateBulkActionsVisibility and updateSelectedCount methods
+    
+    updateSelectAllState() {
+        // Use correct selector matching invoice-list.js
+        const selectAllCheckbox = document.getElementById('select-all-invoices');
+        const checkboxes = document.querySelectorAll('#invoices-table-body input[type="checkbox"]');
+
+        if (selectAllCheckbox && checkboxes.length > 0) {
+            const checkedCount = document.querySelectorAll('#invoices-table-body input[type="checkbox"]:checked').length;
+
+            if (checkedCount === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCount === checkboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+    }
+    
+    // Use parent's renderError, formatCurrency, formatDate, formatTime methods
+    
+    // Bulk actions
+    // ===== CONFIRMATION MODALS =====
+
+    showConfirmationModal(options) {
+        const modal = document.createElement('div');
+        modal.className = 'confirmation-modal';
+        modal.id = 'confirmationModal';
+
+        const iconClass = options.type === 'danger' ? 'fa-exclamation-triangle' :
+                         options.type === 'warning' ? 'fa-exclamation-circle' : 'fa-info-circle';
+
+        let detailsHtml = '';
+        if (options.details && options.details.length > 0) {
+            detailsHtml = '<div class="confirmation-details">';
+            options.details.forEach(detail => {
+                detailsHtml += `
+                    <div class="confirmation-detail-item">
+                        <span class="confirmation-detail-label">${detail.label}</span>
+                        <span class="confirmation-detail-value">${detail.value}</span>
+                    </div>
+                `;
+            });
+            detailsHtml += '</div>';
+        }
+
+        modal.innerHTML = `
+            <div class="confirmation-content">
+                <div class="confirmation-header">
+                    <div class="confirmation-icon ${options.type || 'info'}">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <h4 class="confirmation-title">${options.title}</h4>
+                </div>
+                <div class="confirmation-message">${options.message}</div>
+                ${detailsHtml}
+                <div class="confirmation-actions">
+                    <button type="button" class="btn btn-light" onclick="this.closest('.confirmation-modal').remove()">
+                        ${options.cancelText || 'Hủy'}
+                    </button>
+                    <button type="button" class="btn btn-${options.type === 'danger' ? 'danger' : 'primary'}" onclick="window.confirmationCallback && window.confirmationCallback(); this.closest('.confirmation-modal').remove();">
+                        ${options.confirmText || 'Xác nhận'}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Store callback
+        window.confirmationCallback = options.onConfirm;
+
+        // Show modal
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                window.confirmationCallback = null;
+            }
+        });
+    }
+
+    // ===== BULK ACTIONS IMPLEMENTATION =====
+
+    getSelectedInvoiceIds() {
+        // Use parent's selectedItems Set
+        return Array.from(this.selectedItems);
+    }
+
+    // Implement parent's abstract bulk action methods
+    bulkDelete() {
+        const selectedIds = this.getSelectedInvoiceIds();
+        if (selectedIds.length === 0) {
+            this.showWarningToast('Vui lòng chọn ít nhất một hóa đơn');
+            return;
+        }
+
+        this.showConfirmationModal({
+            type: 'danger',
+            title: 'Xác nhận xóa hóa đơn',
+            message: 'Bạn có chắc chắn muốn xóa các hóa đơn đã chọn?',
+            details: [
+                { label: 'Số lượng hóa đơn', value: selectedIds.length },
+                { label: 'Cảnh báo', value: 'Dữ liệu sẽ bị xóa vĩnh viễn' }
+            ],
+            confirmText: 'Xóa hóa đơn',
+            onConfirm: () => {
+                this.performBulkDelete(selectedIds);
+            }
+        });
+    }
+
+    showBulkStatusModal() {
+        const selectedIds = this.getSelectedInvoiceIds();
+        if (selectedIds.length === 0) {
+            this.showWarningToast('Vui lòng chọn ít nhất một hóa đơn');
+            return;
+        }
+
+        // Show status update modal
+        console.log('Showing bulk status modal for invoices:', selectedIds);
+        // Implementation for bulk status update modal
+    }
+
+    bulkExport() {
+        const selectedIds = this.getSelectedInvoiceIds();
+        if (selectedIds.length === 0) {
+            this.showWarningToast('Vui lòng chọn ít nhất một hóa đơn');
+            return;
+        }
+
+        this.showConfirmationModal({
+            type: 'info',
+            title: 'Xuất Excel hóa đơn',
+            message: 'Bạn có muốn xuất danh sách hóa đơn đã chọn ra file Excel?',
+            details: [
+                { label: 'Số lượng hóa đơn', value: selectedIds.length },
+                { label: 'Định dạng', value: 'Excel (.xlsx)' }
+            ],
+            confirmText: 'Xuất Excel',
+            onConfirm: () => {
+                this.performBulkExport(selectedIds);
+            }
+        });
+    }
+
+    bulkUpdateStatus(status) {
+        const selectedIds = this.getSelectedInvoiceIds();
+        if (selectedIds.length === 0) {
+            this.showWarningToast('Vui lòng chọn ít nhất một hóa đơn');
+            return;
+        }
+
+        const statusLabels = {
+            'completed': 'Hoàn thành',
+            'processing': 'Đang xử lý',
+            'cancelled': 'Đã hủy'
+        };
+
+        this.showConfirmationModal({
+            type: 'warning',
+            title: 'Xác nhận cập nhật trạng thái',
+            message: `Bạn có chắc chắn muốn cập nhật trạng thái của ${selectedIds.length} hóa đơn thành "${statusLabels[status]}"?`,
+            details: [
+                { label: 'Số lượng hóa đơn', value: selectedIds.length },
+                { label: 'Trạng thái mới', value: statusLabels[status] }
+            ],
+            confirmText: 'Cập nhật',
+            onConfirm: () => {
+                this.performBulkStatusUpdate(selectedIds, status);
+            }
+        });
+    }
+
+    performBulkStatusUpdate(invoiceIds, status) {
+        this.showLoading('table', 'Đang cập nhật trạng thái...');
+
+        $.ajax({
+            url: '/admin/invoices/bulk-update-status',
+            type: 'POST',
+            data: {
+                invoice_ids: invoiceIds,
+                status: status,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: (response) => {
+                if (response.success) {
+                    this.showSuccessToast(`Đã cập nhật trạng thái ${response.updated_count} hóa đơn thành công`);
+                    this.clearSelection();
+                    this.loadData();
+                } else {
+                    this.showErrorToast(response.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
+                }
+            },
+            error: (xhr) => {
+                let message = 'Có lỗi xảy ra khi cập nhật trạng thái';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                this.showErrorToast(message);
+            },
+            complete: () => {
+                this.hideLoading('table');
+            }
+        });
+    }
+
+    // Duplicate bulkExport method removed - using the one defined above
+
+    performBulkExport(invoiceIds) {
+        this.showLoading('export', 'Đang tạo file Excel...');
+
+        // Create form for download
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/invoices/bulk-export';
+        form.style.display = 'none';
+
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = $('meta[name="csrf-token"]').attr('content');
+        form.appendChild(csrfInput);
+
+        // Add invoice IDs
+        invoiceIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'invoice_ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        this.showSuccessToast('File Excel đang được tạo và sẽ tự động tải xuống');
+        this.hideLoading('export');
+    }
+
+    // Duplicate bulkDelete method removed - using the one defined above
+
+    performBulkDelete(invoiceIds) {
+        this.showLoading('table', 'Đang xóa hóa đơn...');
+
+        $.ajax({
+            url: '/admin/invoices/bulk-delete',
+            type: 'POST',
+            data: {
+                invoice_ids: invoiceIds,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: (response) => {
+                if (response.success) {
+                    this.showSuccessToast(`Đã xóa ${response.deleted_count} hóa đơn thành công`);
+                    this.clearSelection();
+                    this.loadData();
+                } else {
+                    this.showErrorToast(response.message || 'Có lỗi xảy ra khi xóa hóa đơn');
+                }
+            },
+            error: (xhr) => {
+                let message = 'Có lỗi xảy ra khi xóa hóa đơn';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                this.showErrorToast(message);
+            },
+            complete: () => {
+                this.hideLoading('table');
+            }
+        });
+    }
+
+    clearSelection() {
+        // Use correct selector matching invoice-list.js
+        const checkboxes = document.querySelectorAll('#invoices-table-body input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            const row = checkbox.closest('tr');
+            if (row) {
+                row.classList.remove('selected');
+            }
+        });
+
+        // Update master checkbox - use correct selector
+        const masterCheckbox = document.getElementById('select-all-invoices');
+        if (masterCheckbox) {
+            masterCheckbox.checked = false;
+            masterCheckbox.indeterminate = false;
+        }
+
+        this.selectedItems.clear();
+        this.updateBulkActionsVisibility();
+        this.updateSelectedCount();
+        this.updateSelectAllState();
+    }
+
+    // ===== ENHANCED SEARCH FUNCTIONALITY =====
+
+    initEnhancedSearch() {
+        const searchInput = document.querySelector('input[data-kt-invoice-table-filter="search"]');
+        if (!searchInput) return;
+
+        // Wrap search input in container
+        const container = document.createElement('div');
+        container.className = 'search-input-container';
+        searchInput.parentNode.insertBefore(container, searchInput);
+        container.appendChild(searchInput);
+
+        // Add enhanced classes
+        searchInput.classList.add('search-input-enhanced');
+
+        // Create search actions
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'search-actions';
+        actionsDiv.innerHTML = `
+            <div class="search-loading-indicator"></div>
+            <button type="button" class="search-clear-btn" title="Xóa tìm kiếm">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="search-icon">
+                <i class="fas fa-search"></i>
+            </div>
+        `;
+        container.appendChild(actionsDiv);
+
+        // Create suggestions dropdown
+        const suggestionsDiv = document.createElement('div');
+        suggestionsDiv.className = 'search-suggestions';
+        suggestionsDiv.id = 'search-suggestions';
+        container.appendChild(suggestionsDiv);
+
+        // Bind events
+        this.bindSearchEvents(searchInput);
+    }
+
+    bindSearchEvents(searchInput) {
+        const clearBtn = document.querySelector('.search-clear-btn');
+        const suggestions = document.getElementById('search-suggestions');
+
+        // Input events
+        searchInput.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            this.currentSearchTerm = value;
+
+            // Show/hide clear button
+            if (value) {
+                clearBtn.classList.add('show');
+            } else {
+                clearBtn.classList.remove('show');
+                this.hideSuggestions();
+            }
+
+            // Show suggestions
+            if (value.length >= 2) {
+                this.showSearchSuggestions(value);
+            } else {
+                this.hideSuggestions();
+            }
+        });
+
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            this.currentSearchTerm = '';
+            clearBtn.classList.remove('show');
+            this.hideSuggestions();
+            this.hideSearchResults();
+            this.loadData();
+        });
+    }
+
+    showSearchSuggestions(term) {
+        const suggestions = document.getElementById('search-suggestions');
+        if (!suggestions) return;
+
+        // Generate suggestions
+        const suggestionItems = this.generateSearchSuggestions(term);
+        this.renderSuggestions(suggestionItems);
+    }
+
+    generateSearchSuggestions(term) {
+        const suggestions = [];
+
+        // Add invoice number suggestions
+        if (/^HD/i.test(term)) {
+            suggestions.push({
+                type: 'invoice',
+                title: term.toUpperCase(),
+                subtitle: 'Tìm theo số hóa đơn',
+                value: term
+            });
+        }
+
+        // Add phone number suggestions
+        if (/^\d{3,}/.test(term)) {
+            suggestions.push({
+                type: 'phone',
+                title: term,
+                subtitle: 'Tìm theo số điện thoại',
+                value: term
+            });
+        }
+
+        // Add customer name suggestions
+        if (term.length >= 2 && !/^\d/.test(term)) {
+            suggestions.push({
+                type: 'customer',
+                title: term,
+                subtitle: 'Tìm theo tên khách hàng',
+                value: term
+            });
+        }
+
+        return suggestions.slice(0, 6);
+    }
+
+    renderSuggestions(suggestions) {
+        const container = document.getElementById('search-suggestions');
+        if (!container) return;
+
+        if (suggestions.length === 0) {
+            container.innerHTML = `
+                <div class="search-no-results">
+                    <div class="search-no-results-text">Không có gợi ý</div>
+                </div>
+            `;
+        } else {
+            let html = '';
+            suggestions.forEach((item, index) => {
+                html += `
+                    <div class="search-suggestion-item" data-value="${item.value}">
+                        <div class="search-suggestion-content">
+                            <div class="search-suggestion-title">${item.title}</div>
+                            <div class="search-suggestion-subtitle">${item.subtitle}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+            // Bind click events
+            container.querySelectorAll('.search-suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    this.selectSuggestion(item.getAttribute('data-value'));
+                });
+            });
+        }
+
+        container.classList.add('show');
+    }
+
+    hideSuggestions() {
+        const container = document.getElementById('search-suggestions');
+        if (container) {
+            container.classList.remove('show');
+        }
+    }
+
+    selectSuggestion(value) {
+        const searchInput = document.querySelector('input[data-kt-invoice-table-filter="search"]');
+        if (searchInput) {
+            searchInput.value = value;
+            this.currentSearchTerm = value;
+        }
+
+        this.hideSuggestions();
+        this.showSearchResults(value);
+        this.currentPage = 1;
+        this.loadData();
+    }
+
+    showSearchResults(term) {
+        const existingInfo = document.querySelector('.search-results-info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'search-results-info show';
+        infoDiv.innerHTML = `
+            <div class="search-results-text">
+                Kết quả tìm kiếm cho: "<strong>${term}</strong>"
+                <span class="search-results-count" id="search-count">0</span> kết quả
+            </div>
+            <button class="search-results-clear" onclick="window.invoiceTableManager.clearSearch()">
+                Xóa tìm kiếm
+            </button>
+        `;
+
+        const tableContainer = document.getElementById('kt_invoices_table_container');
+        if (tableContainer) {
+            tableContainer.parentNode.insertBefore(infoDiv, tableContainer);
+        }
+    }
+
+    hideSearchResults() {
+        const existingInfo = document.querySelector('.search-results-info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+    }
+
+    clearSearch() {
+        const searchInput = document.querySelector('input[data-kt-invoice-table-filter="search"]');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+        }
+
+        const clearBtn = document.querySelector('.search-clear-btn');
+        if (clearBtn) {
+            clearBtn.classList.remove('show');
+        }
+
+        this.currentSearchTerm = '';
+        this.hideSearchResults();
+        this.hideSuggestions();
+
+        this.currentPage = 1;
+        this.loadData();
+    }
+
+    updateSearchResultsCount(count) {
+        const countElement = document.getElementById('search-count');
+        if (countElement) {
+            countElement.textContent = count;
+        }
+    }
+
+    // ===== UTILITY METHODS =====
+
+    formatCurrency(amount) {
+        if (!amount) return '0 ₫';
+        return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+    }
+
+    formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    }
+
+    formatTime(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Override updatePagination to use renderPagination from invoice-list.js
+    updatePagination(data) {
+        // Use renderPagination from invoice-list.js if available
+        if (window.invoiceListRenderFunctions && typeof window.invoiceListRenderFunctions.renderPagination === 'function') {
+            console.log('Using renderPagination from invoice-list.js');
+            window.invoiceListRenderFunctions.renderPagination(data);
+        } else {
+            console.log('Fallback to parent updatePagination');
+            super.updatePagination(data);
+        }
+    }
+
+    // Auto expansion functionality
+    handleAutoExpansion(invoices) {
+        // Check if URL has Code parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const codeParam = urlParams.get('Code');
+
+        if (codeParam && invoices.length === 1) {
+            console.log('Auto expanding invoice row for Code:', codeParam);
+
+            // Wait for DOM to be updated, then expand the row
+            setTimeout(() => {
+                const invoiceRow = document.querySelector('.invoice-row');
+                if (invoiceRow) {
+                    invoiceRow.click(); // Trigger row click to expand
+                    console.log('Invoice row auto-expanded');
+                }
+            }, 500);
+        }
+    }
+}
+
+// Export for use
+window.InvoiceTableManager = InvoiceTableManager;

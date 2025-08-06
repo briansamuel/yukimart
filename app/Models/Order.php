@@ -115,6 +115,14 @@ class Order extends Model
     }
 
     /**
+     * Relationship with invoices.
+     */
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
      * Get order edit URL.
      */
     protected function orderEdit(): Attribute
@@ -606,20 +614,7 @@ class Order extends Model
      */
     public static function generateOrderCode()
     {
-        $prefix = 'ORD';
-        $date = date('Ymd');
-        $lastOrder = self::where('order_code', 'like', $prefix . $date . '%')
-                         ->orderBy('order_code', 'desc')
-                         ->first();
-        
-        if ($lastOrder) {
-            $lastNumber = intval(substr($lastOrder->order_code, -4));
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
-        
-        return $prefix . $date . $newNumber;
+        return \App\Services\PrefixGeneratorService::generateOrderCode();
     }
 
     /**
@@ -811,5 +806,14 @@ class Order extends Model
                                                ->keyBy('payment_method')
                                                ->toArray(),
         ];
+    }
+
+    /**
+     * Check if should send inventory notification for this order.
+     */
+    public function shouldSendInventoryNotification()
+    {
+        // Only send inventory notifications for confirmed/processing/completed orders
+        return in_array($this->status, ['confirmed', 'processing', 'completed']);
     }
 }

@@ -72,9 +72,8 @@ class QuickInvoiceController extends Controller
             // Process quick order data
             $invoiceData = $this->quickOrderService->processQuickOrder($request->all());
 
-            // Override status for quick invoice - always set to paid
-            $invoiceData['status'] = 'paid';
-            $invoiceData['payment_status'] = 'paid';
+            // Override status for quick invoice - always set to completed
+            $invoiceData['status'] = 'completed';
 
             // Create invoice using InvoiceService
             $invoiceResult = $this->invoiceService->createInvoice($invoiceData);
@@ -95,14 +94,25 @@ class QuickInvoiceController extends Controller
 
             $invoice = $invoiceResult['data'];
 
-            return response()->json([
+            $response = [
                 'success' => true,
                 'message' => 'Hóa đơn đã được tạo thành công!',
                 'data' => [
                     'invoice' => $invoice,
-                    'redirect_url' => route('admin.invoice.show', $invoice->id)
+                    'redirect_url' => route('admin.invoice.list') . '?Code=' . $invoice->invoice_number
                 ]
-            ]);
+            ];
+
+            // Add inventory warnings if any
+            if (isset($invoiceResult['warnings']) && !empty($invoiceResult['warnings'])) {
+                $response['warnings'] = $invoiceResult['warnings'];
+
+                // Modify success message to include warning
+                $warningCount = count($invoiceResult['warnings']);
+                $response['message'] = "Hóa đơn đã được tạo thành công! Tuy nhiên có {$warningCount} sản phẩm không đủ tồn kho.";
+            }
+
+            return response()->json($response);
 
         } catch (\Exception $e) {
             Log::error('Quick invoice creation failed', [

@@ -28,6 +28,9 @@ class DatabaseSeeder extends Seeder
             AdvancedInventoryTransactionSeeder::class,
             OrderSeeder::class,
             InvoiceSeeder::class,
+            BankAccountSeeder::class,
+            PaymentSeeder::class,
+            TestDataSeeder::class,
         ]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\QuickOrderService;
 use App\Services\OrderService;
+use App\Services\ReturnOrderService;
 use App\Models\Customer;
 use App\Models\BranchShop;
 use App\Models\BankAccount;
@@ -17,19 +18,22 @@ class QuickOrderController extends Controller
 {
     protected $quickOrderService;
     protected $orderService;
+    protected $returnOrderService;
 
-    public function __construct(QuickOrderService $quickOrderService, OrderService $orderService)
+    public function __construct(QuickOrderService $quickOrderService, OrderService $orderService, ReturnOrderService $returnOrderService)
     {
         $this->quickOrderService = $quickOrderService;
         $this->orderService = $orderService;
+        $this->returnOrderService = $returnOrderService;
     }
 
     /**
      * Display the quick order page
      *
+     * @param Request $request
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
         // Get default customer and branch shop from user settings
         $userSettings = Auth::user()->settings ?? collect();
@@ -56,12 +60,16 @@ class QuickOrderController extends Controller
         // Get default branch shop
         $defaultBranchShop = $defaultBranchShopId ? BranchShop::find($defaultBranchShopId) : $branchShops->first();
 
+        // Check if this is a return order request
+        $isReturnOrder = $request->get('type') === 'return';
+
         return view('admin.quick-order.index', compact(
             'customers',
             'branchShops',
             'defaultCustomer',
             'defaultBranchShop',
-            'bankAccounts'
+            'bankAccounts',
+            'isReturnOrder'
         ));
     }
 
@@ -126,7 +134,7 @@ class QuickOrderController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Không thể tạo đơn hàng. Vui lòng thử lại sau.'
+                    'message' => $orderResult['message'] ?? 'Không thể tạo đơn hàng. Vui lòng thử lại sau.'
                 ], 500);
             }
 
@@ -148,7 +156,7 @@ class QuickOrderController extends Controller
                     'order_code' => $order->order_code,
                     'total_amount' => $order->total_amount,
                     'formatted_total' => number_format($order->total_amount, 0, ',', '.') . ' VND',
-                    'redirect_url' => route('admin.order.show', $order->id),
+                    'redirect_url' => route('admin.order.list') . '?Code=' . $order->order_code,
                 ]
             ]);
 
@@ -392,6 +400,405 @@ class QuickOrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => __('Search failed')
+            ], 500);
+        }
+    }
+
+    /**
+     * Get invoices for return selection
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getInvoicesForReturn(Request $request)
+    {
+        try {
+            $search = $request->input('search');
+            $timeFilter = $request->input('time_filter', 'this_month');
+            $customerFilter = $request->input('customer_filter');
+
+            // Get user's branch shops
+            try {
+                $userBranchShops = Auth::user()->currentBranchShops()->pluck('id');
+            } catch (\Exception $e) {
+                Log::error('Error getting user branch shops', ['error' => $e->getMessage()]);
+                // Fallback: get all branch shops for now
+                $userBranchShops = collect([1]); // Temporary fallback
+            }
+
+            // Build query
+            $query = \App\Models\Invoice::with(['customer', 'seller', 'creator', 'invoiceItems'])
+                ->whereIn('branch_shop_id', $userBranchShops)
+                ->where('status', 'paid') // Only paid invoices can be returned
+                ->orderBy('created_at', 'desc');
+
+            // Apply time filter
+            switch ($timeFilter) {
+                case 'this_month':
+                    $query->whereMonth('created_at', now()->month)
+                          ->whereYear('created_at', now()->year);
+                    break;
+                case 'last_month':
+                    $query->whereMonth('created_at', now()->subMonth()->month)
+                          ->whereYear('created_at', now()->subMonth()->year);
+                    break;
+                case 'this_year':
+                    $query->whereYear('created_at', now()->year);
+                    break;
+            }
+
+            // Apply search filter
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                      ->orWhereHas('customer', function($customerQuery) use ($search) {
+                          $customerQuery->where('name', 'like', "%{$search}%")
+                                       ->orWhere('phone', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            // Apply customer filter
+            if ($customerFilter) {
+                $query->whereHas('customer', function($customerQuery) use ($customerFilter) {
+                    $customerQuery->where('name', 'like', "%{$customerFilter}%");
+                });
+            }
+
+            $invoices = $query->limit(50)->get();
+
+            $data = $invoices->map(function($invoice) {
+                // Debug seller information
+                $sellerName = 'N/A';
+                $debugInfo = [
+                    'sold_by' => $invoice->sold_by,
+                    'created_by' => $invoice->created_by,
+                    'seller_loaded' => !!$invoice->seller,
+                    'creator_loaded' => !!$invoice->creator,
+                    'seller_name' => $invoice->seller?->name ?? 'null',
+                    'creator_name' => $invoice->creator?->name ?? 'null'
+                ];
+
+                if ($invoice->seller && $invoice->seller->name) {
+                    $sellerName = $invoice->seller->name;
+                } elseif ($invoice->creator && $invoice->creator->name) {
+                    $sellerName = $invoice->creator->name;
+                } else {
+                    // Try to load manually
+                    if ($invoice->sold_by) {
+                        $seller = \App\Models\User::find($invoice->sold_by);
+                        if ($seller) {
+                            $sellerName = $seller->name;
+                            $debugInfo['manual_seller'] = $seller->name;
+                        } else {
+                            $sellerName = 'Nhân viên đã xóa (ID: ' . $invoice->sold_by . ')';
+                            $debugInfo['manual_seller'] = 'User ID ' . $invoice->sold_by . ' not found';
+                        }
+                    } elseif ($invoice->created_by) {
+                        $creator = \App\Models\User::find($invoice->created_by);
+                        if ($creator) {
+                            $sellerName = $creator->name;
+                            $debugInfo['manual_creator'] = $creator->name;
+                        } else {
+                            $sellerName = 'Nhân viên đã xóa';
+                            $debugInfo['manual_creator'] = 'User ID ' . $invoice->created_by . ' not found';
+                        }
+                    }
+                }
+
+                return [
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'created_at' => $invoice->created_at->format('Y-m-d H:i:s'),
+                    'seller_name' => $sellerName,
+                    'customer_name' => $invoice->customer->name ?? 'Khách lẻ',
+                    'customer_phone' => $invoice->customer->phone ?? '',
+                    'total_amount' => $invoice->total_amount,
+                    'items_count' => $invoice->invoiceItems->count(),
+                    // Debug info
+                    'debug' => $debugInfo
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Get invoices for return failed', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tải danh sách hóa đơn'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get invoice items for return
+     *
+     * @param Request $request
+     * @param int $invoiceId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getInvoiceItems(Request $request, $invoiceId)
+    {
+        try {
+            Log::info('getInvoiceItems called', ['invoice_id' => $invoiceId, 'user_id' => Auth::id()]);
+
+            // Get user's branch shops (with fallback)
+            try {
+                $userBranchShops = Auth::user()->currentBranchShops()->pluck('branch_shops.id');
+                Log::info('User branch shops', ['branch_shops' => $userBranchShops->toArray()]);
+            } catch (\Exception $e) {
+                Log::error('Error getting user branch shops in getInvoiceItems', ['error' => $e->getMessage()]);
+                $userBranchShops = collect([1]); // Temporary fallback
+                Log::info('Using fallback branch shops', ['branch_shops' => $userBranchShops->toArray()]);
+            }
+
+            // First check if invoice exists
+            $invoiceExists = \App\Models\Invoice::where('id', $invoiceId)->exists();
+            Log::info('Invoice exists check', ['invoice_id' => $invoiceId, 'exists' => $invoiceExists]);
+
+            if (!$invoiceExists) {
+                Log::error('Invoice not found', ['invoice_id' => $invoiceId]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy hóa đơn'
+                ], 404);
+            }
+
+            // Check invoice with branch shop filter
+            $invoiceInBranch = \App\Models\Invoice::whereIn('branch_shop_id', $userBranchShops)
+                ->where('id', $invoiceId)
+                ->exists();
+            Log::info('Invoice in user branch check', ['invoice_id' => $invoiceId, 'in_branch' => $invoiceInBranch]);
+
+            // Check invoice status
+            $invoiceStatus = \App\Models\Invoice::where('id', $invoiceId)->value('status');
+            Log::info('Invoice status check', ['invoice_id' => $invoiceId, 'status' => $invoiceStatus]);
+
+            // Try to find invoice with different statuses
+            $invoice = \App\Models\Invoice::with(['customer', 'invoiceItems.product', 'creator', 'seller'])
+                ->whereIn('branch_shop_id', $userBranchShops)
+                ->where('id', $invoiceId)
+                ->first();
+
+            if (!$invoice) {
+                Log::error('Invoice not found in user branches', ['invoice_id' => $invoiceId, 'user_branches' => $userBranchShops->toArray()]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy hóa đơn trong chi nhánh của bạn'
+                ], 404);
+            }
+
+            // Check if invoice status allows returns
+            $allowedStatuses = ['paid', 'completed', 'delivered'];
+            if (!in_array($invoice->status, $allowedStatuses)) {
+                Log::error('Invoice status not allowed for return', ['invoice_id' => $invoiceId, 'status' => $invoice->status, 'allowed' => $allowedStatuses]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hóa đơn này không thể trả hàng (trạng thái: ' . $invoice->status . ')'
+                ], 400);
+            }
+
+            Log::info('Invoice loaded successfully', [
+                'invoice_id' => $invoiceId,
+                'items_count' => $invoice->invoiceItems->count(),
+                'customer_id' => $invoice->customer_id,
+                'branch_shop_id' => $invoice->branch_shop_id
+            ]);
+
+            $data = $invoice->invoiceItems->map(function($item) use ($invoice) {
+                // Calculate total returned quantity for this item
+                $totalReturned = \App\Models\ReturnOrderItem::whereHas('returnOrder', function($query) use ($invoice) {
+                        $query->where('invoice_id', $invoice->id)
+                              ->where('status', '!=', 'rejected');
+                    })
+                    ->where('invoice_item_id', $item->id)
+                    ->sum('quantity_returned');
+
+                $returnableQuantity = max(0, $item->quantity - $totalReturned);
+
+                return [
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name,
+                    'product_sku' => $item->product_sku,
+                    'price' => $item->unit_price, // Fix: use unit_price instead of price
+                    'unit_price' => $item->unit_price, // Also include unit_price for compatibility
+                    'quantity' => $item->quantity,
+                    'stock_quantity' => $item->product->stock_quantity ?? 0,
+                    'product_image' => $item->product->image ?? null,
+                    'max_quantity' => $item->quantity, // Original quantity
+                    'returned_quantity' => $totalReturned, // Already returned quantity
+                    'returnable_quantity' => $returnableQuantity, // Available for return
+                    'invoice_item_id' => $item->id // Add invoice_item_id for reference
+                ];
+            });
+
+            // Determine seller name with priority: seller -> creator -> fallback
+            $sellerName = 'N/A';
+            if ($invoice->seller && $invoice->seller->full_name) {
+                $sellerName = $invoice->seller->full_name;
+            } elseif ($invoice->creator && $invoice->creator->full_name) {
+                $sellerName = $invoice->creator->full_name;
+            }
+
+            // Determine creator name
+            $creatorName = 'N/A';
+            if ($invoice->creator && $invoice->creator->full_name) {
+                $creatorName = $invoice->creator->full_name;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'customer_name' => $invoice->customer->name ?? 'Khách lẻ',
+                'customer_phone' => $invoice->customer->phone ?? '',
+                'seller_name' => $sellerName,
+                'creator_name' => $creatorName
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Get invoice items failed', [
+                'user_id' => Auth::id(),
+                'invoice_id' => $invoiceId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tải sản phẩm từ hóa đơn: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Store return order from quick order interface
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeReturnOrder(Request $request)
+    {
+        try {
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'invoice_id' => 'required|integer|exists:invoices,id',
+                'invoice_number' => 'required|string',
+                'customer_name' => 'nullable|string',
+                'customer_phone' => 'nullable|string',
+                'return_items' => 'required|array|min:1',
+                'return_items.*.product_id' => 'required|integer|exists:products,id',
+                'return_items.*.product_name' => 'required|string',
+                'return_items.*.product_sku' => 'required|string',
+                'return_items.*.quantity' => 'required|integer|min:1',
+                'return_items.*.price' => 'required|numeric|min:0',
+                'exchange_items' => 'nullable|array',
+                'exchange_items.*.product_id' => 'required|integer|exists:products,id',
+                'exchange_items.*.quantity' => 'required|integer|min:1',
+                'exchange_items.*.price' => 'required|numeric|min:0',
+                'payment_method' => 'nullable|string|in:cash,transfer,card,ewallet',
+                'notes' => 'nullable|string|max:1000',
+                'return_subtotal' => 'nullable|numeric|min:0',
+                'exchange_subtotal' => 'nullable|numeric|min:0',
+                'refund_amount' => 'nullable|numeric',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Get user's branch shop
+            $userBranchShops = Auth::user()->currentBranchShops()->pluck('branch_shops.id')->toArray();
+            if (empty($userBranchShops)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn không có quyền truy cập chi nhánh nào.'
+                ], 403);
+            }
+
+            // Calculate net_payable for exchange orders
+            $exchangeSubtotal = $request->exchange_subtotal ?? 0;
+            $refundAmount = $request->refund_amount ?? 0;
+            $netPayable = max(0, $exchangeSubtotal - $refundAmount);
+
+            // Prepare data for ReturnOrderService
+            $returnOrderData = [
+                'invoice_code' => $request->invoice_number, // ReturnOrderService expects 'invoice_code'
+                'branch_shop_id' => $userBranchShops[0], // Use first available branch shop
+                'return_items' => $request->return_items,
+                'exchange_items' => $request->exchange_items ?? [],
+                'payment_method' => $request->payment_method ?? 'cash',
+                'notes' => $request->notes,
+                'return_subtotal' => $request->return_subtotal ?? 0,
+                'exchange_subtotal' => $exchangeSubtotal,
+                'refund_amount' => $refundAmount,
+                'net_payable' => $netPayable, // Add net_payable for exchange order processing
+            ];
+
+            // Create return order using ReturnOrderService
+            $result = $this->returnOrderService->createQuickOrderReturn($returnOrderData);
+
+            if (!$result['success']) {
+                Log::error('Return order creation failed in service', [
+                    'user_id' => Auth::id(),
+                    'error_message' => $result['message'] ?? 'Unknown error',
+                    'request_data' => $request->all(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Không thể tạo đơn trả hàng. Vui lòng thử lại sau.'
+                ], 500);
+            }
+
+            $returnOrderData = $result['data'];
+            $returnOrder = $returnOrderData['return_order'];
+
+            Log::info('Return order created successfully', [
+                'return_order_id' => $returnOrder->id,
+                'return_number' => $returnOrder->return_number,
+                'invoice_id' => $request->invoice_id,
+                'user_id' => Auth::id(),
+                'items_count' => count($request->input('return_items', [])),
+                'refund_amount' => $returnOrder->total_amount,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đơn trả hàng đã được tạo thành công',
+                'data' => [
+                    'return_order_id' => $returnOrder->id,
+                    'return_number' => $returnOrder->return_number,
+                    'total_amount' => $returnOrder->total_amount,
+                    'formatted_total' => number_format($returnOrder->total_amount, 0, ',', '.') . ' VND',
+                    'redirect_url' => route('admin.returns.index') . '?return_number=' . $returnOrder->return_number,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Return order creation failed', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+            ]);
+
+            // Return user-friendly message without exposing technical details
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tạo đơn trả hàng. Vui lòng thử lại sau.',
+                'data' => null
             ], 500);
         }
     }

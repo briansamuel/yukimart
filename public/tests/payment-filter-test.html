@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Filter Test Cases</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-case { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-passed { background-color: #d4edda; border-color: #c3e6cb; }
+        .test-failed { background-color: #f8d7da; border-color: #f5c6cb; }
+        .test-pending { background-color: #fff3cd; border-color: #ffeaa7; }
+        .test-running { background-color: #cce5ff; border-color: #99ccff; }
+        .log-area { height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; font-family: monospace; font-size: 12px; }
+        .summary-table { margin-top: 20px; }
+        .filter-controls { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1 class="mb-4">Payment Filter Test Cases</h1>
+        
+        <!-- Test Summary -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary" id="total-tests">0</h5>
+                        <p class="card-text">Total Tests</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-success" id="passed-tests">0</h5>
+                        <p class="card-text">Passed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-danger" id="failed-tests">0</h5>
+                        <p class="card-text">Failed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning" id="pending-tests">0</h5>
+                        <p class="card-text">Pending</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Controls -->
+        <div class="filter-controls">
+            <div class="row">
+                <div class="col-md-6">
+                    <button id="run-all-tests" class="btn btn-primary">Run All Tests</button>
+                    <button id="run-selected-tests" class="btn btn-secondary">Run Selected</button>
+                    <button id="clear-results" class="btn btn-outline-secondary">Clear Results</button>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="auto-scroll" checked>
+                        <label class="form-check-label" for="auto-scroll">Auto Scroll</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="stop-on-fail">
+                        <label class="form-check-label" for="stop-on-fail">Stop on Fail</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Cases -->
+        <div id="test-cases">
+            <!-- Test cases will be generated here -->
+        </div>
+
+        <!-- Global Log -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Global Test Log</h5>
+                <button class="btn btn-sm btn-outline-secondary float-end" id="clear-log">Clear Log</button>
+            </div>
+            <div class="card-body">
+                <div id="global-log" class="log-area"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test configuration
+        const TEST_ENDPOINT = '/test-payment-pagination';
+        const SUMMARY_ENDPOINT = '/test-payment-summary-direct';
+        
+        // Test cases definition
+        const testCases = [
+            // Basic Pagination Tests
+            {
+                id: 'pagination-page-1',
+                category: 'Pagination',
+                name: 'Test Page 1',
+                description: 'Test pagination page 1 with default per_page',
+                params: { page: 1, per_page: 5 },
+                expectedChecks: [
+                    { field: 'pagination.current_page', value: 1 },
+                    { field: 'pagination.per_page', value: 5 },
+                    { field: 'data.length', value: 5 }
+                ]
+            },
+            {
+                id: 'pagination-page-2',
+                category: 'Pagination',
+                name: 'Test Page 2',
+                description: 'Test pagination page 2',
+                params: { page: 2, per_page: 5 },
+                expectedChecks: [
+                    { field: 'pagination.current_page', value: 2 },
+                    { field: 'pagination.per_page', value: 5 },
+                    { field: 'data.length', value: 5 }
+                ]
+            },
+            {
+                id: 'pagination-per-page-10',
+                category: 'Pagination',
+                name: 'Test Per Page 10',
+                description: 'Test pagination with 10 items per page',
+                params: { page: 1, per_page: 10 },
+                expectedChecks: [
+                    { field: 'pagination.current_page', value: 1 },
+                    { field: 'pagination.per_page', value: 10 },
+                    { field: 'data.length', value: 10 }
+                ]
+            },
+            
+            // Time Filter Tests
+            {
+                id: 'filter-time-today',
+                category: 'Time Filter',
+                name: 'Filter Today',
+                description: 'Test time filter for today',
+                params: { time_filter: 'today', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' }
+                ]
+            },
+            {
+                id: 'filter-time-this-month',
+                category: 'Time Filter',
+                name: 'Filter This Month',
+                description: 'Test time filter for this month',
+                params: { time_filter: 'this_month', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' }
+                ]
+            },
+            {
+                id: 'filter-time-last-month',
+                category: 'Time Filter',
+                name: 'Filter Last Month',
+                description: 'Test time filter for last month',
+                params: { time_filter: 'last_month', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' }
+                ]
+            },
+            
+            // Payment Type Filter Tests
+            {
+                id: 'filter-payment-type-receipt',
+                category: 'Payment Type Filter',
+                name: 'Filter Receipt',
+                description: 'Test filter by payment type receipt',
+                params: { payment_type: 'receipt', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' },
+                    { field: 'data[0].payment_type', value: 'receipt' }
+                ]
+            },
+            {
+                id: 'filter-payment-type-payment',
+                category: 'Payment Type Filter',
+                name: 'Filter Payment',
+                description: 'Test filter by payment type payment',
+                params: { payment_type: 'payment', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' }
+                ]
+            },
+            
+            // Payment Method Filter Tests
+            {
+                id: 'filter-payment-method-cash',
+                category: 'Payment Method Filter',
+                name: 'Filter Cash',
+                description: 'Test filter by payment method cash',
+                params: { payment_method: 'cash', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' },
+                    { field: 'data[0].payment_method', value: 'cash' }
+                ]
+            },
+            {
+                id: 'filter-payment-method-card',
+                category: 'Payment Method Filter',
+                name: 'Filter Card',
+                description: 'Test filter by payment method card',
+                params: { payment_method: 'card', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' }
+                ]
+            },
+            
+            // Status Filter Tests
+            {
+                id: 'filter-status-completed',
+                category: 'Status Filter',
+                name: 'Filter Completed',
+                description: 'Test filter by status completed',
+                params: { status: 'completed', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' },
+                    { field: 'data[0].status', value: 'completed' }
+                ]
+            },
+            
+            // Combined Filter Tests
+            {
+                id: 'filter-combined-cash-receipt',
+                category: 'Combined Filters',
+                name: 'Cash + Receipt',
+                description: 'Test combined filter: cash payment method + receipt type',
+                params: { payment_method: 'cash', payment_type: 'receipt', per_page: 5 },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'data', type: 'array' },
+                    { field: 'data[0].payment_method', value: 'cash' },
+                    { field: 'data[0].payment_type', value: 'receipt' }
+                ]
+            },
+            
+            // Summary Tests
+            {
+                id: 'summary-this-month',
+                category: 'Summary',
+                name: 'Summary This Month',
+                description: 'Test summary calculation for this month',
+                endpoint: SUMMARY_ENDPOINT,
+                params: { time_filter: 'this_month' },
+                expectedChecks: [
+                    { field: 'success', value: true },
+                    { field: 'controller_response.success', value: true },
+                    { field: 'controller_response.data.opening_balance', type: 'number' },
+                    { field: 'controller_response.data.total_income', type: 'string' },
+                    { field: 'controller_response.data.total_expense', type: 'string' },
+                    { field: 'controller_response.data.closing_balance', type: 'number' }
+                ]
+            }
+        ];
+
+        // Test runner
+        let testResults = {};
+        let isRunning = false;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            const logArea = document.getElementById('global-log');
+            const colorClass = type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-dark';
+            logArea.innerHTML += `<div class="${colorClass}">${logEntry}</div>`;
+            
+            if (document.getElementById('auto-scroll').checked) {
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+        }
+
+        function getNestedValue(obj, path) {
+            return path.split('.').reduce((current, key) => {
+                if (key.includes('[') && key.includes(']')) {
+                    const arrayKey = key.substring(0, key.indexOf('['));
+                    const index = parseInt(key.substring(key.indexOf('[') + 1, key.indexOf(']')));
+                    return current && current[arrayKey] && current[arrayKey][index];
+                }
+                return current && current[key];
+            }, obj);
+        }
+
+        function validateResponse(response, expectedChecks) {
+            const results = [];
+            
+            for (const check of expectedChecks) {
+                const actualValue = getNestedValue(response, check.field);
+                let passed = false;
+                let message = '';
+                
+                if (check.type) {
+                    // Type check
+                    const actualType = Array.isArray(actualValue) ? 'array' : typeof actualValue;
+                    passed = actualType === check.type;
+                    message = `${check.field} type: expected ${check.type}, got ${actualType}`;
+                } else {
+                    // Value check
+                    passed = actualValue === check.value;
+                    message = `${check.field}: expected ${check.value}, got ${actualValue}`;
+                }
+                
+                results.push({ passed, message, field: check.field });
+            }
+            
+            return results;
+        }
+
+        async function runTest(testCase) {
+            const testElement = document.getElementById(`test-${testCase.id}`);
+            const logArea = testElement.querySelector('.test-log');
+            const statusElement = testElement.querySelector('.test-status');
+            
+            // Update UI
+            testElement.className = 'test-case test-running';
+            statusElement.textContent = 'Running...';
+            logArea.innerHTML = '';
+            
+            log(`Starting test: ${testCase.name}`, 'info');
+            
+            try {
+                const endpoint = testCase.endpoint || TEST_ENDPOINT;
+                const url = new URL(endpoint, window.location.origin);
+                Object.keys(testCase.params).forEach(key => {
+                    url.searchParams.append(key, testCase.params[key]);
+                });
+                
+                logArea.innerHTML += `<div>Request: ${url.toString()}</div>`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                logArea.innerHTML += `<div>Response received (${response.status})</div>`;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // Validate response
+                const validationResults = validateResponse(data, testCase.expectedChecks);
+                const allPassed = validationResults.every(r => r.passed);
+                
+                // Update results
+                testResults[testCase.id] = {
+                    passed: allPassed,
+                    response: data,
+                    validationResults: validationResults,
+                    timestamp: new Date()
+                };
+                
+                // Update UI
+                testElement.className = `test-case ${allPassed ? 'test-passed' : 'test-failed'}`;
+                statusElement.textContent = allPassed ? 'PASSED' : 'FAILED';
+                
+                // Show validation results
+                validationResults.forEach(result => {
+                    const resultClass = result.passed ? 'text-success' : 'text-danger';
+                    const icon = result.passed ? '✓' : '✗';
+                    logArea.innerHTML += `<div class="${resultClass}">${icon} ${result.message}</div>`;
+                });
+                
+                log(`Test ${testCase.name}: ${allPassed ? 'PASSED' : 'FAILED'}`, allPassed ? 'success' : 'error');
+                
+                return allPassed;
+                
+            } catch (error) {
+                testResults[testCase.id] = {
+                    passed: false,
+                    error: error.message,
+                    timestamp: new Date()
+                };
+                
+                testElement.className = 'test-case test-failed';
+                statusElement.textContent = 'ERROR';
+                logArea.innerHTML += `<div class="text-danger">Error: ${error.message}</div>`;
+                
+                log(`Test ${testCase.name}: ERROR - ${error.message}`, 'error');
+                
+                return false;
+            }
+        }
+
+        function updateSummary() {
+            const total = testCases.length;
+            const passed = Object.values(testResults).filter(r => r.passed).length;
+            const failed = Object.values(testResults).filter(r => !r.passed).length;
+            const pending = total - passed - failed;
+            
+            document.getElementById('total-tests').textContent = total;
+            document.getElementById('passed-tests').textContent = passed;
+            document.getElementById('failed-tests').textContent = failed;
+            document.getElementById('pending-tests').textContent = pending;
+        }
+
+        function renderTestCases() {
+            const container = document.getElementById('test-cases');
+            const categories = [...new Set(testCases.map(tc => tc.category))];
+            
+            categories.forEach(category => {
+                const categoryTests = testCases.filter(tc => tc.category === category);
+                
+                const categoryHtml = `
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5>${category} Tests (${categoryTests.length})</h5>
+                        </div>
+                        <div class="card-body">
+                            ${categoryTests.map(testCase => `
+                                <div id="test-${testCase.id}" class="test-case test-pending">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="form-check">
+                                                <input class="form-check-input test-checkbox" type="checkbox" value="${testCase.id}" checked>
+                                                <label class="form-check-label">
+                                                    <strong>${testCase.name}</strong>
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">${testCase.description}</small>
+                                            <div class="mt-2">
+                                                <small><strong>Params:</strong> ${JSON.stringify(testCase.params)}</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <span class="badge bg-secondary test-status">Pending</span>
+                                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="runSingleTest('${testCase.id}')">Run</button>
+                                        </div>
+                                    </div>
+                                    <div class="test-log mt-3" style="display: none;"></div>
+                                    <button class="btn btn-sm btn-link toggle-log" onclick="toggleLog('${testCase.id}')">Show Details</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML += categoryHtml;
+            });
+        }
+
+        function toggleLog(testId) {
+            const testElement = document.getElementById(`test-${testId}`);
+            const logArea = testElement.querySelector('.test-log');
+            const toggleBtn = testElement.querySelector('.toggle-log');
+            
+            if (logArea.style.display === 'none') {
+                logArea.style.display = 'block';
+                toggleBtn.textContent = 'Hide Details';
+            } else {
+                logArea.style.display = 'none';
+                toggleBtn.textContent = 'Show Details';
+            }
+        }
+
+        async function runSingleTest(testId) {
+            const testCase = testCases.find(tc => tc.id === testId);
+            if (testCase) {
+                await runTest(testCase);
+                updateSummary();
+            }
+        }
+
+        async function runAllTests() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('run-all-tests').disabled = true;
+            
+            log('Starting all tests...', 'info');
+            
+            for (const testCase of testCases) {
+                const passed = await runTest(testCase);
+                updateSummary();
+                
+                if (!passed && document.getElementById('stop-on-fail').checked) {
+                    log('Stopping tests due to failure', 'error');
+                    break;
+                }
+                
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            log('All tests completed', 'info');
+            
+            isRunning = false;
+            document.getElementById('run-all-tests').disabled = false;
+        }
+
+        async function runSelectedTests() {
+            if (isRunning) return;
+            
+            const selectedIds = Array.from(document.querySelectorAll('.test-checkbox:checked')).map(cb => cb.value);
+            
+            if (selectedIds.length === 0) {
+                alert('Please select at least one test to run');
+                return;
+            }
+            
+            isRunning = true;
+            document.getElementById('run-selected-tests').disabled = true;
+            
+            log(`Starting ${selectedIds.length} selected tests...`, 'info');
+            
+            for (const testId of selectedIds) {
+                const testCase = testCases.find(tc => tc.id === testId);
+                if (testCase) {
+                    const passed = await runTest(testCase);
+                    updateSummary();
+                    
+                    if (!passed && document.getElementById('stop-on-fail').checked) {
+                        log('Stopping tests due to failure', 'error');
+                        break;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+            
+            log('Selected tests completed', 'info');
+            
+            isRunning = false;
+            document.getElementById('run-selected-tests').disabled = false;
+        }
+
+        function clearResults() {
+            testResults = {};
+            document.querySelectorAll('.test-case').forEach(el => {
+                el.className = 'test-case test-pending';
+                el.querySelector('.test-status').textContent = 'Pending';
+                el.querySelector('.test-log').innerHTML = '';
+                el.querySelector('.test-log').style.display = 'none';
+                el.querySelector('.toggle-log').textContent = 'Show Details';
+            });
+            updateSummary();
+            log('Results cleared', 'info');
+        }
+
+        function clearLog() {
+            document.getElementById('global-log').innerHTML = '';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTestCases();
+            updateSummary();
+            
+            // Event listeners
+            document.getElementById('run-all-tests').addEventListener('click', runAllTests);
+            document.getElementById('run-selected-tests').addEventListener('click', runSelectedTests);
+            document.getElementById('clear-results').addEventListener('click', clearResults);
+            document.getElementById('clear-log').addEventListener('click', clearLog);
+            
+            log('Payment Filter Test Suite initialized', 'info');
+        });
+
+        // Global functions
+        window.runSingleTest = runSingleTest;
+        window.toggleLog = toggleLog;
+    </script>
+</body>
+</html>

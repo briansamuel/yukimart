@@ -1,0 +1,289 @@
+/**
+ * Optimized Components CSS
+ * Contains optimized styles for better performance and consistency
+ */
+
+/* Loading States */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #009ef7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Button Loading States */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+/* Modal Optimizations */
+.modal-optimized {
+    backdrop-filter: blur(2px);
+}
+
+.modal-optimized .modal-dialog {
+    transform: scale(0.9);
+    transition: transform 0.2s ease-out;
+}
+
+.modal-optimized.show .modal-dialog {
+    transform: scale(1);
+}
+
+/* Table Optimizations */
+.table-optimized {
+    table-layout: fixed;
+}
+
+.table-optimized th,
+.table-optimized td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-optimized .col-actions {
+    width: 120px;
+}
+
+.table-optimized .col-id {
+    width: 80px;
+}
+
+.table-optimized .col-date {
+    width: 140px;
+}
+
+.table-optimized .col-amount {
+    width: 120px;
+}
+
+/* Form Optimizations */
+.form-optimized .form-control {
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-optimized .form-control:focus {
+    border-color: #009ef7;
+    box-shadow: 0 0 0 0.2rem rgba(0, 158, 247, 0.25);
+}
+
+/* Card Optimizations */
+.card-optimized {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card-optimized:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Pagination Optimizations */
+.pagination-optimized .page-link {
+    transition: all 0.15s ease-in-out;
+}
+
+.pagination-optimized .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Toast Notifications */
+.toast-optimized {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.toast-optimized.toast-success {
+    border-left: 4px solid #50cd89;
+}
+
+.toast-optimized.toast-error {
+    border-left: 4px solid #f1416c;
+}
+
+.toast-optimized.toast-warning {
+    border-left: 4px solid #ffc700;
+}
+
+.toast-optimized.toast-info {
+    border-left: 4px solid #009ef7;
+}
+
+/* Responsive Optimizations */
+@media (max-width: 768px) {
+    .table-optimized {
+        font-size: 0.875rem;
+    }
+    
+    .modal-optimized .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .btn-group-optimized .btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Performance Optimizations */
+.will-change-transform {
+    will-change: transform;
+}
+
+.will-change-opacity {
+    will-change: opacity;
+}
+
+.gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Accessibility Optimizations */
+.sr-only-focusable:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+}
+
+/* Focus Optimizations */
+.focus-optimized:focus {
+    outline: 2px solid #009ef7;
+    outline-offset: 2px;
+}
+
+/* Animation Optimizations */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Print Optimizations */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-break-before {
+        page-break-before: always;
+    }
+    
+    .print-break-after {
+        page-break-after: always;
+    }
+    
+    .print-break-inside-avoid {
+        page-break-inside: avoid;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .auto-dark {
+        background-color: #1e1e2e;
+        color: #cdd6f4;
+    }
+    
+    .auto-dark .card-optimized {
+        background-color: #313244;
+        border-color: #45475a;
+    }
+    
+    .auto-dark .form-control {
+        background-color: #313244;
+        border-color: #45475a;
+        color: #cdd6f4;
+    }
+}
+
+/* Utility Classes */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.text-truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.aspect-ratio-16-9 {
+    aspect-ratio: 16 / 9;
+}
+
+.aspect-ratio-4-3 {
+    aspect-ratio: 4 / 3;
+}
+
+.aspect-ratio-1-1 {
+    aspect-ratio: 1 / 1;
+}
+
+/* Container Queries Support */
+@container (min-width: 768px) {
+    .container-md-up {
+        display: flex;
+        flex-direction: row;
+    }
+}
+
+@container (max-width: 767px) {
+    .container-sm-down {
+        display: flex;
+        flex-direction: column;
+    }
+}

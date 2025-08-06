@@ -33,6 +33,9 @@ class QuickOrderService
         // Map payment methods
         $paymentMethod = $this->mapPaymentMethod($data['payment_method'] ?? 'cash');
 
+        // Map channel
+        $channel = $this->mapChannel($data['channel'] ?? 'offline');
+
         // Handle empty customer (walk-in customer)
         $customerId = empty($data['customer_id']) || $data['customer_id'] == 0 ? null : $data['customer_id'];
 
@@ -46,7 +49,7 @@ class QuickOrderService
             'customer_id' => $customerId,
             'branch_shop_id' => $data['branch_shop_id'],
             'sold_by' => $data['sold_by'] ?? Auth::id(),
-            'channel' => $data['channel'] ?? 'direct',
+            'channel' => $channel,
             'payment_method' => $paymentMethod,
             'payment_status' => $paymentStatus,
             'payment_date' => $paymentDate,
@@ -86,6 +89,28 @@ class QuickOrderService
         ];
 
         return $mapping[$method] ?? 'cash';
+    }
+
+    /**
+     * Map channel from frontend to database values
+     *
+     * @param string $channel
+     * @return string
+     */
+    protected function mapChannel(string $channel): string
+    {
+        $mapping = [
+            'offline' => 'direct',
+            'online' => 'online',
+            'pos' => 'pos',
+            'direct' => 'direct',
+            'other' => 'other',
+            'shopee' => 'shopee',
+            'tiktok' => 'tiktok',
+            'facebook' => 'facebook',
+        ];
+
+        return $mapping[$channel] ?? 'direct';
     }
 
     /**
@@ -422,7 +447,7 @@ class QuickOrderService
             'cost_price' => $product->cost_price,
             'stock_quantity' => $stockQuantity,
             'category' => $product->category ? $product->category->name : null,
-            'image' => $product->product_thumbnail ? $product->product_thumbnail : null,
+            'image' => $product->product_thumbnail ? asset($product->product_thumbnail) : null,
             'description' => $product->description,
             'status' => $product->status,
         ];
@@ -472,7 +497,7 @@ class QuickOrderService
                 'cost_price' => $product->cost_price,
                 'stock_quantity' => $stockQuantity,
                 'category' => $product->category ? $product->category->name : null,
-                'image' => $product->product_thumbnail ? $product->product_thumbnail : null,
+                'image' => $product->product_thumbnail ? asset($product->product_thumbnail) : null,
                 'description' => $product->product_description ?? null,
                 'status' => $product->product_status,
             ];

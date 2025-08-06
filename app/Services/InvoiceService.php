@@ -8,21 +8,29 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Services\InventoryService;
+use App\Services\LoyaltyPointsService;
 use App\Services\NotificationService;
+use App\Services\PaymentService;
+use App\Services\BaseQuickOrderService;
+use App\Services\PrefixGeneratorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Exception;
 
-class InvoiceService
+class InvoiceService extends BaseQuickOrderService
 {
     protected $inventoryService;
+    protected $loyaltyPointsService;
     protected $notificationService;
+    protected $paymentService;
 
-    public function __construct(InventoryService $inventoryService, NotificationService $notificationService)
+    public function __construct(InventoryService $inventoryService, LoyaltyPointsService $loyaltyPointsService, NotificationService $notificationService, PaymentService $paymentService)
     {
         $this->inventoryService = $inventoryService;
+        $this->loyaltyPointsService = $loyaltyPointsService;
         $this->notificationService = $notificationService;
+        $this->paymentService = $paymentService;
     }
     /**
      * Create a new invoice.
@@ -35,29 +43,29 @@ class InvoiceService
             // Handle customer_id - null for walk-in customers
             $customerId = empty($data['customer_id']) || $data['customer_id'] == 0 ? null : $data['customer_id'];
 
-            // Create invoice
+            // Map channel to sales_channel for invoices
+            $salesChannel = $this->mapChannelToSalesChannel($data['channel'] ?? 'offline');
+
+            // Create invoice (without payment fields - they go to payments table)
             $invoice = Invoice::create([
                 'customer_id' => $customerId,
                 'order_id' => $data['order_id'] ?? null,
                 'branch_shop_id' => $data['branch_shop_id'] ?? null,
                 'invoice_type' => $data['invoice_type'] ?? 'sale',
+                'sales_channel' => $salesChannel,
                 'invoice_date' => $data['invoice_date'] ?? now(),
                 'due_date' => $data['due_date'] ?? now()->addDays(30),
                 'tax_rate' => $data['tax_rate'] ?? 0,
                 'discount_rate' => $data['discount_rate'] ?? 0,
                 'discount_amount' => $data['discount_amount'] ?? 0,
-                'paid_amount' => $data['amount_paid'] ?? 0,
-                'payment_method' => $data['payment_method'] ?? null,
-                'payment_status' => $data['payment_status'] ?? 'unpaid',
                 'status' => $data['status'] ?? 'processing',
-                'paid_at' => ($data['payment_status'] ?? 'unpaid') === 'paid' ? now() : null,
                 'notes' => $data['notes'] ?? null,
                 'terms_conditions' => $data['terms_conditions'] ?? null,
                 'reference_number' => $data['reference_number'] ?? null,
                 'created_by' => Auth::id(),
             ]);
 
-            // Create invoice items
+            // Create invoice items manually to avoid BaseService issues
             if (isset($data['items']) && is_array($data['items'])) {
                 foreach ($data['items'] as $index => $itemData) {
                     $this->createInvoiceItem($invoice, $itemData, $index);
@@ -67,27 +75,83 @@ class InvoiceService
             // Calculate totals
             $invoice->calculateTotals();
 
-            // Update payment status based on amounts
-            $invoice->updatePaymentStatus();
+            // Create payment record if amount_paid is provided
+            if (isset($data['amount_paid']) && $data['amount_paid'] > 0) {
+                try {
+                    $paymentResult = $this->paymentService->createInvoicePayment($invoice, [
+                        'amount' => $data['amount_paid'],
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'notes' => 'Thanh toán tại thời điểm tạo hóa đơn',
+                        'bank_name' => $data['bank_name'] ?? null,
+                        'account_number' => $data['account_number'] ?? null,
+                        'transaction_reference' => $data['transaction_reference'] ?? null,
+                    ]);
+
+                    if (!$paymentResult['success']) {
+                        Log::warning('Payment creation failed but continuing', ['error' => $paymentResult['message']]);
+                    }
+                } catch (Exception $e) {
+                    Log::warning('Payment service error but continuing', ['error' => $e->getMessage()]);
+                }
+            }
 
             // Update inventory
-            $inventoryResult = $this->inventoryService->updateInventoryForInvoice($invoice);
-            if (!$inventoryResult['success']) {
-                throw new Exception($inventoryResult['message']);
+            try {
+                $inventoryResult = $this->inventoryService->updateInventoryForInvoice($invoice);
+                if (!$inventoryResult['success']) {
+                    Log::warning('Inventory update failed but continuing', ['error' => $inventoryResult['message']]);
+                }
+            } catch (Exception $e) {
+                Log::warning('Inventory service error but continuing', ['error' => $e->getMessage()]);
             }
 
             // Send notification
-            $this->sendSaleNotification($invoice);
+            try {
+                $this->sendSaleNotification($invoice);
+            } catch (Exception $e) {
+                Log::warning('Notification failed but continuing', ['error' => $e->getMessage()]);
+            }
+
+            // Award loyalty points if applicable
+            $loyaltyResult = null;
+            try {
+                $loyaltyResult = $this->loyaltyPointsService->awardPointsForInvoice($invoice);
+                if ($loyaltyResult['success'] && $loyaltyResult['points_awarded'] > 0) {
+                    Log::info('Loyalty points awarded', [
+                        'invoice_id' => $invoice->id,
+                        'points_awarded' => $loyaltyResult['points_awarded'],
+                        'customer_id' => $invoice->customer_id
+                    ]);
+                }
+            } catch (Exception $e) {
+                Log::warning('Loyalty points calculation failed but continuing', ['error' => $e->getMessage()]);
+            }
 
             DB::commit();
 
             Log::info('Invoice created successfully', ['invoice_id' => $invoice->id]);
 
-            return [
+            $result = [
                 'success' => true,
                 'message' => 'Hóa đơn đã được tạo thành công',
                 'data' => $invoice->load(['customer', 'invoiceItems.product'])
             ];
+
+            // Add inventory warnings if any
+            if (isset($inventoryResult['warnings']) && !empty($inventoryResult['warnings'])) {
+                $result['warnings'] = $inventoryResult['warnings'];
+            }
+
+            // Add loyalty points information if any
+            if ($loyaltyResult && $loyaltyResult['success'] && $loyaltyResult['points_awarded'] > 0) {
+                $result['loyalty_points'] = [
+                    'points_awarded' => $loyaltyResult['points_awarded'],
+                    'new_balance' => $loyaltyResult['new_balance'],
+                    'message' => $loyaltyResult['message']
+                ];
+            }
+
+            return $result;
 
         } catch (Exception $e) {
             DB::rollBack();
@@ -170,7 +234,10 @@ class InvoiceService
             $product = Product::find($itemData['product_id']);
         }
 
-        return InvoiceItem::create([
+        // Handle both 'price' and 'unit_price' from frontend
+        $unitPrice = $itemData['unit_price'] ?? $itemData['price'] ?? $product?->product_price ?? 0;
+
+        $invoiceItem = InvoiceItem::create([
             'invoice_id' => $invoice->id,
             'product_id' => $itemData['product_id'] ?? null,
             'product_name' => $itemData['product_name'] ?? $product?->product_name ?? 'Sản phẩm',
@@ -178,7 +245,7 @@ class InvoiceService
             'product_description' => $itemData['product_description'] ?? $product?->product_description ?? null,
             'quantity' => $itemData['quantity'] ?? 1,
             'unit' => $itemData['unit'] ?? 'cái',
-            'unit_price' => $itemData['unit_price'] ?? $product?->product_price ?? 0,
+            'unit_price' => $unitPrice,
             'discount_rate' => $itemData['discount_rate'] ?? 0,
             'discount_amount' => $itemData['discount_amount'] ?? 0,
             'tax_rate' => $itemData['tax_rate'] ?? 0,
@@ -186,6 +253,12 @@ class InvoiceService
             'notes' => $itemData['notes'] ?? null,
             'sort_order' => $sortOrder,
         ]);
+
+        // Calculate line total
+        $invoiceItem->calculateLineTotal();
+        $invoiceItem->save();
+
+        return $invoiceItem;
     }
 
     /**
@@ -237,22 +310,22 @@ class InvoiceService
     public function recordPayment(Invoice $invoice, float $amount, array $paymentData = [])
     {
         try {
-            DB::beginTransaction();
-
-            $newPaidAmount = $invoice->paid_amount + $amount;
-            
-            $invoice->update([
-                'paid_amount' => $newPaidAmount,
-                'payment_method' => $paymentData['payment_method'] ?? $invoice->payment_method,
+            // Use PaymentService to create payment record
+            $paymentResult = $this->paymentService->createInvoicePayment($invoice, [
+                'amount' => $amount,
+                'payment_method' => $paymentData['payment_method'] ?? 'cash',
+                'notes' => $paymentData['notes'] ?? null,
+                'bank_name' => $paymentData['bank_name'] ?? null,
+                'account_number' => $paymentData['account_number'] ?? null,
+                'transaction_reference' => $paymentData['transaction_reference'] ?? null,
             ]);
 
-            // Update payment status
-            $invoice->updatePaymentStatus();
-
-            DB::commit();
+            if (!$paymentResult['success']) {
+                throw new Exception($paymentResult['message']);
+            }
 
             Log::info('Payment recorded for invoice', ['invoice_id' => $invoice->id, 'amount' => $amount]);
-            
+
             return [
                 'success' => true,
                 'message' => 'Thanh toán đã được ghi nhận thành công',
@@ -260,9 +333,8 @@ class InvoiceService
             ];
 
         } catch (Exception $e) {
-            DB::rollBack();
             Log::error('Failed to record payment', ['invoice_id' => $invoice->id, 'error' => $e->getMessage()]);
-            
+
             return [
                 'success' => false,
                 'message' => 'Không thể ghi nhận thanh toán: ' . $e->getMessage()
@@ -300,27 +372,62 @@ class InvoiceService
     }
 
     /**
-     * Cancel invoice.
+     * Cancel invoice using soft delete.
      */
     public function cancelInvoice(Invoice $invoice, string $reason = '')
     {
         try {
             $invoice->update([
                 'status' => 'cancelled',
+                'cancelled_at' => now(),
+                'cancelled_by' => auth()->id(),
+                'deleted_at' => now(),
+                'updated_by' => auth()->id(),
                 'notes' => $invoice->notes . "\n\nHóa đơn bị hủy: " . $reason,
             ]);
 
-            Log::info('Invoice cancelled', ['invoice_id' => $invoice->id, 'reason' => $reason]);
-            
-            return [
+            // Reverse loyalty points if applicable
+            $loyaltyResult = null;
+            try {
+                $loyaltyResult = $this->loyaltyPointsService->reversePointsForInvoice($invoice);
+                if ($loyaltyResult['success'] && $loyaltyResult['points_reversed'] > 0) {
+                    Log::info('Loyalty points reversed for cancelled invoice', [
+                        'invoice_id' => $invoice->id,
+                        'points_reversed' => $loyaltyResult['points_reversed'],
+                        'customer_id' => $invoice->customer_id
+                    ]);
+                }
+            } catch (Exception $e) {
+                Log::warning('Loyalty points reversal failed but continuing', ['error' => $e->getMessage()]);
+            }
+
+            Log::info('Invoice cancelled', [
+                'invoice_id' => $invoice->id,
+                'reason' => $reason,
+                'cancelled_by' => auth()->id(),
+                'cancelled_at' => now()
+            ]);
+
+            $result = [
                 'success' => true,
                 'message' => 'Hóa đơn đã được hủy thành công',
                 'data' => $invoice->fresh()
             ];
 
+            // Add loyalty points information if any
+            if ($loyaltyResult && $loyaltyResult['success'] && $loyaltyResult['points_reversed'] > 0) {
+                $result['loyalty_points'] = [
+                    'points_reversed' => $loyaltyResult['points_reversed'],
+                    'new_balance' => $loyaltyResult['new_balance'],
+                    'message' => $loyaltyResult['message']
+                ];
+            }
+
+            return $result;
+
         } catch (Exception $e) {
             Log::error('Failed to cancel invoice', ['invoice_id' => $invoice->id, 'error' => $e->getMessage()]);
-            
+
             return [
                 'success' => false,
                 'message' => 'Không thể hủy hóa đơn: ' . $e->getMessage()
@@ -334,6 +441,25 @@ class InvoiceService
     public function getStatistics(array $filters = [])
     {
         return Invoice::getStatistics($filters);
+    }
+
+    /**
+     * Map channel from orders to sales_channel for invoices.
+     */
+    private function mapChannelToSalesChannel(string $channel): string
+    {
+        $mapping = [
+            'direct' => 'offline',
+            'online' => 'online',
+            'pos' => 'offline',
+            'other' => 'offline',
+            'shopee' => 'marketplace',
+            'tiktok' => 'marketplace',
+            'facebook' => 'social_media',
+            'offline' => 'offline',
+        ];
+
+        return $mapping[$channel] ?? 'offline';
     }
 
     /**

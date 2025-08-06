@@ -50,16 +50,16 @@ class OrderFactoryTest extends TestCase
     public function it_generates_order_code_with_correct_format()
     {
         $order = Order::factory()->create();
-        
-        // Order code should be in format: ORD + YYYYMMDD + 4 digits
-        $this->assertMatchesRegularExpression('/^ORD\d{8}\d{4}$/', $order->order_code);
-        
+
+        // Order code should be in format: DH + YYYYMMDD + 4 digits
+        $this->assertMatchesRegularExpression('/^DH\d{8}\d{4}$/', $order->order_code);
+
         // Extract date part and verify it's a valid date
-        $datePart = substr($order->order_code, 3, 8);
+        $datePart = substr($order->order_code, 2, 8);
         $year = substr($datePart, 0, 4);
         $month = substr($datePart, 4, 2);
         $day = substr($datePart, 6, 2);
-        
+
         $this->assertTrue(checkdate($month, $day, $year), 'Date part should be valid');
     }
 

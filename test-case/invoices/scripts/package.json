@@ -1,0 +1,48 @@
+{
+  "name": "invoice-tests-optimized",
+  "version": "2.0.0",
+  "description": "Optimized automated tests for Invoice module using Playwright",
+  "main": "auto-runner.js",
+  "scripts": {
+    "test": "node auto-runner.js",
+    "test:speed": "node auto-runner.js",
+    "test:optimized": "node optimized-test-runner.js",
+    "test:generate": "node test-generator.js",
+    "test:filter": "node filter-tests.js",
+    "test:columns": "node column-visibility-tests.js",
+    "test:expansion": "node row-expansion-tests.js",
+    "test:all": "npm run test:generate && npm run test:speed",
+    "test:ultimate": "node ultimate-test-runner.js",
+    "test:comprehensive": "node comprehensive-test-runner.js",
+    "test:all-categories": "node comprehensive-test-runner.js",
+    "test:professional": "node professional-test-runner.js",
+    "test:performance": "node performance-tests.js",
+    "test:security": "node security-tests.js",
+    "test:bulk": "node bulk-action-tests.js",
+    "test:export": "node export-tests.js",
+    "test:complete": "node complete-automation.js",
+    "test:parallel": "node auto-runner.js",
+    "test:headless": "node auto-runner.js",
+    "install-playwright": "npx playwright install chromium",
+    "setup": "npm install && npm run install-playwright",
+    "clean": "rm -rf session.json generated-tests/ *.png",
+    "report": "echo 'Latest test report:' && tail -50 ../report.md"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {},
+  "keywords": ["testing", "playwright", "automation", "invoice", "speed", "optimization"],
+  "author": "YukiMart Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "config": {
+    "playwright": {
+      "headless": true,
+      "parallel": true,
+      "timeout": 15000
+    }
+  }
+}

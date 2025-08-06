@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Payment Detail Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Payment Detail Panel */
+        .payment-detail-panel {
+            position: fixed;
+            top: 0;
+            right: -600px;
+            width: 600px;
+            height: 100vh;
+            background: #fff;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+            z-index: 1055;
+            transition: right 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .payment-detail-panel.show {
+            right: 0;
+        }
+
+        .payment-detail-panel .panel-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .payment-detail-panel .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid #e4e6ea;
+            background-color: #f8f9fa;
+            flex-shrink: 0;
+        }
+
+        .payment-detail-panel .panel-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .payment-detail-panel .panel-footer {
+            padding: 20px;
+            border-top: 1px solid #e4e6ea;
+            background-color: #f8f9fa;
+            flex-shrink: 0;
+        }
+
+        .payment-detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1054;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .payment-detail-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .payment-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .payment-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .payment-row.expanded {
+            background-color: #e3f2fd;
+            border-left: 3px solid #009ef7;
+        }
+
+        .info-item {
+            margin-bottom: 8px;
+        }
+
+        .info-item .text-muted {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .payment-info-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .related-invoice-section {
+            border: 1px solid #e4e6ea;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <h2>Test Payment Detail Panel</h2>
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Mã phiếu</th>
+                        <th>Thời gian</th>
+                        <th>Loại thu chi</th>
+                        <th>Người nộp/nhận</th>
+                        <th>Giá trị</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="payment-row" data-payment-id="1">
+                        <td><strong>TTH0040607</strong><br><small class="text-muted">HD040607</small></td>
+                        <td>10/07/2025 15:07<br><small class="text-muted">15:07</small></td>
+                        <td><span class="badge bg-success">Phiếu thu</span><br><small class="text-muted">Tiền khách trả</small></td>
+                        <td>Nguyễn Văn A<br><small class="text-muted">Thu tiền từ hóa đơn</small></td>
+                        <td class="text-end"><span class="text-success fw-bold">+155,000₫</span><br><small class="text-muted">Tiền mặt</small></td>
+                    </tr>
+                    <tr class="payment-row" data-payment-id="2">
+                        <td><strong>TTH0040608</strong><br><small class="text-muted">TH040608</small></td>
+                        <td>10/07/2025 16:30<br><small class="text-muted">16:30</small></td>
+                        <td><span class="badge bg-danger">Phiếu chi</span><br><small class="text-muted">Tiền hoàn trả</small></td>
+                        <td>Trần Thị B<br><small class="text-muted">Chi tiền hoàn trả</small></td>
+                        <td class="text-end"><span class="text-danger fw-bold">-75,000₫</span><br><small class="text-muted">Tiền mặt</small></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detail Panel -->
+    <div id="payment_detail_panel" class="payment-detail-panel">
+        <div class="panel-content">
+            <div class="panel-header">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold text-dark mb-0">Thông tin</h5>
+                    <button type="button" class="btn btn-sm btn-light" id="close_payment_detail">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="panel-body">
+                <div class="payment-info-section mb-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="me-3">
+                            <span class="badge bg-success" id="payment_type_badge">Phiếu thu</span>
+                        </div>
+                        <div>
+                            <span class="fw-bold text-dark fs-4" id="payment_number">TTH0040607</span>
+                        </div>
+                        <div class="ms-auto">
+                            <span class="badge bg-success" id="payment_status_badge">Đã thanh toán</span>
+                            <span class="badge bg-warning ms-2" id="accounting_status_badge">Không hạch toán</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="info-item">
+                                <span class="text-muted">Người tạo:</span>
+                                <span class="text-dark fw-semibold" id="payment_creator">Lục Thị Như Hoa</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <span class="text-muted">Người thu:</span>
+                                <span class="text-dark fw-semibold" id="payment_collector">Lục Thị Như Hoa</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <span class="text-muted">Thời gian:</span>
+                                <span class="text-dark fw-semibold" id="payment_datetime">10/07/2025 15:07</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <span class="text-muted">Chi nhánh:</span>
+                                <span class="text-dark fw-semibold" id="payment_branch">524 Lý Thường Kiệt</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-3">
+                            <div class="info-item">
+                                <span class="text-muted">Số tiền</span>
+                                <div class="text-dark fw-bold fs-5" id="payment_amount">155,000₫</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="info-item">
+                                <span class="text-muted">Loại thu</span>
+                                <div class="text-dark fw-semibold" id="payment_income_type">Tiền khách trả</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="info-item">
+                                <span class="text-muted">Đối tượng nộp</span>
+                                <div class="text-dark fw-semibold" id="payment_payer">Khách hàng</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="info-item">
+                                <span class="text-muted">Phương thức</span>
+                                <div class="text-dark fw-semibold" id="payment_method">Tiền mặt</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-item mb-4">
+                        <span class="text-muted">Người nộp</span>
+                        <div class="text-dark fw-semibold" id="payment_recipient">Khách lẻ</div>
+                    </div>
+                </div>
+
+                <div class="related-invoice-section mb-4" id="related_invoice_section">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold text-dark mb-0">Phiếu thu từ đơn được gắn với hóa đơn <span class="text-primary" id="related_invoice_code">HD040607</span></h6>
+                        <button type="button" class="btn btn-sm btn-light" id="toggle_invoice_detail">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+
+                    <div class="invoice-detail-table" id="invoice_detail_table">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr class="fw-bold text-muted">
+                                        <th>Mã phiếu</th>
+                                        <th>Thời gian</th>
+                                        <th class="text-end">Giá trị phiếu</th>
+                                        <th class="text-end">Đã thu trước</th>
+                                        <th class="text-end">Giá trị thu</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><a href="#" class="text-primary fw-bold" id="invoice_code_link">HD040607</a></td>
+                                        <td class="text-dark fw-semibold" id="invoice_datetime">10/07/2025 15:07</td>
+                                        <td class="text-end text-dark fw-bold" id="invoice_amount">155,000₫</td>
+                                        <td class="text-end text-muted" id="invoice_paid_before">0₫</td>
+                                        <td class="text-end text-success fw-bold" id="invoice_collected_amount">155,000₫</td>
+                                        <td><span class="badge bg-success" id="invoice_status">Đã thanh toán</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-dashed p-3 mb-4" id="notes_section">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-sticky-note text-muted me-2"></i>
+                        <span class="text-muted">Chưa có ghi chú</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-footer">
+                <div class="d-flex justify-content-end gap-3">
+                    <button type="button" class="btn btn-light" id="cancel_payment_btn">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </button>
+                    <button type="button" class="btn btn-primary" id="edit_payment_btn">
+                        <i class="fas fa-edit me-2"></i>Chỉnh sửa
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="print_payment_btn">
+                        <i class="fas fa-print me-2"></i>In
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Overlay -->
+    <div id="payment_detail_overlay" class="payment-detail-overlay"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var detailPanel = document.getElementById('payment_detail_panel');
+            var detailOverlay = document.getElementById('payment_detail_overlay');
+            var currentPaymentId = null;
+
+            // Handle row click
+            $('.payment-row').on('click', function() {
+                var paymentId = $(this).data('payment-id');
+                console.log('Row clicked, payment ID:', paymentId);
+                
+                // Mark row as expanded
+                $('.payment-row').removeClass('expanded');
+                $(this).addClass('expanded');
+                
+                // Show panel
+                showPaymentDetail(paymentId);
+            });
+
+            function showPaymentDetail(paymentId) {
+                currentPaymentId = paymentId;
+                console.log('Showing detail panel for payment:', paymentId);
+                
+                // Show panel and overlay
+                if (detailOverlay) {
+                    detailOverlay.classList.add('show');
+                }
+                
+                if (detailPanel) {
+                    detailPanel.classList.add('show');
+                }
+                
+                // Prevent body scroll
+                document.body.style.overflow = 'hidden';
+            }
+
+            function hidePaymentDetail() {
+                currentPaymentId = null;
+                
+                // Remove expanded state
+                $('.payment-row').removeClass('expanded');
+                
+                // Hide panel and overlay
+                if (detailOverlay) {
+                    detailOverlay.classList.remove('show');
+                }
+                
+                if (detailPanel) {
+                    detailPanel.classList.remove('show');
+                }
+                
+                // Restore body scroll
+                document.body.style.overflow = '';
+            }
+
+            // Close panel when clicking overlay
+            $('#payment_detail_overlay').on('click', function() {
+                hidePaymentDetail();
+            });
+
+            // Close panel when clicking close button
+            $('#close_payment_detail').on('click', function() {
+                hidePaymentDetail();
+            });
+
+            // Toggle invoice detail table
+            $('#toggle_invoice_detail').on('click', function() {
+                var table = $('#invoice_detail_table');
+                var icon = $(this).find('i');
+                
+                if (table.is(':visible')) {
+                    table.hide();
+                    icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                } else {
+                    table.show();
+                    icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                }
+            });
+
+            // Handle action buttons
+            $('#edit_payment_btn').on('click', function() {
+                alert('Edit payment: ' + currentPaymentId);
+            });
+
+            $('#print_payment_btn').on('click', function() {
+                alert('Print payment: ' + currentPaymentId);
+            });
+
+            $('#cancel_payment_btn').on('click', function() {
+                alert('Cancel payment: ' + currentPaymentId);
+            });
+
+            // Handle invoice code link click
+            $('#invoice_code_link').on('click', function(e) {
+                e.preventDefault();
+                var invoiceCode = $(this).text();
+                alert('Navigate to invoice: ' + invoiceCode);
+            });
+
+            // Close panel with Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && detailPanel.classList.contains('show')) {
+                    hidePaymentDetail();
+                }
+            });
+
+            console.log('Test payment detail panel initialized');
+        });
+    </script>
+</body>
+</html>

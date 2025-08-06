@@ -1,0 +1,31 @@
+{
+  "name": "yukimart-test-cases",
+  "version": "1.0.0",
+  "description": "Test cases for YukiMart Invoice and Payment systems",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:invoices": "playwright test invoices/",
+    "test:payments": "playwright test payments/",
+    "test:payment-creation": "playwright test invoices/payment-creation.test.js",
+    "test:detail-panel-actions": "playwright test invoices/detail-panel-actions.test.js",
+    "test:print-functionality": "playwright test payments/print-functionality.test.js",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "install-browsers": "playwright install"
+  },
+  "keywords": [
+    "testing",
+    "playwright",
+    "yukimart",
+    "invoice",
+    "payment",
+    "e2e"
+  ],
+  "author": "Augment Agent",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Payment Page</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .card { border: 1px solid #ddd; padding: 20px; margin: 10px 0; border-radius: 5px; }
+        .summary-cards { display: flex; gap: 20px; margin: 20px 0; }
+        .summary-card { flex: 1; padding: 20px; border-radius: 10px; color: white; text-align: center; }
+        .card-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .card-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .card-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .amount { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        .label { font-size: 14px; opacity: 0.9; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Payment System</h1>
+    
+    <div class="summary-cards">
+        <div class="summary-card card-1">
+            <div class="label">Quỹ đầu kỳ</div>
+            <div class="amount" id="opening_balance">Loading...</div>
+        </div>
+        <div class="summary-card card-2">
+            <div class="label">Tổng thu</div>
+            <div class="amount" id="total_income">Loading...</div>
+        </div>
+        <div class="summary-card card-3">
+            <div class="label">Tổng chi</div>
+            <div class="amount" id="total_expense">Loading...</div>
+        </div>
+        <div class="summary-card card-4">
+            <div class="label">Quỹ cuối kỳ</div>
+            <div class="amount" id="closing_balance">Loading...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Test Results</h3>
+        <div id="test-results">
+            <p>Testing payment summary endpoint...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Raw Response</h3>
+        <pre id="raw-response">Loading...</pre>
+    </div>
+
+    <script>
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount);
+        }
+
+        function updateSummaryCards(data) {
+            $('#opening_balance').text(formatCurrency(data.opening_balance));
+            $('#total_income').text(formatCurrency(data.total_income));
+            $('#total_expense').text('-' + formatCurrency(data.total_expense));
+            $('#closing_balance').text(formatCurrency(data.closing_balance));
+        }
+
+        $(document).ready(function() {
+            // Test public endpoint first
+            $.ajax({
+                url: '/test-payment-summary',
+                type: 'GET',
+                success: function(response) {
+                    $('#raw-response').text(JSON.stringify(response, null, 2));
+                    if (response.success && response.controller_response && response.controller_response.success) {
+                        updateSummaryCards(response.controller_response.data);
+                        $('#test-results').html('<p style="color: green;">✅ Payment summary endpoint working!</p>');
+                    } else {
+                        $('#test-results').html('<p style="color: red;">❌ Error: ' + (response.error || 'Unknown error') + '</p>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#test-results').html('<p style="color: red;">❌ AJAX Error: ' + error + '</p>');
+                    $('#raw-response').text('Error: ' + xhr.responseText);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

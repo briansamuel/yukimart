@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Services\SettingService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Harimayco\Menu\Facades\Menu;
 use App\Helpers\ArrayHelper;
 use App\Repositories\Setting\SettingRepositoryInterface;
@@ -100,6 +101,13 @@ class AppServiceProvider extends ServiceProvider
         View::share('setting', SettingService::class);
         // View::share( 'menus', Menu::getByName('Main Menu'));
         // View::share( 'menus_footer', Menu::getByName('Footer Menu'));
+
+        // Configure polymorphic relationships mapping
+        Relation::morphMap([
+            'invoice' => \App\Models\Invoice::class,
+            'return_order' => \App\Models\ReturnOrder::class,
+            'order' => \App\Models\Order::class,
+        ]);
 
         // Register FontAwesome helper as a global function
         // if (!function_exists('faIcon')) {

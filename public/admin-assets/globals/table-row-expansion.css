@@ -1,0 +1,412 @@
+/* ===== GLOBAL TABLE ROW EXPANSION STYLES ===== */
+
+/* DataTable Row Expansion Styles */
+.dt-control {
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+    position: relative;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.dt-control:hover {
+    background-color: rgba(0, 158, 247, 0.1);
+    transform: scale(1.05);
+}
+
+/* Default state - Plus icon */
+table.dataTable td.dt-control:before {
+    content: "\f055"; /* fa-plus-circle */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: #009ef7;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+}
+
+/* Expanded state - Minus icon */
+table.dataTable td.dt-control.expanded:before {
+    content: "\f056"; /* fa-minus-circle */
+    color: #f1416c;
+    transform: translate(-50%, -50%) rotate(180deg);
+}
+
+/* Hover effects for control icons */
+table.dataTable td.dt-control:hover:before {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+table.dataTable td.dt-control.expanded:hover:before {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
+}
+
+/* Expanded row styling */
+tr.shown {
+    background-color: rgba(0, 158, 247, 0.02);
+}
+
+tr.shown td {
+    border-bottom: none;
+}
+
+/* ===== TABLE DETAIL PANELS ===== */
+
+.kt-table-detail-row {
+    background-color: #f8f9fa;
+    overflow: visible !important;
+    width: 100% !important;
+}
+
+.kt-table-row-active {
+    border-top: 2px solid var(--kt-primary) !important;
+}
+
+.kt-table-detail-row td {
+    padding: 0 !important;
+    border: none !important;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+.kt-table-detail-row > td {
+    border-bottom: 2px solid var(--kt-primary) !important;
+}
+
+.kt-table-detail-row-td {
+    border-bottom: 2px solid var(--kt-primary) !important;
+}
+
+/* Fix padding for detail row tr elements */
+.kt-table-detail-row tr {
+    padding: 0 !important;
+}
+
+/* Override kt_table_responsive tbody td:first-child padding for detail rows */
+.kt_table_responsive .kt-table-detail-row tbody td:first-child,
+.kt-table-detail-row .kt_table_responsive tbody td:first-child {
+    padding: 0 !important;
+}
+
+/* Detail container styling */
+.kt-table-detail-container {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    position: static !important;
+    background: white !important;
+    box-sizing: border-box;
+    z-index: 1 !important;
+}
+
+/* Detail panels styling */
+.kt-table-detail-row .card {
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+}
+
+.kt-table-detail-row .card-body {
+    padding: 1.5rem;
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.kt-table-detail-row .nav-tabs {
+    border-bottom: 1px solid #e4e6ef;
+    margin-bottom: 1.5rem;
+}
+
+.kt-table-detail-row .nav-tabs .nav-link {
+    border: none;
+    color: #7e8299;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    transition: all 0.2s ease;
+}
+
+.kt-table-detail-row .nav-tabs .nav-link:hover {
+    color: var(--kt-primary);
+    background-color: rgba(0, 158, 247, 0.05);
+}
+
+.kt-table-detail-row .nav-tabs .nav-link.active {
+    color: var(--kt-primary);
+    background-color: #ffffff;
+    border-bottom: 2px solid var(--kt-primary);
+}
+
+.kt-table-detail-row .tab-content {
+    background-color: #ffffff;
+    border-radius: 0 0.75rem 0.75rem 0.75rem;
+    
+}
+
+/* Action buttons in detail panels */
+.kt-table-detail-row .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    min-width: 100px;
+}
+
+.kt-table-detail-row .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kt-table-detail-row .btn i {
+    font-size: 1rem;
+}
+
+/* Left and Right border spans */
+.kt-table-detail-border-left,
+.kt-table-detail-border-right {
+    position: absolute !important;
+    top: 0;
+    width: 2px !important;
+    height: 0;
+    background-color: var(--kt-primary) !important;
+    z-index: 99 !important;
+    pointer-events: none !important;
+    display: none;
+}
+
+.kt-table-detail-border-left {
+    left: 2.25rem !important;
+}
+
+.kt-table-detail-border-right {
+    right: 2.25rem !important;
+}
+
+/* Details expansion container */
+.details-expansion {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 0;
+    margin: 0;
+    animation: expandIn 0.3s ease-out;
+}
+
+@keyframes expandIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Card styling within expansion */
+.details-expansion .card {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.details-expansion .card-body {
+    padding: 2rem;
+    box-shadow: none;
+}
+
+/* Table styling within expansion */
+.details-expansion .table {
+    margin-bottom: 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.details-expansion .table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e4e6ef;
+    font-weight: 600;
+    color: #3f4254;
+    padding: 1rem;
+    font-size: 0.875rem;
+}
+
+.details-expansion .table tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f1f3f6;
+    color: #5e6278;
+    font-size: 0.875rem;
+}
+
+.details-expansion .table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.details-expansion .table tbody tr:hover {
+    background-color: rgba(0, 158, 247, 0.05);
+}
+
+/* Badge styling */
+.details-expansion .badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* Button styling */
+.details-expansion .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.details-expansion .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.details-expansion .btn i {
+    font-size: 0.875rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .kt-table-detail-container {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 1200px) {
+    .kt-table-detail-container {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 992px) {
+    .kt-table-detail-container {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        position: static;
+        overflow: visible !important;
+        box-sizing: border-box;
+    }
+}
+
+/* ===== DETAIL PANEL SPECIFIC STYLES ===== */
+
+/* Make detail panel match the table-responsive container width */
+.details-expansion .detail-panel {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Ensure detail panel doesn't get affected by table scroll */
+.detail-panel .card {
+    position: relative;
+    z-index: 10;
+}
+
+/* Customer header styling in detail panel */
+.detail-panel h3 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+}
+
+.detail-panel .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Payment history styling */
+.detail-panel .payment-history-item {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid #e4e6ef;
+    transition: all 0.2s ease;
+}
+
+.detail-panel .payment-history-item:hover {
+    background-color: rgba(0, 158, 247, 0.05) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Action buttons styling */
+.detail-panel .btn {
+    min-width: 100px;
+}
+
+/* Responsive adjustments for detail panel - always match table width */
+@media (max-width: 1400px) {
+    .detail-panel {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 1200px) {
+    .detail-panel {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 992px) {
+    .detail-panel {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        position: static;
+        overflow: visible !important;
+        box-sizing: border-box;
+    }
+}
+
+/* Number hover effects */
+.number {
+    transition: all 0.2s ease;
+}
+
+.number:hover {
+    color: var(--kt-primary) !important;
+    text-decoration: underline;
+}
+
+/* Collapse icons */
+.collapse-icon {
+    transition: transform 0.3s ease;
+}
+
+.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}

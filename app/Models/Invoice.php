@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class Invoice extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $guarded = [];
 
@@ -23,6 +25,8 @@ class Invoice extends Model
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'sent_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+        'deleted_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -94,6 +98,22 @@ class Invoice extends Model
     }
 
     /**
+     * Relationship with seller.
+     */
+    public function seller()
+    {
+        return $this->belongsTo(User::class, 'sold_by');
+    }
+
+    /**
+     * Relationship with canceller.
+     */
+    public function canceller()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    /**
      * Relationship with invoice items.
      */
     public function invoiceItems()
@@ -114,7 +134,8 @@ class Invoice extends Model
      */
     public function payments()
     {
-        return $this->morphMany(Payment::class, 'reference');
+        return $this->morphMany(Payment::class, 'reference', 'reference_type', 'reference_id')
+                    ->where('reference_type', 'invoice');
     }
 
     /**
@@ -126,17 +147,50 @@ class Invoice extends Model
             get: function($value, $attributes) {
                 $status = $attributes['status'] ?? 'processing';
                 return match($status) {
+                    'draft' => '<span class="badge badge-secondary">Nháp</span>',
+                    'pending' => '<span class="badge badge-info">Chờ xử lý</span>',
+                    'confirmed' => '<span class="badge badge-primary">Đã xác nhận</span>',
                     'processing' => '<span class="badge badge-warning">Đang xử lý</span>',
                     'completed' => '<span class="badge badge-success">Hoàn thành</span>',
                     'cancelled' => '<span class="badge badge-danger">Đã hủy</span>',
-                    'failed' => '<span class="badge badge-dark">Không giao được</span>',
+                    'returned_partial' => '<span class="badge badge-light">Trả một phần</span>',
+                    'returned_full' => '<span class="badge badge-dark">Trả toàn bộ</span>',
                     // Legacy statuses for backward compatibility
-                    'draft' => '<span class="badge badge-secondary">Nháp</span>',
+                    'failed' => '<span class="badge badge-dark">Không giao được</span>',
                     'sent' => '<span class="badge badge-info">Đã gửi</span>',
                     'paid' => '<span class="badge badge-success">Đã thanh toán</span>',
                     'overdue' => '<span class="badge badge-danger">Quá hạn</span>',
                     default => '<span class="badge badge-secondary">Không xác định</span>',
                 };
+            }
+        );
+    }
+
+    /**
+     * Get cancellation info.
+     */
+    protected function cancellationInfo(): Attribute
+    {
+        return new Attribute(
+            get: function($value, $attributes) {
+                if ($attributes['status'] !== 'cancelled' || !$attributes['cancelled_at']) {
+                    return null;
+                }
+
+                $cancelledAt = Carbon::parse($attributes['cancelled_at']);
+                $info = [
+                    'cancelled_at' => $cancelledAt->format('d/m/Y H:i'),
+                    'cancelled_at_human' => $cancelledAt->diffForHumans(),
+                    'cancelled_by_id' => $attributes['cancelled_by'] ?? null,
+                    'cancelled_by_name' => null
+                ];
+
+                // Load canceller name if available
+                if ($this->canceller) {
+                    $info['cancelled_by_name'] = $this->canceller->full_name ?? $this->canceller->name;
+                }
+
+                return $info;
             }
         );
     }
@@ -273,24 +327,65 @@ class Invoice extends Model
     }
 
     /**
-     * Generate unique invoice number.
+     * Update invoice status atomically to prevent race conditions.
      */
-    public static function generateInvoiceNumber()
+    public function updateStatusAtomic($newStatus, $additionalData = [])
     {
-        $prefix = 'HD';
-        $date = date('Ymd');
-        $lastInvoice = self::where('invoice_number', 'like', $prefix . $date . '%')
-                          ->orderBy('invoice_number', 'desc')
-                          ->first();
+        return DB::transaction(function () use ($newStatus, $additionalData) {
+            // Lock the record for update
+            $invoice = self::lockForUpdate()->find($this->id);
 
-        if ($lastInvoice) {
-            $lastNumber = intval(substr($lastInvoice->invoice_number, -4));
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
+            if (!$invoice) {
+                throw new \Exception('Invoice not found');
+            }
 
-        return $prefix . $date . $newNumber;
+            // Validate status transition
+            $allowedTransitions = [
+                'processing' => ['completed', 'cancelled', 'undeliverable'],
+                'completed' => ['cancelled'], // Allow cancellation of completed invoices
+                'cancelled' => [], // Cannot change from cancelled
+                'undeliverable' => ['processing', 'cancelled'], // Can retry or cancel
+            ];
+
+            $currentStatus = $invoice->status;
+            if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [])) {
+                throw new \Exception("Cannot change status from {$currentStatus} to {$newStatus}");
+            }
+
+            // Update status and additional data
+            $updateData = array_merge($additionalData, [
+                'status' => $newStatus,
+                'updated_by' => auth()->id(),
+                'updated_at' => now(),
+            ]);
+
+            // Add status-specific fields
+            if ($newStatus === 'completed') {
+                $updateData['completed_at'] = now();
+            } elseif ($newStatus === 'cancelled') {
+                $updateData['cancelled_at'] = now();
+            }
+
+            $invoice->update($updateData);
+
+            return $invoice->fresh();
+        });
+    }
+
+    /**
+     * Generate unique invoice number with atomic operation to prevent race conditions.
+     */
+    public static function generateInvoiceNumber($customPrefix = null)
+    {
+        return \App\Services\PrefixGeneratorService::generateInvoiceNumber($customPrefix);
+    }
+
+    /**
+     * Generate unique exchange invoice number for return orders.
+     */
+    public static function generateExchangeInvoiceNumber()
+    {
+        return self::generateInvoiceNumber('HDD_TH');
     }
 
     /**
@@ -301,13 +396,11 @@ class Invoice extends Model
         $subtotal = $this->invoiceItems->sum('line_total');
         $taxAmount = $subtotal * ($this->tax_rate / 100);
         $totalAmount = $subtotal + $taxAmount - $this->discount_amount;
-        $remainingAmount = $totalAmount - $this->paid_amount;
 
         $this->update([
             'subtotal' => $subtotal,
             'tax_amount' => $taxAmount,
             'total_amount' => $totalAmount,
-            'remaining_amount' => $remainingAmount,
         ]);
 
         // Update payment status
@@ -317,28 +410,48 @@ class Invoice extends Model
     }
 
     /**
-     * Update payment status based on amounts.
+     * Update payment status based on amounts atomically.
+     * Note: Payment status is now computed from payments table, not stored in invoice.
      */
     public function updatePaymentStatus()
     {
-        if ($this->paid_amount <= 0) {
+        return DB::transaction(function () {
+            // Lock the record for update to prevent race conditions
+            $invoice = self::lockForUpdate()->find($this->id);
+
+            if (!$invoice) {
+                throw new \Exception('Invoice not found');
+            }
+
+            // Calculate payment status from payments table
+            $paidAmount = $invoice->paid_amount; // This uses the accessor
+            $totalAmount = $invoice->total_amount;
+
             $paymentStatus = 'unpaid';
-        } elseif ($this->paid_amount >= $this->total_amount) {
-            $paymentStatus = $this->paid_amount > $this->total_amount ? 'overpaid' : 'paid';
-        } else {
-            $paymentStatus = 'partial';
-        }
+            if ($paidAmount > 0) {
+                if ($paidAmount >= $totalAmount) {
+                    $paymentStatus = $paidAmount > $totalAmount ? 'overpaid' : 'paid';
+                } else {
+                    $paymentStatus = 'partial';
+                }
+            }
 
-        $this->update(['payment_status' => $paymentStatus]);
+            $updateData = [
+                'updated_by' => auth()->id(),
+                'updated_at' => now(),
+            ];
 
-        // Update main status if needed
-        if ($paymentStatus === 'paid' && $this->status === 'sent') {
-            $this->update(['status' => 'paid', 'paid_at' => now()]);
-        } elseif ($this->is_overdue && $paymentStatus !== 'paid' && $this->status === 'sent') {
-            $this->update(['status' => 'overdue']);
-        }
+            // Update main status if needed
+            if ($paymentStatus === 'paid' && in_array($invoice->status, ['processing', 'sent'])) {
+                $updateData['status'] = 'completed';
+            } elseif ($invoice->is_overdue && $paymentStatus !== 'paid' && $invoice->status === 'sent') {
+                $updateData['status'] = 'overdue';
+            }
 
-        return $this;
+            $invoice->update($updateData);
+
+            return $invoice->fresh();
+        });
     }
 
     /**
@@ -419,14 +532,25 @@ class Invoice extends Model
             $query->where('branch_shop_id', $filters['branch_shop_id']);
         }
 
+        // Calculate paid and remaining amounts from payments table
+        $invoices = $query->with('payments')->get();
+        $totalAmount = $invoices->sum('total_amount');
+        $paidAmount = $invoices->sum('paid_amount'); // Uses accessor
+        $remainingAmount = $totalAmount - $paidAmount;
+
+        // Count invoices by payment status (computed)
+        $paidCount = $invoices->filter(fn($invoice) => $invoice->payment_status === 'paid')->count();
+        $unpaidCount = $invoices->filter(fn($invoice) => in_array($invoice->payment_status, ['unpaid', 'partial']))->count();
+        $overdueCount = $invoices->filter(fn($invoice) => $invoice->is_overdue)->count();
+
         return [
-            'total_invoices' => $query->count(),
-            'paid_invoices' => (clone $query)->where('payment_status', 'paid')->count(),
-            'unpaid_invoices' => (clone $query)->whereIn('payment_status', ['unpaid', 'partial'])->count(),
-            'overdue_invoices' => (clone $query)->overdue()->count(),
-            'total_amount' => (clone $query)->sum('total_amount'),
-            'paid_amount' => (clone $query)->sum('paid_amount'),
-            'remaining_amount' => (clone $query)->sum('remaining_amount'),
+            'total_invoices' => $invoices->count(),
+            'paid_invoices' => $paidCount,
+            'unpaid_invoices' => $unpaidCount,
+            'overdue_invoices' => $overdueCount,
+            'total_amount' => $totalAmount,
+            'paid_amount' => $paidAmount,
+            'remaining_amount' => $remainingAmount,
         ];
     }
 
@@ -439,10 +563,16 @@ class Invoice extends Model
 
         static::creating(function ($invoice) {
             if (empty($invoice->invoice_number)) {
-                $invoice->invoice_number = self::generateInvoiceNumber();
+                // Generate invoice number within transaction to ensure atomicity
+                DB::transaction(function () use ($invoice) {
+                    $invoice->invoice_number = self::generateInvoiceNumber();
+                });
             }
             if (empty($invoice->created_by)) {
                 $invoice->created_by = auth()->id();
+            }
+            if (empty($invoice->sold_by)) {
+                $invoice->sold_by = auth()->id();
             }
         });
 

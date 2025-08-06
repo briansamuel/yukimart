@@ -12,11 +12,15 @@ use App\Models\User;
 use App\Services\InvoiceService;
 use App\Services\InvoicePrintService;
 use App\Services\ValidationService;
+use App\Traits\FilterableTrait;
+use App\Traits\HandlesApiErrors;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
+    use FilterableTrait, HandlesApiErrors;
+
     protected $invoiceService;
     protected $validationService;
     protected $printService;
@@ -43,8 +47,8 @@ class InvoiceController extends Controller
         // Handle invoice code search via Code parameter
         $invoiceCodeSearch = null;
         $searchedInvoice = null;
-        if ($request->has('Code') && !empty($request->get('Code'))) {
-            $invoiceCode = $request->get('Code');
+        if ($request->has('code') && !empty($request->get('code'))) {
+            $invoiceCode = $request->get('code');
             $invoiceCodeSearch = $invoiceCode;
 
             // Find invoice by invoice_number
@@ -175,10 +179,14 @@ class InvoiceController extends Controller
         try {
             $params = $this->request->all();
 
+            // Debug log to see what parameters are received
+            Log::info('Invoice AJAX request parameters:', $params);
+
             // DataTables parameters
             $draw = $params['draw'] ?? 1;
-            $start = $params['start'] ?? 0;
-            $length = $params['length'] ?? 10;
+            $page = $params['page'] ?? 1;
+            $start = ($page - 1) * ($params['per_page'] ?? 10);
+            $length = $params['per_page'] ?? 10;
             $searchValue = $params['search']['value'] ?? '';
 
             // Custom search term
@@ -197,8 +205,21 @@ class InvoiceController extends Controller
                 $query->search($searchText);
             }
 
-            // Apply filters
-            $this->applyFilters($query, $params);
+            // Apply filters using FilterableTrait
+            $filterConfig = [
+                'searchColumns' => ['invoice_number', 'customer_name', 'customer_phone'],
+                'statusColumn' => 'status',
+                'userColumns' => [
+                    'creator_id' => 'created_by',
+                    'seller_id' => 'created_by'  // Invoices don't have seller_id, use created_by for both
+                ],
+                'dateRangeColumns' => ['created_at']
+            ];
+
+            $this->applyCommonFilters($query, $this->request, $filterConfig);
+
+            // Apply additional custom filters
+            $this->applyCustomFilters($query, $params);
             
             // Get total count before pagination
             $totalRecords = $query->count();
@@ -209,30 +230,26 @@ class InvoiceController extends Controller
                              ->orderBy('created_at', 'desc')
                              ->get();
             
-            // Format data for DataTables
+            // Format data for simple table
             $data = $invoices->map(function($invoice) {
                 return [
-                    'id' => $invoice->id, // Add ID field for JavaScript access
-                    'checkbox' => '<div class="form-check form-check-sm form-check-custom form-check-solid">
-                                    <input class="form-check-input" type="checkbox" value="' . $invoice->id . '" />
-                                   </div>',
-                    'invoice_number' => '<span class="text-gray-800 fw-bold invoice-number" data-invoice-id="' . $invoice->id . '" data-bs-toggle="collapse" data-bs-target="#invoice-detail-' . $invoice->id . '" style="cursor: pointer;">' . $invoice->invoice_number . '</span>',
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
                     'customer_display' => $invoice->customer_display ?? 'Khách lẻ',
-                    'total_amount' => number_format($invoice->total_amount, 0, ',', '.') . ' ₫',
-                    'amount_paid' => number_format($invoice->paid_amount ?? 0, 0, ',', '.') . ' ₫',
-                    'payment_status' => $this->getStatusBadge($invoice->status),
-                    'payment_method' => $this->getPaymentMethodLabel($invoice->payment_method),
-                    'sales_channel' => $this->getSalesChannelLabel($invoice->sales_channel ?? 'offline'),
-                    'created_at' => $invoice->created_at->format('d/m/Y H:i'),
-                    'seller' => $invoice->creator->full_name ?? 'N/A', // Người bán (người tạo)
-                    'creator' => $invoice->creator->full_name ?? 'N/A', // Người tạo
-                    'discount' => $invoice->discount_amount ? number_format($invoice->discount_amount, 0, ',', '.') . ' ₫' : '0 ₫',
-                    'email' => $invoice->customer->email ?? 'N/A',
-                    'phone' => $invoice->customer->phone ?? 'N/A',
-                    'address' => $invoice->customer->address ?? 'N/A',
-                    'branch_shop' => $invoice->branchShop->name ?? 'N/A',
-                    'notes' => $invoice->notes ? substr($invoice->notes, 0, 50) . '...' : 'N/A',
-                    'detail_panel' => null // Lazy load when needed
+                    'total_amount' => $invoice->total_amount ?? 0,
+                    'amount_paid' => $invoice->paid_amount ?? 0,
+                    'status' => $invoice->status ?? 'processing',
+                    'payment_method' => $invoice->payment_method ?? 'cash',
+                    'sales_channel' => $invoice->sales_channel ?? 'offline',
+                    'created_at' => $invoice->created_at ? $invoice->created_at->toISOString() : null,
+                    'seller' => $invoice->creator->full_name ?? '',
+                    'creator' => $invoice->creator->full_name ?? '',
+                    'discount' => $invoice->discount_amount ?? 0,
+                    'email' => $invoice->customer->email ?? '',
+                    'phone' => $invoice->customer->phone ?? '',
+                    'address' => $invoice->customer->address ?? '',
+                    'branch_shop' => $invoice->branchShop->name ?? '',
+                    'notes' => $invoice->notes ?? ''
                 ];
             });
 
@@ -248,13 +265,7 @@ class InvoiceController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'draw' => $params['draw'] ?? 1,
-                'recordsTotal' => 0,
-                'recordsFiltered' => 0,
-                'data' => [],
-                'error' => 'Error loading invoices: ' . $e->getMessage()
-            ]);
+            return $this->handleDataTablesException($e, $params);
         }
     }
 
@@ -316,13 +327,54 @@ class InvoiceController extends Controller
     public function show($id)
     {
         try {
-            $invoice = Invoice::with(['customer', 'branchShop', 'invoiceItems.product', 'creator', 'order'])
+            $invoice = Invoice::with(['customer', 'branchShop', 'invoiceItems.product', 'creator', 'order', 'payments'])
                              ->findOrFail($id);
-            
+
             return view('admin.invoice.show', compact('invoice'));
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return redirect()->route('invoice.list')->with('error', 'Không tìm thấy hóa đơn');
+        }
+    }
+
+    /**
+     * Get payment history for invoice via AJAX.
+     */
+    public function getPaymentHistory($id)
+    {
+        try {
+            $invoice = Invoice::findOrFail($id);
+
+            $payments = $invoice->payments()
+                ->with(['creator', 'bankAccount'])
+                ->orderBy('payment_date', 'desc')
+                ->get();
+
+            $data = [];
+            foreach ($payments as $payment) {
+                $data[] = [
+                    'payment_number' => $payment->payment_number,
+                    'payment_date' => $payment->payment_date->format('d/m/Y H:i'),
+                    'creator_name' => $payment->creator->name ?? 'N/A',
+                    'amount' => $payment->actual_amount,
+                    'formatted_amount' => number_format($payment->actual_amount, 0, ',', '.'),
+                    'payment_method' => $payment->payment_method_display,
+                    'status' => $payment->status,
+                    'status_badge' => $payment->status_badge,
+                    'description' => $payment->description ?? '',
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+
+        } catch (\Exception) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể tải lịch sử thanh toán'
+            ], 500);
         }
     }
 
@@ -345,7 +397,7 @@ class InvoiceController extends Controller
 
             return view('admin.invoice.edit', compact('invoice', 'customers', 'products', 'branchShops'));
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return redirect()->route('invoice.list')->with('error', 'Không tìm thấy hóa đơn');
         }
     }
@@ -509,7 +561,7 @@ class InvoiceController extends Controller
 
             return view($viewName, $data);
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return redirect()->route('invoice.list')->with('error', 'Không tìm thấy hóa đơn');
         }
     }
@@ -603,14 +655,11 @@ class InvoiceController extends Controller
     private function getStatusBadge($status)
     {
         $badges = [
-            'đang xử lý' => '<span class="badge badge-warning">Đang xử lý</span>',
-            'hoàn thành' => '<span class="badge badge-success">Hoàn thành</span>',
-            'đã huỷ' => '<span class="badge badge-danger">Đã huỷ</span>',
-            'không giao được' => '<span class="badge badge-secondary">Không giao được</span>',
-            'processing' => '<span class="badge badge-warning">Processing</span>',
-            'completed' => '<span class="badge badge-success">Completed</span>',
-            'cancelled' => '<span class="badge badge-danger">Cancelled</span>',
-            'pending' => '<span class="badge badge-info">Pending</span>',
+           
+            'processing' => '<span class="badge badge-warning">Đang xử lý</span>',
+            'completed' => '<span class="badge badge-success">Hoàn thành</span>',
+            'cancelled' => '<span class="badge badge-danger">Đã huỷ</span>',
+            'undeliverable' => '<span class="badge badge-info">Không giao được</span>',
         ];
 
         return $badges[$status] ?? '<span class="badge badge-secondary">' . ucfirst($status) . '</span>';
@@ -667,7 +716,7 @@ class InvoiceController extends Controller
     /**
      * Get users for filter dropdown
      */
-    public function getFilterUsers(Request $request)
+    public function getFilterUsers()
     {
         try {
             $currentUser = auth()->user();
@@ -698,7 +747,7 @@ class InvoiceController extends Controller
                 'success' => true,
                 'data' => $formattedUsers
             ]);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tải danh sách người dùng'
@@ -790,34 +839,15 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Apply all filters to query
+     * Apply custom filters specific to invoices (not covered by FilterableTrait)
      */
-    private function applyFilters($query, $params)
+    private function applyCustomFilters($query, $params)
     {
-        // Invoice code filter (Code parameter)
-        if (!empty($params['Code'])) {
-            $invoiceCode = $params['Code'];
+        // Invoice code filter (Code or code parameter)
+        $invoiceCode = $params['Code'] ?? $params['code'] ?? null;
+        if (!empty($invoiceCode)) {
             $query->where('invoice_number', $invoiceCode);
-        }
-
-        // Time filter
-        if (!empty($params['time_filter'])) {
-            $this->applyTimeFilter($query, $params['time_filter']);
-        }
-
-        // Status filters (checkboxes)
-        if (!empty($params['status_filters']) && is_array($params['status_filters'])) {
-            $query->whereIn('status', $params['status_filters']);
-        }
-
-        // Creator filter
-        if (!empty($params['creator_id'])) {
-            $query->where('created_by', $params['creator_id']);
-        }
-
-        // Seller filter (using created_by as seller)
-        if (!empty($params['seller_id'])) {
-            $query->where('created_by', $params['seller_id']);
+            Log::info('Invoice AJAX: Filtering by invoice code', ['code' => $invoiceCode]);
         }
 
         // Delivery status filters
@@ -825,9 +855,15 @@ class InvoiceController extends Controller
             $query->whereIn('delivery_status', $params['delivery_status']);
         }
 
-        // Sales channel filter
+        // Sales channel filter (multiple values)
         if (!empty($params['sales_channel'])) {
-            $query->whereIn('sales_channel', $params['sales_channel']);
+            if (is_array($params['sales_channel'])) {
+                $query->whereIn('sales_channel', $params['sales_channel']);
+            } else {
+                // Handle single value or comma-separated string
+                $channels = is_string($params['sales_channel']) ? explode(',', $params['sales_channel']) : [$params['sales_channel']];
+                $query->whereIn('sales_channel', array_filter($channels));
+            }
         }
 
         // Delivery partner filter
@@ -840,9 +876,34 @@ class InvoiceController extends Controller
             $query->where('delivery_area', $params['delivery_area']);
         }
 
-        // Payment method filter
+        // Payment method filter - join with payments table
         if (!empty($params['payment_method'])) {
-            $query->where('payment_method', $params['payment_method']);
+            $query->whereHas('payments', function($q) use ($params) {
+                $q->where('payment_method', $params['payment_method'])
+                  ->where('status', 'completed');
+            });
+        }
+
+        // Creator filter (multiple values)
+        if (!empty($params['creator_id'])) {
+            if (is_array($params['creator_id'])) {
+                $query->whereIn('created_by', $params['creator_id']);
+            } else {
+                // Handle single value or comma-separated string
+                $creatorIds = is_string($params['creator_id']) ? explode(',', $params['creator_id']) : [$params['creator_id']];
+                $query->whereIn('created_by', array_filter($creatorIds));
+            }
+        }
+
+        // Seller filter (for invoices, this is the same as creator since invoices don't have separate seller)
+        if (!empty($params['seller_id'])) {
+            if (is_array($params['seller_id'])) {
+                $query->whereIn('created_by', $params['seller_id']);
+            } else {
+                // Handle single value or comma-separated string
+                $sellerIds = is_string($params['seller_id']) ? explode(',', $params['seller_id']) : [$params['seller_id']];
+                $query->whereIn('created_by', array_filter($sellerIds));
+            }
         }
 
         // Price list filter
@@ -855,150 +916,22 @@ class InvoiceController extends Controller
             $query->where('other_income_type', $params['other_income_type']);
         }
 
-        // Legacy filters for backward compatibility
-        if (!empty($params['status'])) {
-            $query->where('status', $params['status']);
-        }
-
+        // Payment status filter
         if (!empty($params['payment_status'])) {
             $query->where('payment_status', $params['payment_status']);
         }
 
+        // Branch shop filter
         if (!empty($params['branch_shop_id'])) {
             $query->where('branch_shop_id', $params['branch_shop_id']);
         }
 
-        if (!empty($params['date_from'])) {
-            $query->whereDate('invoice_date', '>=', $params['date_from']);
-        }
-
-        if (!empty($params['date_to'])) {
-            $query->whereDate('invoice_date', '<=', $params['date_to']);
-        }
+       
     }
 
-    /**
-     * Apply time filter to query
-     */
-    private function applyTimeFilter($query, $timeFilter)
-    {
-        $now = now();
 
-        // Debug log
-        \Log::info('Time filter applied', [
-            'filter' => $timeFilter,
-            'current_time' => $now->toDateTimeString()
-        ]);
 
-        switch ($timeFilter) {
-            // Theo ngày
-            case 'today':
-                $today = $now->toDateString();
-                $query->whereDate('created_at', $today);
-                Log::info('Today filter', ['date' => $today]);
-                break;
-            case 'yesterday':
-                $yesterday = $now->copy()->subDay()->toDateString();
-                $query->whereDate('created_at', $yesterday);
-                Log::info('Yesterday filter', ['date' => $yesterday]);
-                break;
 
-            // Theo tuần
-            case 'this_week':
-                $startOfWeek = $now->copy()->startOfWeek();
-                $endOfWeek = $now->copy()->endOfWeek();
-                $query->whereBetween('created_at', [$startOfWeek, $endOfWeek]);
-                break;
-            case 'last_week':
-                $startOfLastWeek = $now->copy()->subWeek()->startOfWeek();
-                $endOfLastWeek = $now->copy()->subWeek()->endOfWeek();
-                $query->whereBetween('created_at', [$startOfLastWeek, $endOfLastWeek]);
-                break;
-            case '7_days':
-                $query->where('created_at', '>=', $now->copy()->subDays(7));
-                break;
-
-            // Theo tháng
-            case 'this_month':
-                $startOfMonth = $now->copy()->startOfMonth();
-                $endOfMonth = $now->copy()->endOfMonth();
-                $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
-                Log::info('This month filter', [
-                    'start' => $startOfMonth->toDateTimeString(),
-                    'end' => $endOfMonth->toDateTimeString()
-                ]);
-                break;
-            case 'last_month':
-                $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
-                $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
-                $query->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth]);
-                Log::info('Last month filter', [
-                    'start' => $startOfLastMonth->toDateTimeString(),
-                    'end' => $endOfLastMonth->toDateTimeString()
-                ]);
-                break;
-            case '30_days':
-                $thirtyDaysAgo = $now->copy()->subDays(30);
-                $query->where('created_at', '>=', $thirtyDaysAgo);
-                Log::info('30 days filter', ['from' => $thirtyDaysAgo->toDateTimeString()]);
-                break;
-
-            // Theo quý
-            case 'this_quarter':
-                $startOfQuarter = $now->copy()->startOfQuarter();
-                $endOfQuarter = $now->copy()->endOfQuarter();
-                $query->whereBetween('created_at', [$startOfQuarter, $endOfQuarter]);
-                break;
-            case 'last_quarter':
-                $startOfLastQuarter = $now->copy()->subQuarter()->startOfQuarter();
-                $endOfLastQuarter = $now->copy()->subQuarter()->endOfQuarter();
-                $query->whereBetween('created_at', [$startOfLastQuarter, $endOfLastQuarter]);
-                break;
-
-            // Theo năm
-            case 'this_year':
-                $startOfYear = $now->copy()->startOfYear();
-                $endOfYear = $now->copy()->endOfYear();
-                $query->whereBetween('created_at', [$startOfYear, $endOfYear]);
-                break;
-            case 'last_year':
-                $startOfLastYear = $now->copy()->subYear()->startOfYear();
-                $endOfLastYear = $now->copy()->subYear()->endOfYear();
-                $query->whereBetween('created_at', [$startOfLastYear, $endOfLastYear]);
-                break;
-        }
-    }
-
-    /**
-     * Apply status filters to query
-     */
-    private function applyStatusFilters($query, $statusFilters)
-    {
-        if (in_array('paid', $statusFilters)) {
-            $query->orWhere('payment_status', 'paid');
-        }
-        if (in_array('partial', $statusFilters)) {
-            $query->orWhere('payment_status', 'partial');
-        }
-        if (in_array('unpaid', $statusFilters)) {
-            $query->orWhere('payment_status', 'unpaid');
-        }
-        if (in_array('pending', $statusFilters)) {
-            $query->orWhere('status', 'pending');
-        }
-        if (in_array('processing', $statusFilters)) {
-            $query->orWhere('status', 'processing');
-        }
-        if (in_array('shipped', $statusFilters)) {
-            $query->orWhere('status', 'shipped');
-        }
-        if (in_array('delivered', $statusFilters)) {
-            $query->orWhere('status', 'delivered');
-        }
-        if (in_array('cancelled', $statusFilters)) {
-            $query->orWhere('status', 'cancelled');
-        }
-    }
 
     /**
      * Calculate summary data for dashboard cards
@@ -1071,12 +1004,22 @@ class InvoiceController extends Controller
         try {
             Log::info('Loading invoice detail panel', ['invoice_id' => $id]);
 
-            $invoice = Invoice::with(['customer', 'branchShop', 'invoiceItems.product', 'creator'])->findOrFail($id);
+            $invoice = Invoice::with([
+                'customer',
+                'branchShop',
+                'invoiceItems.product',
+                'creator',
+                'payments' => function($query) {
+                    $query->where('payment_type', 'receipt')
+                          ->orderBy('payment_date', 'desc');
+                }
+            ])->findOrFail($id);
 
             Log::info('Invoice found', [
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
-                'customer_id' => $invoice->customer_id
+                'customer_id' => $invoice->customer_id,
+                'payments_count' => $invoice->payments->count()
             ]);
 
             $html = view('admin.invoice.partials.detail_panel', compact('invoice'))->render();
@@ -1104,6 +1047,120 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Bulk cancel invoices
+     */
+    public function bulkCancel(Request $request)
+    {
+        try {
+            // Validate request
+            $request->validate([
+                'invoice_ids' => 'required|array|min:1',
+                'invoice_ids.*' => 'required|integer|exists:invoices,id'
+            ]);
+
+            $invoiceIds = $request->input('invoice_ids');
+            $cancelledCount = 0;
+            $errors = [];
+
+            Log::info('Bulk cancel invoices request', [
+                'invoice_ids' => $invoiceIds,
+                'user_id' => auth()->id()
+            ]);
+
+            // Process each invoice
+            foreach ($invoiceIds as $invoiceId) {
+                try {
+                    $invoice = Invoice::findOrFail($invoiceId);
+
+                    // Check if invoice can be cancelled
+                    if ($invoice->status === 'cancelled') {
+                        $errors[] = "Hóa đơn {$invoice->invoice_number} đã được huỷ trước đó.";
+                        continue;
+                    }
+
+                    if ($invoice->status === 'completed' && $invoice->amount_paid > 0) {
+                        $errors[] = "Hóa đơn {$invoice->invoice_number} đã thanh toán, không thể huỷ.";
+                        continue;
+                    }
+
+                    // Update invoice status to cancelled using soft delete
+                    $invoice->update([
+                        'status' => 'cancelled',
+                        'cancelled_at' => now(),
+                        'cancelled_by' => auth()->id(),
+                        'deleted_at' => now(),
+                        'updated_by' => auth()->id(),
+                        'notes' => ($invoice->notes ? $invoice->notes . "\n" : '') .
+                                  'Hóa đơn được huỷ hàng loạt vào ' . now()->format('d/m/Y H:i:s') .
+                                  ' bởi ' . auth()->user()->full_name
+                    ]);
+
+                    $cancelledCount++;
+
+                    Log::info('Invoice cancelled successfully', [
+                        'invoice_id' => $invoiceId,
+                        'invoice_number' => $invoice->invoice_number,
+                        'user_id' => auth()->id()
+                    ]);
+
+                } catch (\Exception $e) {
+                    Log::error('Error cancelling invoice', [
+                        'invoice_id' => $invoiceId,
+                        'error' => $e->getMessage(),
+                        'user_id' => auth()->id()
+                    ]);
+                    $errors[] = "Lỗi khi huỷ hóa đơn ID {$invoiceId}: " . $e->getMessage();
+                }
+            }
+
+            // Prepare response
+            $response = [
+                'success' => $cancelledCount > 0,
+                'cancelled_count' => $cancelledCount,
+                'total_requested' => count($invoiceIds),
+                'errors' => $errors
+            ];
+
+            if ($cancelledCount > 0) {
+                $response['message'] = "Đã huỷ thành công {$cancelledCount} hóa đơn.";
+                if (!empty($errors)) {
+                    $response['message'] .= " Có " . count($errors) . " lỗi xảy ra.";
+                }
+            } else {
+                $response['message'] = "Không thể huỷ hóa đơn nào. " . implode(' ', $errors);
+            }
+
+            Log::info('Bulk cancel invoices completed', $response);
+
+            return response()->json($response);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Bulk cancel validation failed', [
+                'errors' => $e->errors(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Dữ liệu không hợp lệ.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Bulk cancel invoices failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi huỷ hóa đơn: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Render detail panel for invoice row expansion
      */
     private function renderDetailPanel($invoice)
@@ -1113,6 +1170,394 @@ class InvoiceController extends Controller
         } catch (\Exception $e) {
             Log::error('Error rendering invoice detail panel: ' . $e->getMessage());
             return '<div class="alert alert-danger">Không thể tải thông tin chi tiết</div>';
+        }
+    }
+
+    /**
+     * Export invoices to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        try {
+            // Get filtered invoices
+            $invoices = $this->getFilteredInvoices($request);
+
+            // Create Excel export
+            $filename = 'invoices_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+            // Headers for Excel
+            $headers = [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'max-age=0',
+            ];
+
+            // Create CSV content (simple implementation)
+            $csvContent = $this->generateCsvContent($invoices);
+
+            return response($csvContent, 200, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="invoices_' . date('Y-m-d_H-i-s') . '.csv"',
+                'Cache-Control' => 'max-age=0',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error exporting invoices to Excel: ' . $e->getMessage());
+            return response()->json(['error' => 'Lỗi khi xuất file Excel'], 500);
+        }
+    }
+
+    /**
+     * Export invoices to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        try {
+            // Get filtered invoices
+            $invoices = $this->getFilteredInvoices($request);
+
+            // Create PDF content
+            $html = $this->generatePdfContent($invoices);
+
+            // For now, return HTML (can be enhanced with PDF library later)
+            return response($html, 200, [
+                'Content-Type' => 'text/html',
+                'Content-Disposition' => 'attachment; filename="invoices_' . date('Y-m-d_H-i-s') . '.html"',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error exporting invoices to PDF: ' . $e->getMessage());
+            return response()->json(['error' => 'Lỗi khi xuất file PDF'], 500);
+        }
+    }
+
+    /**
+     * Get filtered invoices for export
+     */
+    private function getFilteredInvoices(Request $request)
+    {
+        $query = Invoice::with(['customer', 'creator', 'seller', 'branchShop']);
+
+        // Apply filters (reuse existing filter logic)
+        $filters = $this->getFiltersFromRequest($request);
+        $query = $this->applyFilters($query, $filters);
+
+        return $query->get();
+    }
+
+    /**
+     * Generate CSV content
+     */
+    private function generateCsvContent($invoices)
+    {
+        $csv = "Mã hóa đơn,Khách hàng,Tổng tiền,Đã thanh toán,Trạng thái,Phương thức TT,Kênh bán,Ngày tạo,Người bán,Người tạo,Chi nhánh\n";
+
+        foreach ($invoices as $invoice) {
+            $csv .= sprintf(
+                '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"' . "\n",
+                $invoice->invoice_code,
+                $invoice->customer ? $invoice->customer->full_name : 'Khách lẻ',
+                number_format($invoice->final_amount, 0, ',', '.') . ' ₫',
+                number_format($invoice->paid_amount, 0, ',', '.') . ' ₫',
+                $this->getStatusText($invoice->status),
+                $invoice->payment_method ?? 'N/A',
+                $invoice->channel ?? 'N/A',
+                $invoice->created_at ? $invoice->created_at->format('d/m/Y H:i') : '',
+                $invoice->seller ? $invoice->seller->full_name : 'N/A',
+                $invoice->creator ? $invoice->creator->full_name : 'N/A',
+                $invoice->branchShop ? $invoice->branchShop->name : 'N/A'
+            );
+        }
+
+        return $csv;
+    }
+
+    /**
+     * Generate PDF content
+     */
+    private function generatePdfContent($invoices)
+    {
+        $html = '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách hóa đơn</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .total { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>DANH SÁCH HÓA ĐƠN</h1>
+        <p>Ngày xuất: ' . date('d/m/Y H:i') . '</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Mã hóa đơn</th>
+                <th>Khách hàng</th>
+                <th>Tổng tiền</th>
+                <th>Đã thanh toán</th>
+                <th>Trạng thái</th>
+                <th>Phương thức TT</th>
+                <th>Kênh bán</th>
+                <th>Ngày tạo</th>
+                <th>Người bán</th>
+                <th>Người tạo</th>
+                <th>Chi nhánh</th>
+            </tr>
+        </thead>
+        <tbody>';
+
+        $totalAmount = 0;
+        $totalPaid = 0;
+
+        foreach ($invoices as $invoice) {
+            $totalAmount += $invoice->final_amount;
+            $totalPaid += $invoice->paid_amount;
+
+            $html .= '<tr>
+                <td>' . $invoice->invoice_code . '</td>
+                <td>' . ($invoice->customer ? $invoice->customer->full_name : 'Khách lẻ') . '</td>
+                <td>' . number_format($invoice->final_amount, 0, ',', '.') . ' ₫</td>
+                <td>' . number_format($invoice->paid_amount, 0, ',', '.') . ' ₫</td>
+                <td>' . $this->getStatusText($invoice->status) . '</td>
+                <td>' . ($invoice->payment_method ?? 'N/A') . '</td>
+                <td>' . ($invoice->channel ?? 'N/A') . '</td>
+                <td>' . ($invoice->created_at ? $invoice->created_at->format('d/m/Y H:i') : '') . '</td>
+                <td>' . ($invoice->seller ? $invoice->seller->full_name : 'N/A') . '</td>
+                <td>' . ($invoice->creator ? $invoice->creator->full_name : 'N/A') . '</td>
+                <td>' . ($invoice->branchShop ? $invoice->branchShop->name : 'N/A') . '</td>
+            </tr>';
+        }
+
+        $html .= '</tbody>
+    </table>
+
+    <div class="total">
+        <p>Tổng số hóa đơn: ' . count($invoices) . '</p>
+        <p>Tổng tiền: ' . number_format($totalAmount, 0, ',', '.') . ' ₫</p>
+        <p>Tổng đã thanh toán: ' . number_format($totalPaid, 0, ',', '.') . ' ₫</p>
+    </div>
+</body>
+</html>';
+
+        return $html;
+    }
+
+    /**
+     * Get status text
+     */
+    private function getStatusText($status)
+    {
+        $statusMap = [
+            'processing' => 'Đang xử lý',
+            'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy',
+            'undeliverable' => 'Không giao được'
+        ];
+
+        return $statusMap[$status] ?? $status;
+    }
+
+    /**
+     * Get invoices for return order selection (API)
+     */
+    public function getInvoicesForReturn(Request $request)
+    {
+        try {
+            $page = $request->get('page', 1);
+            $perPage = $request->get('per_page', 10);
+            $search = $request->get('search', '');
+            $timeFilter = $request->get('time_filter', 'this_month');
+            $customerFilter = $request->get('customer_filter', '');
+            $status = $request->get('status', ['paid', 'completed']);
+
+            $query = Invoice::with(['customer:id,name,phone', 'creator:id,full_name'])
+                ->whereIn('status', $status);
+
+            // Apply search filter
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                      ->orWhereHas('customer', function($customerQuery) use ($search) {
+                          $customerQuery->where('name', 'like', "%{$search}%")
+                                      ->orWhere('phone', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            // Apply customer filter
+            if (!empty($customerFilter)) {
+                $query->whereHas('customer', function($customerQuery) use ($customerFilter) {
+                    $customerQuery->where('name', 'like', "%{$customerFilter}%");
+                });
+            }
+
+            // Apply time filter
+            switch ($timeFilter) {
+                case 'this_month':
+                    $query->whereMonth('created_at', now()->month)
+                          ->whereYear('created_at', now()->year);
+                    break;
+                case 'last_month':
+                    $query->whereMonth('created_at', now()->subMonth()->month)
+                          ->whereYear('created_at', now()->subMonth()->year);
+                    break;
+                case 'this_year':
+                    $query->whereYear('created_at', now()->year);
+                    break;
+            }
+
+            // Get paginated results
+            $invoices = $query->orderBy('created_at', 'desc')
+                            ->paginate($perPage, ['*'], 'page', $page);
+
+            // Format data for response
+            $data = $invoices->map(function($invoice) {
+                return [
+                    'id' => $invoice->id,
+                    'invoice_code' => $invoice->invoice_number,
+                    'created_at' => $invoice->created_at,
+                    'total_amount' => $invoice->total_amount,
+                    'customer_name' => $invoice->customer ? $invoice->customer->name : null,
+                    'customer_phone' => $invoice->customer ? $invoice->customer->phone : null,
+                    'creator_name' => $invoice->creator ? $invoice->creator->full_name : null,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => $invoices->currentPage(),
+                    'last_page' => $invoices->lastPage(),
+                    'per_page' => $invoices->perPage(),
+                    'total' => $invoices->total(),
+                    'from' => $invoices->firstItem(),
+                    'to' => $invoices->lastItem(),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Get invoices for return failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải danh sách hóa đơn'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get invoice details for return order (API)
+     */
+    public function getInvoiceDetails($id)
+    {
+        try {
+            \Log::info("Getting invoice details for ID: " . $id);
+
+            $invoice = Invoice::with(['customer', 'creator', 'branchShop'])
+                             ->find($id);
+
+            if (!$invoice) {
+                \Log::error("Invoice not found with ID: " . $id);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy hóa đơn'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'customer_name' => $invoice->customer ? $invoice->customer->name : 'Khách lẻ',
+                    'customer_phone' => $invoice->customer ? $invoice->customer->phone : '',
+                    'seller_name' => $invoice->creator ? $invoice->creator->name : 'N/A',
+                    'creator_name' => $invoice->creator ? $invoice->creator->name : 'N/A',
+                    'total_amount' => $invoice->total_amount,
+                    'status' => $invoice->status
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error("Error getting invoice details: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tải thông tin hóa đơn'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get invoice items for return order (API)
+     */
+    public function getInvoiceItems($id)
+    {
+        try {
+            \Log::info("Getting invoice items for ID: " . $id);
+
+            // First check if invoice exists
+            $invoice = Invoice::find($id);
+            \Log::info("Invoice found: " . ($invoice ? 'Yes' : 'No'));
+
+            if (!$invoice) {
+                \Log::error("Invoice not found with ID: " . $id);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy hóa đơn'
+                ], 404);
+            }
+
+            // Load invoice with items
+            $invoice = Invoice::with(['invoiceItems.product:id,product_name,product_thumbnail,sku'])
+                             ->find($id);
+
+            \Log::info("Invoice items count: " . $invoice->invoiceItems->count());
+
+            if ($invoice->invoiceItems->count() == 0) {
+                \Log::warning("Invoice has no items", ['invoice_id' => $id]);
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'message' => 'Hóa đơn không có sản phẩm nào'
+                ]);
+            }
+
+            $items = $invoice->invoiceItems->map(function($item) {
+                return [
+                    'product_id' => $item->product_id,
+                    'product_sku' => $item->product ? $item->product->sku : null,
+                    'product_name' => $item->product_name,
+                    'product_image' => $item->product && $item->product->product_thumbnail
+                                     ? $item->product->product_thumbnail
+                                     : null,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'stock_quantity' => $item->product ? $item->product->stock_quantity : 0,
+                ];
+            });
+
+            \Log::info("Successfully mapped items", ['items_count' => $items->count()]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $items
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Get invoice items failed', ['error' => $e->getMessage(), 'invoice_id' => $id, 'trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy hóa đơn hoặc có lỗi xảy ra: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

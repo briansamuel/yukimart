@@ -26,6 +26,7 @@ class Customer extends Model
         'notes',
         'birthday',
         'points',
+        'branch_shop_id',
         'created_by',
         'updated_by'
     ];
@@ -47,6 +48,38 @@ class Customer extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Relationship with invoices.
+     */
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Relationship with return orders.
+     */
+    public function returnOrders()
+    {
+        return $this->hasMany(ReturnOrder::class);
+    }
+
+    /**
+     * Relationship with point transactions.
+     */
+    public function pointTransactions()
+    {
+        return $this->hasMany(CustomerPointTransaction::class);
+    }
+
+    /**
+     * Relationship with branch shop (where customer was created)
+     */
+    public function branchShop()
+    {
+        return $this->belongsTo(BranchShop::class);
     }
 
     /**

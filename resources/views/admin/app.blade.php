@@ -34,6 +34,10 @@
     <link href="{{ asset('admin-assets/assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('admin-assets/assets/css/style.bundle.css') }}" rel="stylesheet" type="text/css" />
 
+    <!--begin::SweetAlert2-->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.min.css" rel="stylesheet">
+    <!--end::SweetAlert2-->
+
     <!--end::Global Stylesheets Bundle-->
 
     <link rel="shortcut icon"
@@ -101,6 +105,12 @@
 
     <script src="{{ asset('') }}admin-assets/assets/plugins/global/plugins.bundle.js" type="text/javascript"></script>
     <script src="{{ asset('') }}admin-assets/assets/js/scripts.bundle.js" type="text/javascript"></script>
+
+    <!--begin::SweetAlert2-->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+    <script src="{{ asset('admin-assets/globals/sweetalert-helper.js') }}"></script>
+    <!--end::SweetAlert2-->
+
     <script>
         $.ajaxSetup({
             headers: {

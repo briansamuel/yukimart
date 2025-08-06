@@ -1,0 +1,46 @@
+{
+  "cookies": [
+    {
+      "name": "remember_admin_59ba36addc2b2f9401580f014c7f58ea4e30989d",
+      "value": "eyJpdiI6InZOeGJobDNQdHBvL053ejg4T0Rlc0E9PSIsInZhbHVlIjoiZVZUdmRHc3NPNHlSUUJzK2VDQ0J0T2ZXN2wrR29nSUh6a0JTanRib1hlWS9TN1hWRTVDMmFoM0daS0xBdzlhbWl2MnlOcXh4ck92Q2ViYzRHUVkwM1VEeU9iSkN0Y1dnS1NwK2E0YllBT0xtbFNldlZlbnY5UHVtbDN1RnRwdkhCVlhaTm5ONEtCdmg0SHZFOXM3cENUSDdEMjlRdHMrMkJ0a2w0RFhvTHFzPSIsIm1hYyI6ImU3ODViOTU2ZjY5MWRjNzg3NzViNGI5ZTBjNDk5YWU4ZjJlYTgxMjg2M2RhNjA4YjBlNjBjODdlNDQ3MzVlOGUiLCJ0YWciOiIifQ%3D%3D",
+      "domain": "yukimart.local",
+      "path": "/",
+      "expires": 1787740523.632454,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "locale",
+      "value": "eyJpdiI6IkJGV1BzRzRiL3JVcDFITmFSdGVLOXc9PSIsInZhbHVlIjoiUkNLY295YUlVNUt6YnkxS0hxYUNzMlg0MzdReDBNdTk0WTFCUjNRSHFWWGdyUDk5TllDb1oxYkF0U0k4K0VvTCIsIm1hYyI6IjBlMzQ0NThhMjU3MDMwMWZkNTUwNTU1ODAyODQ5ZDUxYWU3YTM2ZDFiNjlmYzU5NzE1ZmJkMjU2M2EwNmY1MTIiLCJ0YWciOiIifQ%3D%3D",
+      "domain": "yukimart.local",
+      "path": "/",
+      "expires": 1755772530.165229,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6IjBHSkFYV2hMcitwL0puOTRmaW5NNEE9PSIsInZhbHVlIjoib0l3Y2E0bVNBOVJxNjFVbTBSNHlqazl0M2RQUEVpVnlibG52UUdsV3N6TFBJd1l4TXMydS90a3hXK0lxcENjYjh6VERxQ2tzMDRaRmxPZlpyWmkzNVV1d3U5WXU3TURzT1R5bk1Sc2Z6cUJvTjBUT3VJTnpzSDJHaC9MY0JiTjYiLCJtYWMiOiI5MWJmZDAxMGYxYjE0YzY2ZDllYWI3MDc3ZmQ1Mjk1MWFkMDRjOWQwMjQ3MmVmZGMwNjFkN2RjYWY4MTY3YzI1IiwidGFnIjoiIn0%3D",
+      "domain": "yukimart.local",
+      "path": "/",
+      "expires": 1753187730.165276,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "laravel_session",
+      "value": "eyJpdiI6Im8zd1FRK29PYXVGUGFnWWJ5YWZCeWc9PSIsInZhbHVlIjoiRzFTb0tZckg2bHNuRTYrVUNsSTYwb1ZBVE54NGxkMjRwMDN1QmVWRVdneFk5cEJRaDREUkZucGhoa2hUeXBaTmNwRHVERWl5N2R4ZFVoNG43b3NTQmlHR1lyTUJMUmpxYXBvNU1BTno2TFBCZG1FY1NWeDlKMFZkVytFQlpiUVciLCJtYWMiOiJhMDM2M2VjNjBiYzJjNjM2ZDc0Mjk3Nzc1YzgxM2E2NjAzZGI2YzkxNDEwMjQ5Njg0ZGRmNTg4MWY0M2I4ZTIxIiwidGFnIjoiIn0%3D",
+      "domain": "yukimart.local",
+      "path": "/",
+      "expires": 1753187730.1653,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "localStorage": "{\"phpdebugbar-height\":\"300\",\"data-theme\":\"light\",\"data-theme-mode\":\"light\"}",
+  "timestamp": 1753180531129
+}

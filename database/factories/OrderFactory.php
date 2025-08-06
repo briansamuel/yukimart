@@ -102,7 +102,7 @@ class OrderFactory extends Factory
      */
     private function generateOrderCode($date)
     {
-        $prefix = 'ORD';
+        $prefix = 'DH';
 
         // Handle both DateTime objects and string dates
         if ($date instanceof \DateTime) {

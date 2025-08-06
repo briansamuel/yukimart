@@ -1,0 +1,1655 @@
+@extends('admin.main-content')
+
+@section('title', 'Quản lý đơn hàng')
+
+@section('style')
+<link rel="stylesheet" href="{{ asset('admin-assets/assets/plugins/custom/datatables/datatables.bundle.css') }}" />
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" />
+<link href="{{ asset('admin-assets/css/globals.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ asset('admin-assets/css/order-list.css') }}" rel="stylesheet" type="text/css" />
+@endsection
+
+@section('content')
+    <!--begin::Content-->
+    <div id="kt_app_content" class="app-content flex-column-fluid">
+            <!--begin::Toolbar-->
+        <div id="kt_app_toolbar" class="app-toolbar py-3 py-lg-6">
+            
+        </div>
+        <!--end::Toolbar-->
+        <div id="kt_app_content_container" class="app-container container-fluid">
+            <div class="d-flex flex-column flex-lg-row">
+                @include('admin.orders.elements.filter')
+
+                <!--begin::Content-->
+                <div class="flex-lg-row-fluid ms-lg-15 order-2 order-lg-2">
+
+                    <div class="d-flex flex-column gap-7 gap-lg-10">
+                        <!--begin::Card-->
+                        <div class="card card-flush">
+                            <!--begin::Card header-->
+                            <div id="kt_invoices_table_toolbar" class="card-header align-items-center py-5 gap-2 gap-md-5">
+                                <!--begin::Card title-->
+                                <div class="card-title">
+                                    <!--begin::Search-->
+                                    <div class="d-flex align-items-center position-relative my-1">
+                                        <i class="fas fa-search fs-3 position-absolute ms-4"></i>
+                                        <input type="text" data-kt-orders-table-filter="search"
+                                            class="form-control form-control-solid w-250px ps-12"
+                                            placeholder="Tìm kiếm đơn hàng..." />
+                                    </div>
+                                    <!--end::Search-->
+                                </div>
+                                <!--end::Card title-->
+
+                                <!--begin::Card toolbar-->
+                                <div class="card-toolbar flex-row-fluid justify-content-end gap-5">
+                                    <!--begin::Bulk actions-->
+                                    <div id="bulk-actions-container" class="d-flex align-items-center gap-2" style="display: none !important;">
+                                        <span class="text-muted fs-7">
+                                            Đã chọn <span class="selected-count fw-bold">0</span> đơn hàng
+                                        </span>
+                                        <div class="separator separator-dashed mx-3"></div>
+                                        <button type="button" class="btn btn-sm btn-light-danger" id="bulk-delete-btn">
+                                            <i class="fas fa-trash"></i>
+                                            Xóa
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-light-primary" id="bulk-status-btn">
+                                            <i class="fas fa-edit"></i>
+                                            Cập nhật trạng thái
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-light-success" id="bulk-export-btn">
+                                            <i class="fas fa-download"></i>
+                                            Xuất Excel
+                                        </button>
+                                    </div>
+                                    <!--end::Bulk actions-->
+                                    <!--begin::Export dropdown-->
+                                    <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                                        data-kt-menu-placement="bottom-end">
+                                        <i class="fas fa-download"></i>
+                                        Xuất Excel
+                                    </button>
+                                    <!--begin::Menu-->
+                                    <div id="kt_orders_export_menu"
+                                        class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px py-4"
+                                        data-kt-menu="true">
+                                        <!--begin::Menu item-->
+                                        <div class="menu-item px-3">
+                                            <a href="#" class="menu-link px-3" data-kt-orders-export="copy">
+                                                Copy to clipboard
+                                            </a>
+                                        </div>
+                                        <!--end::Menu item-->
+                                        <!--begin::Menu item-->
+                                        <div class="menu-item px-3">
+                                            <a href="#" class="menu-link px-3" data-kt-orders-export="excel">
+                                                Export as Excel
+                                            </a>
+                                        </div>
+                                        <!--end::Menu item-->
+                                        <!--begin::Menu item-->
+                                        <div class="menu-item px-3">
+                                            <a href="#" class="menu-link px-3" data-kt-orders-export="csv">
+                                                Export as CSV
+                                            </a>
+                                        </div>
+                                        <!--end::Menu item-->
+                                        <!--begin::Menu item-->
+                                        <div class="menu-item px-3">
+                                            <a href="#" class="menu-link px-3" data-kt-orders-export="pdf">
+                                                Export as PDF
+                                            </a>
+                                        </div>
+                                        <!--end::Menu item-->
+                                    </div>
+                                    <!--end::Menu-->
+                                    <!--end::Export dropdown-->
+
+                                    <!--begin::Add order-->
+                                    <a href="{{ route('admin.order.add') }}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                        Thêm mới
+                                    </a>
+                                    <!--end::Add order-->
+
+                                    <!--begin::Column visibility-->
+                                    <div class="position-relative">
+                                        <button type="button" class="btn btn-success column-visibility-trigger" id="column_visibility_trigger">
+                                            <i class="fas fa-list fs-2"></i>
+                                        </button>
+                                        <!-- Column visibility panel -->
+                                        <div id="column_visibility_panel" class="column-visibility-panel position-absolute" style="display: none;">
+                                            <div class="panel-content">
+                                                <div class="panel-header">
+                                                    <h6 class="fw-bold text-dark mb-0">Chọn cột hiển thị</h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="0" id="col_checkbox" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_checkbox">Checkbox</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="1" id="col_order_code" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_order_code">Mã đơn hàng</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="2" id="col_customer" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_customer">Khách hàng</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="3" id="col_total" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_total">Tổng tiền</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="4" id="col_paid" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_paid">Đã thanh toán</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="5" id="col_status" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_status">Trạng thái</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="6" id="col_payment_status" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_payment_status">TT Thanh toán</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="7" id="col_delivery_status" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_delivery_status">TT Giao hàng</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="8" id="col_channel" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_channel">Kênh bán</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="9" id="col_created_at" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_created_at">Ngày tạo</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="10" id="col_updated_at" checked/>
+                                                                <label class="form-check-label fw-semibold" for="col_updated_at">Ngày cập nhật</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="11" id="col_creator"/>
+                                                                <label class="form-check-label fw-semibold" for="col_creator">Người tạo</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="12" id="col_email"/>
+                                                                <label class="form-check-label fw-semibold" for="col_email">Email</label>
+                                                            </div>
+                                                            <div class="form-check form-check-custom form-check-solid mb-3">
+                                                                <input class="form-check-input column-toggle" type="checkbox" value="13" id="col_branch"/>
+                                                                <label class="form-check-label fw-semibold" for="col_branch">Chi nhánh</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!--end::Column visibility-->
+                                </div>
+                                <!--end::Card toolbar-->
+                            </div>
+                            <!--end::Card header-->
+
+                            <!--begin::Card body-->
+                            <div class="card-body pt-0">
+                                <!--begin::Table container-->
+                                <div class="kt_table_responsive_container" id="kt_orders_table_container">
+                                    <!--begin::Table-->
+                                    <table class="kt_table_responsive table align-middle table-row-dashed fs-6 gy-5" id="kt_orders_table">
+                                        <thead>
+                                            <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
+                                                <th class="w-10px pe-2">
+                                                    <div
+                                                        class="form-check form-check-sm form-check-custom form-check-solid me-3">
+                                                        <input class="form-check-input" type="checkbox" id="select-all-orders"
+                                                            data-kt-check="true" data-kt-check-target="#kt_orders_table .form-check-input"
+                                                            value="1" />
+                                                    </div>
+                                                </th>
+                                                <th class="min-w-125px">Mã đơn hàng</th>
+                                                <th class="min-w-125px">Khách hàng</th>
+                                                <th class="min-w-125px">Tổng tiền</th>
+                                                <th class="min-w-125px">Đã thanh toán</th>
+                                                <th class="min-w-125px">Trạng thái</th>
+                                                <th class="min-w-125px">TT Thanh toán</th>
+                                                <th class="min-w-125px">TT Giao hàng</th>
+                                                <th class="min-w-125px">Kênh bán</th>
+                                                <th class="min-w-125px">Ngày tạo</th>
+                                                <th class="min-w-125px">Người bán</th>
+                                                <th class="min-w-125px">Người tạo</th>
+                                                <th class="min-w-125px">Email</th>
+                                                <th class="min-w-125px">Chi nhánh</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="fw-semibold text-gray-600">
+                                            <!-- Data will be populated by AJAX -->
+                                        </tbody>
+                                    </table>
+                                    <!--end::Table-->
+                                </div>
+                                <!--end::Table container-->
+
+                                <!--begin::Pagination-->
+                                <div class="d-flex flex-stack flex-wrap pt-10">
+                                    <div class="d-flex align-items-center">
+                                        <div class="fs-6 fw-semibold text-gray-700" id="kt_orders_table_info">
+                                            Hiển thị 0 đến 0 của 0 kết quả
+                                        </div>
+                                        <div class="ms-7">
+                                            <select class="form-select form-select-sm w-auto" id="kt_orders_per_page">
+                                                <option value="10">10 / trang</option>
+                                                <option value="25">25 / trang</option>
+                                                <option value="50">50 / trang</option>
+                                                <option value="100">100 / trang</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <ul class="pagination kt_table_pagination" id="kt_orders_table_pagination">
+                                        <!-- Pagination links will be generated here -->
+                                    </ul>
+                                </div>
+                                <!--end::Pagination-->
+                            </div>
+                            <!--end::Card body-->
+                        </div>
+                        <!--end::Card-->
+                    
+                </div>
+                <!--end::Content-->
+            </div>
+        </div>
+    </div>
+    <!--end::Content-->
+@endsection
+
+@section('scripts')
+    <!-- Include global utilities and filter scripts -->
+    <script src="{{ asset('admin-assets/globals/date-utils.js') }}"></script>
+    <script src="{{ asset('admin-assets/globals/filter.js') }}"></script>
+    <script src="{{ asset('admin-assets/globals/column-visibility.js') }}"></script>
+    <!-- Include base table manager and order-specific manager -->
+    <script src="{{ asset('admin-assets/js/base/table-manager.js') }}"></script>
+    <script src="{{ asset('admin-assets/js/orders/order-manager.js') }}"></script>
+
+    <script>
+        // Order routes configuration
+        window.orderRoutes = {
+            data: '{{ route('admin.order.ajax') }}',
+            get: '{{ route('admin.order.get', ':id') }}',
+            detail: '{{ route('admin.order.detail.modal', ':id') }}',
+            update: '{{ route('admin.order.update', ':id') }}',
+            delete: '{{ route('admin.order.delete', ':id') }}',
+            bulkDelete: '{{ route('admin.order.bulk.delete') }}',
+            bulkUpdate: '{{ route('admin.order.bulk.update') }}',
+            export: '{{ route('admin.order.export') }}'
+        };
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing Orders Page...');
+
+            // Initialize filters using KTGlobalFilter
+            if (typeof KTGlobalFilter !== 'undefined') {
+                KTGlobalFilter.init('#kt_orders_filter_form', function() {
+                    if (window.orderTableManager) {
+                        window.orderTableManager.loadData();
+                    }
+                });
+            }
+
+            // Initialize order table manager
+            window.orderTableManager = new OrderTableManager();
+        });
+
+
+
+
+
+
+
+            console.log('Initializing order-specific filters...');
+
+            // Initialize status checkboxes
+            const statusCheckboxes = document.querySelectorAll('input[name="status[]"]');
+            statusCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    loadOrders();
+                });
+            });
+
+            // Initialize payment status checkboxes
+            const paymentStatusCheckboxes = document.querySelectorAll('input[name="payment_status[]"]');
+            paymentStatusCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    loadOrders();
+                });
+            });
+
+            // Initialize delivery status checkboxes
+            const deliveryStatusCheckboxes = document.querySelectorAll('input[name="delivery_status[]"]');
+            deliveryStatusCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    loadOrders();
+                });
+            });
+        }
+
+        function initColumnVisibility() {
+            console.log('Initializing column visibility...');
+
+            // Check if KTColumnVisibility is available
+            if (typeof KTColumnVisibility === 'undefined') {
+                console.warn('KTColumnVisibility not available');
+                return;
+            }
+
+            // Define default column visibility
+            var defaultVisibility = {
+                0: true,  // Checkbox
+                1: true,  // Mã đơn hàng
+                2: true,  // Khách hàng
+                3: true,  // Tổng tiền
+                4: true,  // Đã thanh toán
+                5: true,  // Trạng thái
+                6: true,  // TT Thanh toán
+                7: true,  // TT Giao hàng
+                8: false, // Kênh bán (ẩn mặc định)
+                9: true,  // Ngày tạo
+                10: false, // Người bán (ẩn mặc định)
+                11: false, // Người tạo (ẩn mặc định)
+                12: false, // Email (ẩn mặc định)
+                13: false  // Chi nhánh (ẩn mặc định)
+            };
+
+            // Initialize column visibility
+            orderColumnVisibility = KTColumnVisibility.init({
+                storageKey: 'orders_column_visibility',
+                defaultVisibility: defaultVisibility,
+                triggerSelector: '#column_visibility_trigger',
+                panelSelector: '#column_visibility_panel',
+                toggleSelector: '.column-toggle',
+                tableSelector: '#kt_orders_table',
+                onToggle: function(columnIndex, isVisible, columnVisibility) {
+                    console.log('Orders column', columnIndex, 'visibility changed to:', isVisible);
+                }
+            });
+
+            console.log('Column visibility initialized successfully');
+        }
+
+        function initSelectAll() {
+            console.log('Initializing select all functionality...');
+
+            const selectAllCheckbox = document.getElementById('select-all-orders');
+            if (!selectAllCheckbox) {
+                console.warn('Select all checkbox not found');
+                return;
+            }
+
+            // Handle select all checkbox change
+            selectAllCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                console.log('Select all changed:', isChecked);
+
+                // Get all order checkboxes
+                const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+
+                // Update all order checkboxes
+                orderCheckboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+
+                // Update selected count
+                updateSelectedCount();
+
+                // Show/hide bulk actions
+                toggleBulkActions();
+            });
+
+            console.log('Select all functionality initialized successfully');
+        }
+
+        function updateSelectedCount() {
+            const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+            const selectedCount = selectedCheckboxes.length;
+            const totalCheckboxes = document.querySelectorAll('.order-checkbox').length;
+
+            console.log('Selected count:', selectedCount, 'of', totalCheckboxes);
+
+            // Update select all checkbox state
+            const selectAllCheckbox = document.getElementById('select-all-orders');
+            if (selectAllCheckbox) {
+                if (selectedCount === 0) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                } else if (selectedCount === totalCheckboxes) {
+                    selectAllCheckbox.checked = true;
+                    selectAllCheckbox.indeterminate = false;
+                } else {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = true;
+                }
+            }
+
+            // Update selected count display
+            updateSelectedCountDisplay(selectedCount);
+
+            return selectedCount;
+        }
+
+        function updateSelectedCountDisplay(count) {
+            // Update any selected count displays in the UI
+            const countDisplays = document.querySelectorAll('.selected-count');
+            countDisplays.forEach(display => {
+                display.textContent = count;
+            });
+        }
+
+        function toggleBulkActions() {
+            const selectedCount = document.querySelectorAll('.order-checkbox:checked').length;
+            const bulkActionsContainer = document.getElementById('bulk-actions-container');
+
+            if (bulkActionsContainer) {
+                if (selectedCount > 0) {
+                    bulkActionsContainer.style.display = 'block';
+                    bulkActionsContainer.querySelector('.selected-count').textContent = selectedCount;
+                } else {
+                    bulkActionsContainer.style.display = 'none';
+                }
+            }
+
+            console.log('Bulk actions toggled:', selectedCount > 0 ? 'shown' : 'hidden');
+        }
+
+        function bindCheckboxEvents() {
+            console.log('Binding checkbox events...');
+
+            // Bind individual checkbox events
+            const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+            orderCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    console.log('Order checkbox changed:', this.value, this.checked);
+
+                    // Update selected count and bulk actions
+                    updateSelectedCount();
+                    toggleBulkActions();
+                });
+            });
+
+            console.log('Checkbox events bound for', orderCheckboxes.length, 'checkboxes');
+        }
+
+        function initBulkActions() {
+            console.log('Initializing bulk actions...');
+
+            // Bulk delete button
+            const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.addEventListener('click', function() {
+                    handleBulkDelete();
+                });
+            }
+
+            // Bulk status update button
+            const bulkStatusBtn = document.getElementById('bulk-status-btn');
+            if (bulkStatusBtn) {
+                bulkStatusBtn.addEventListener('click', function() {
+                    handleBulkStatusUpdate();
+                });
+            }
+
+            // Bulk export button
+            const bulkExportBtn = document.getElementById('bulk-export-btn');
+            if (bulkExportBtn) {
+                bulkExportBtn.addEventListener('click', function() {
+                    handleBulkExport();
+                });
+            }
+
+            console.log('Bulk actions initialized successfully');
+        }
+
+        function initPagination() {
+            console.log('Initializing pagination...');
+
+            // Initialize per page selector
+            const perPageSelect = document.getElementById('kt_orders_per_page');
+            if (perPageSelect) {
+                perPageSelect.addEventListener('change', function() {
+                    const newPerPage = parseInt(this.value);
+                    console.log('Per page changed to:', newPerPage);
+
+                    // Update current filters and reload
+                    currentFilters.per_page = newPerPage;
+                    currentFilters.page = 1; // Reset to first page
+                    loadOrders();
+                });
+            }
+
+            // Initialize pagination click events
+            bindPaginationEvents();
+
+            console.log('Pagination initialized successfully');
+        }
+
+        function bindPaginationEvents() {
+            console.log('Binding pagination events...');
+
+            const paginationContainer = document.getElementById('kt_orders_table_pagination');
+            if (!paginationContainer) {
+                console.warn('Pagination container not found');
+                return;
+            }
+
+            // Use event delegation for pagination clicks
+            paginationContainer.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const link = e.target.closest('.page-link');
+                if (!link) return;
+
+                const pageItem = link.closest('.page-item');
+                if (!pageItem || pageItem.classList.contains('disabled') || pageItem.classList.contains('active')) {
+                    return;
+                }
+
+                let targetPage = 1;
+
+                if (pageItem.classList.contains('previous')) {
+                    targetPage = Math.max(1, (currentFilters.page || 1) - 1);
+                } else if (pageItem.classList.contains('next')) {
+                    const totalPages = Math.ceil((lastResponseData?.recordsTotal || 0) / (currentFilters.per_page || 10));
+                    targetPage = Math.min(totalPages, (currentFilters.page || 1) + 1);
+                } else {
+                    // Direct page number click
+                    const pageText = link.textContent.trim();
+                    if (!isNaN(pageText)) {
+                        targetPage = parseInt(pageText);
+                    }
+                }
+
+                console.log('Pagination click - target page:', targetPage);
+
+                if (targetPage !== currentFilters.page) {
+                    currentFilters.page = targetPage;
+                    loadOrders();
+                }
+            });
+
+            console.log('Pagination events bound successfully');
+        }
+
+        function updateAdvancedPagination(data) {
+            console.log('Updating advanced pagination with data:', data);
+
+            const recordsTotal = data.recordsTotal || 0;
+            const recordsFiltered = data.recordsFiltered || recordsTotal;
+            const currentPage = currentFilters.page || 1;
+            const perPage = currentFilters.per_page || 10;
+            const totalPages = Math.ceil(recordsFiltered / perPage);
+
+            // Calculate display range
+            const startRecord = recordsFiltered > 0 ? ((currentPage - 1) * perPage) + 1 : 0;
+            const endRecord = Math.min(currentPage * perPage, recordsFiltered);
+
+            console.log('Pagination calculations:', {
+                recordsTotal,
+                recordsFiltered,
+                currentPage,
+                perPage,
+                totalPages,
+                startRecord,
+                endRecord
+            });
+
+            // Update info text
+            updatePaginationInfo(startRecord, endRecord, recordsFiltered);
+
+            // Update per page selector
+            updatePerPageSelector(perPage);
+
+            // Update pagination controls
+            updatePaginationControls(currentPage, totalPages);
+        }
+
+        function updatePaginationInfo(start, end, total) {
+            const infoElement = document.getElementById('kt_orders_table_info');
+            if (infoElement) {
+                if (total > 0) {
+                    infoElement.textContent = `Hiển thị ${start} đến ${end} của ${total} kết quả`;
+                } else {
+                    infoElement.textContent = 'Không có kết quả';
+                }
+            }
+        }
+
+        function updatePerPageSelector(currentPerPage) {
+            const perPageSelect = document.getElementById('kt_orders_per_page');
+            if (perPageSelect && perPageSelect.value != currentPerPage) {
+                perPageSelect.value = currentPerPage;
+            }
+        }
+
+        function updatePaginationControls(currentPage, totalPages) {
+            console.log('Updating pagination controls:', { currentPage, totalPages });
+
+            const paginationContainer = document.getElementById('kt_orders_table_pagination');
+            if (!paginationContainer) {
+                console.warn('Pagination container not found');
+                return;
+            }
+
+            // Clear existing pagination
+            paginationContainer.innerHTML = '';
+
+            // Previous button
+            const prevDisabled = currentPage <= 1;
+            const prevItem = createPaginationItem('previous', 'Previous', prevDisabled);
+            paginationContainer.appendChild(prevItem);
+
+            // Page numbers
+            const pageNumbers = generatePageNumbers(currentPage, totalPages);
+            pageNumbers.forEach(pageInfo => {
+                const pageItem = createPaginationItem(
+                    pageInfo.type,
+                    pageInfo.label,
+                    pageInfo.disabled,
+                    pageInfo.active
+                );
+                paginationContainer.appendChild(pageItem);
+            });
+
+            // Next button
+            const nextDisabled = currentPage >= totalPages;
+            const nextItem = createPaginationItem('next', 'Next', nextDisabled);
+            paginationContainer.appendChild(nextItem);
+
+            console.log('Pagination controls updated successfully');
+        }
+
+        function generatePageNumbers(currentPage, totalPages) {
+            const pages = [];
+            const maxVisiblePages = 5;
+
+            if (totalPages <= maxVisiblePages) {
+                // Show all pages if total is small
+                for (let i = 1; i <= totalPages; i++) {
+                    pages.push({
+                        type: 'page',
+                        label: i.toString(),
+                        disabled: false,
+                        active: i === currentPage
+                    });
+                }
+            } else {
+                // Complex pagination logic
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                // Adjust if we're near the end
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // First page
+                if (startPage > 1) {
+                    pages.push({
+                        type: 'page',
+                        label: '1',
+                        disabled: false,
+                        active: false
+                    });
+
+                    if (startPage > 2) {
+                        pages.push({
+                            type: 'ellipsis',
+                            label: '...',
+                            disabled: true,
+                            active: false
+                        });
+                    }
+                }
+
+                // Middle pages
+                for (let i = startPage; i <= endPage; i++) {
+                    pages.push({
+                        type: 'page',
+                        label: i.toString(),
+                        disabled: false,
+                        active: i === currentPage
+                    });
+                }
+
+                // Last page
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        pages.push({
+                            type: 'ellipsis',
+                            label: '...',
+                            disabled: true,
+                            active: false
+                        });
+                    }
+
+                    pages.push({
+                        type: 'page',
+                        label: totalPages.toString(),
+                        disabled: false,
+                        active: false
+                    });
+                }
+            }
+
+            return pages;
+        }
+
+        function createPaginationItem(type, label, disabled = false, active = false) {
+            const li = document.createElement('li');
+            li.className = `page-item ${type}`;
+
+            if (disabled) li.classList.add('disabled');
+            if (active) li.classList.add('active');
+
+            const a = document.createElement('a');
+            a.href = '#';
+            a.className = 'page-link';
+
+            if (type === 'previous') {
+                a.innerHTML = `
+                    <i class="ki-duotone ki-black-left fs-3">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                `;
+            } else if (type === 'next') {
+                a.innerHTML = `
+                    <i class="ki-duotone ki-black-right fs-3">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                `;
+            } else {
+                a.textContent = label;
+            }
+
+            li.appendChild(a);
+            return li;
+        }
+
+        function getSelectedOrderIds() {
+            const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+            const orderIds = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+            console.log('Selected order IDs:', orderIds);
+            return orderIds;
+        }
+
+        function handleBulkDelete() {
+            const selectedIds = getSelectedOrderIds();
+            if (selectedIds.length === 0) {
+                alert('Vui lòng chọn ít nhất một đơn hàng để xóa.');
+                return;
+            }
+
+            const confirmMessage = `Bạn có chắc chắn muốn xóa ${selectedIds.length} đơn hàng đã chọn?\nHành động này không thể hoàn tác.`;
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            console.log('Bulk deleting orders:', selectedIds);
+
+            // Show loading state
+            showBulkActionLoading('Đang xóa đơn hàng...');
+
+            // Make AJAX request to delete orders
+            fetch('/admin/orders/bulk-delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    order_ids: selectedIds
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideBulkActionLoading();
+
+                if (data.success) {
+                    showNotification('success', `Đã xóa thành công ${selectedIds.length} đơn hàng.`);
+
+                    // Reload data
+                    loadOrders();
+
+                    // Reset selections
+                    resetSelections();
+                } else {
+                    showNotification('error', data.message || 'Có lỗi xảy ra khi xóa đơn hàng.');
+                }
+            })
+            .catch(error => {
+                hideBulkActionLoading();
+                console.error('Bulk delete error:', error);
+                showNotification('error', 'Có lỗi xảy ra khi xóa đơn hàng.');
+            });
+        }
+
+        function handleBulkStatusUpdate() {
+            const selectedIds = getSelectedOrderIds();
+            if (selectedIds.length === 0) {
+                alert('Vui lòng chọn ít nhất một đơn hàng để cập nhật trạng thái.');
+                return;
+            }
+
+            console.log('Bulk status update for orders:', selectedIds);
+
+            // Show status selection modal
+            showStatusUpdateModal(selectedIds);
+        }
+
+        function handleBulkExport() {
+            const selectedIds = getSelectedOrderIds();
+            if (selectedIds.length === 0) {
+                alert('Vui lòng chọn ít nhất một đơn hàng để xuất Excel.');
+                return;
+            }
+
+            console.log('Bulk export for orders:', selectedIds);
+
+            // Show loading state
+            showBulkActionLoading('Đang tạo file Excel...');
+
+            // Create form and submit to export endpoint
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/admin/orders/bulk-export';
+            form.style.display = 'none';
+
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            form.appendChild(csrfInput);
+
+            // Add order IDs
+            selectedIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'order_ids[]';
+                input.value = id;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            // Hide loading after a short delay
+            setTimeout(() => {
+                hideBulkActionLoading();
+                showNotification('success', `Đang tạo file Excel cho ${selectedIds.length} đơn hàng. File sẽ được tải xuống tự động.`);
+            }, 1000);
+        }
+
+        function showBulkActionLoading(message) {
+            // Create or update loading overlay
+            let loadingOverlay = document.getElementById('bulk-action-loading');
+            if (!loadingOverlay) {
+                loadingOverlay = document.createElement('div');
+                loadingOverlay.id = 'bulk-action-loading';
+                loadingOverlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+                loadingOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                loadingOverlay.style.zIndex = '9999';
+                loadingOverlay.innerHTML = `
+                    <div class="bg-white rounded p-4 text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="loading-message">${message}</div>
+                    </div>
+                `;
+                document.body.appendChild(loadingOverlay);
+            } else {
+                loadingOverlay.querySelector('.loading-message').textContent = message;
+                loadingOverlay.style.display = 'flex';
+            }
+        }
+
+        function hideBulkActionLoading() {
+            const loadingOverlay = document.getElementById('bulk-action-loading');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        function resetSelections() {
+            // Uncheck all checkboxes
+            const selectAllCheckbox = document.getElementById('select-all-orders');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            }
+
+            const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+            orderCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // Hide bulk actions
+            toggleBulkActions();
+
+            console.log('Selections reset');
+        }
+
+        function showNotification(type, message) {
+            // Simple notification system - can be enhanced with toast library
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '10000';
+            notification.style.minWidth = '300px';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+
+            console.log('Notification shown:', type, message);
+        }
+
+        function showStatusUpdateModal(orderIds) {
+            // Create modal HTML
+            const modalHtml = `
+                <div class="modal fade" id="statusUpdateModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Cập nhật trạng thái đơn hàng</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Cập nhật trạng thái cho <strong>${orderIds.length}</strong> đơn hàng đã chọn:</p>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Trạng thái đơn hàng:</label>
+                                    <select class="form-select" id="orderStatus">
+                                        <option value="">-- Chọn trạng thái --</option>
+                                        <option value="processing">Đang xử lý</option>
+                                        <option value="completed">Hoàn thành</option>
+                                        <option value="cancelled">Đã hủy</option>
+                                        <option value="undeliverable">Không giao được</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Trạng thái thanh toán:</label>
+                                    <select class="form-select" id="paymentStatus">
+                                        <option value="">-- Không thay đổi --</option>
+                                        <option value="unpaid">Chưa thanh toán</option>
+                                        <option value="paid">Đã thanh toán</option>
+                                        <option value="partial">Thanh toán một phần</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Trạng thái giao hàng:</label>
+                                    <select class="form-select" id="deliveryStatus">
+                                        <option value="">-- Không thay đổi --</option>
+                                        <option value="pending">Chờ xử lý</option>
+                                        <option value="picking">Lấy hàng</option>
+                                        <option value="shipping">Giao hàng</option>
+                                        <option value="delivered">Giao thành công</option>
+                                        <option value="returning">Chuyển hoàn</option>
+                                        <option value="returned">Đã chuyển hoàn</option>
+                                        <option value="cancelled">Đã hủy</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                <button type="button" class="btn btn-primary" id="confirmStatusUpdate">Cập nhật</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('statusUpdateModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
+            modal.show();
+
+            // Handle confirm button
+            document.getElementById('confirmStatusUpdate').addEventListener('click', function() {
+                const orderStatus = document.getElementById('orderStatus').value;
+                const paymentStatus = document.getElementById('paymentStatus').value;
+                const deliveryStatus = document.getElementById('deliveryStatus').value;
+
+                if (!orderStatus && !paymentStatus && !deliveryStatus) {
+                    alert('Vui lòng chọn ít nhất một trạng thái để cập nhật.');
+                    return;
+                }
+
+                // Close modal
+                modal.hide();
+
+                // Perform bulk status update
+                performBulkStatusUpdate(orderIds, {
+                    order_status: orderStatus,
+                    payment_status: paymentStatus,
+                    delivery_status: deliveryStatus
+                });
+            });
+        }
+
+        function performBulkStatusUpdate(orderIds, statusData) {
+            console.log('Performing bulk status update:', orderIds, statusData);
+
+            // Show loading state
+            showBulkActionLoading('Đang cập nhật trạng thái...');
+
+            // Make AJAX request to update status
+            fetch('/admin/orders/bulk-status-update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    order_ids: orderIds,
+                    ...statusData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideBulkActionLoading();
+
+                if (data.success) {
+                    showNotification('success', `Đã cập nhật trạng thái thành công cho ${orderIds.length} đơn hàng.`);
+
+                    // Reload data
+                    loadOrders();
+
+                    // Reset selections
+                    resetSelections();
+                } else {
+                    showNotification('error', data.message || 'Có lỗi xảy ra khi cập nhật trạng thái.');
+                }
+            })
+            .catch(error => {
+                hideBulkActionLoading();
+                console.error('Bulk status update error:', error);
+                showNotification('error', 'Có lỗi xảy ra khi cập nhật trạng thái.');
+            });
+        }
+
+        function loadOrders(filters = {}) {
+            console.log('Loading orders with filters:', filters);
+
+            // Merge filters with currentFilters
+            currentFilters = { ...currentFilters, ...filters };
+            console.log('Current filters updated:', currentFilters);
+
+            // Show loading state
+            const tbody = document.querySelector('#kt_orders_table tbody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="14" class="text-center">Đang tải...</td></tr>';
+            }
+
+            // Show loading state in table manager
+            if (window.ordersTableManager) {
+                window.ordersTableManager.showLoadingState();
+            }
+
+            // Build query parameters
+            const params = new URLSearchParams({
+                page: currentFilters.page || 1,
+                per_page: currentFilters.per_page || 10,
+                search: currentFilters.search || '',
+                time_filter_display: currentFilters.time_filter_display || 'this_month',
+                date_from: currentFilters.date_from || '',
+                date_to: currentFilters.date_to || '',
+                ...currentFilters
+            });
+
+            const url = `${orderRoutes.data}?${params}`;
+            console.log('Fetching orders from:', url);
+
+            // Make AJAX request
+            fetch(url)
+                .then(response => {
+                    console.log('Orders response:', response.status, response.ok);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Orders data received:', data.success, data.data ? data.data.length : 0);
+
+                    if (data.success && data.data) {
+                        // Store response data for pagination
+                        lastResponseData = data;
+                        console.log('Response data stored:', {
+                            recordsTotal: data.recordsTotal,
+                            recordsFiltered: data.recordsFiltered,
+                            currentPage: currentFilters.page,
+                            perPage: currentFilters.per_page
+                        });
+
+                        console.log('About to call renderOrders with', data.data.length, 'items');
+
+                        try {
+                            renderOrders(data.data);
+                            console.log('renderOrders completed successfully');
+                        } catch (renderError) {
+                            console.error('Error in renderOrders:', renderError);
+                            if (tbody) {
+                                tbody.innerHTML =
+                                    '<tr><td colspan="14" class="text-center text-danger">Lỗi hiển thị dữ liệu</td></tr>';
+                            }
+                            return;
+                        }
+
+                        // Update pagination
+                        updateAdvancedPagination(data);
+
+                        // Hide loading state and refresh scroll indicators
+                        if (window.ordersTableManager) {
+                            window.ordersTableManager.hideLoadingState();
+                            setTimeout(() => {
+                                window.ordersTableManager.refreshScrollIndicators();
+                            }, 100);
+                        }
+                    } else {
+                        console.error('Failed to load orders:', data.message || 'No data received');
+                        if (tbody) {
+                            tbody.innerHTML =
+                                '<tr><td colspan="14" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading orders:', error);
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="14" class="text-center text-danger">Lỗi kết nối</td></tr>';
+                    }
+
+                    // Hide loading state on error
+                    if (window.ordersTableManager) {
+                        window.ordersTableManager.hideLoadingState();
+                    }
+                });
+        }
+
+        function renderOrders(orders) {
+            const tbody = document.querySelector('#kt_orders_table tbody');
+
+            if (!orders || orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="14" class="text-center">Không có dữ liệu</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => `
+        <tr class="order-row" data-order-id="${order.id}" style="cursor: pointer;">
+            <td>
+                <div class="form-check form-check-sm form-check-custom form-check-solid">
+                    <input class="form-check-input order-checkbox" type="checkbox" value="${order.id}" data-order-id="${order.id}" />
+                </div>
+            </td>
+            <td>
+                <div class="text-gray-800 text-hover-primary mb-1">${order.order_code || 'N/A'}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 text-hover-primary mb-1">${order.customer_name || 'Khách lẻ'}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">${formatCurrency(order.total_amount)}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">${formatCurrency(order.amount_paid)}</div>
+            </td>
+            <td>
+                <div class="badge badge-${getStatusColor(order.status)}">${getStatusLabel(order.status)}</div>
+            </td>
+            <td>
+                <div class="badge badge-light-${getPaymentStatusColor(order.payment_status)}">${getPaymentStatusLabel(order.payment_status)}</div>
+            </td>
+            <td>
+                <div class="badge badge-light-${getDeliveryStatusColor(order.delivery_status)}">${getDeliveryStatusLabel(order.delivery_status)}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">${getChannelLabel(order.channel)}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">
+                    <div>${formatDate(order.created_at_raw || order.created_at)}</div>
+                    <div class="text-muted fs-7">${formatTime(order.created_at_raw || order.created_at)}</div>
+                </div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">${order.seller_name || 'N/A'}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">${order.creator_name || 'N/A'}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">${order.customer_email || 'N/A'}</div>
+            </td>
+            <td>
+                <div class="text-gray-800 mb-1">${order.branch_shop_name || 'N/A'}</div>
+            </td>
+        </tr>
+    `).join('');
+
+            // Apply column visibility
+            applyColumnVisibility();
+
+            // Bind row click events for expansion
+            try {
+                if (typeof bindRowClickEvents === 'function') {
+                    bindRowClickEvents();
+                }
+            } catch (error) {
+                console.warn('Row click events function not available:', error);
+            }
+
+            // Bind individual checkbox events
+            bindCheckboxEvents();
+
+            // Refresh scroll indicators after rendering
+            if (window.ordersTableManager) {
+                setTimeout(() => {
+                    window.ordersTableManager.refreshScrollIndicators();
+                }, 50);
+            }
+        }
+
+        // Helper functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount || 0);
+        }
+
+        // Date formatting functions are now available globally via DateUtils
+        // formatDate and formatTime are available as window.formatDate and window.formatTime
+
+        function getStatusColor(status) {
+            const colors = {
+                'draft': 'secondary',
+                'pending': 'warning',
+                'processing': 'info',
+                'shipped': 'primary',
+                'delivered': 'success',
+                'completed': 'success',
+                'cancelled': 'danger',
+                'returned': 'dark'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'draft': 'Nháp',
+                'pending': 'Chờ xử lý',
+                'processing': 'Đang xử lý',
+                'shipped': 'Đã gửi hàng',
+                'delivered': 'Đã giao hàng',
+                'completed': 'Hoàn thành',
+                'cancelled': 'Đã hủy',
+                'returned': 'Đã trả hàng'
+            };
+            return labels[status] || status;
+        }
+
+        function getPaymentStatusColor(status) {
+            const colors = {
+                'unpaid': 'danger',
+                'partial': 'warning',
+                'paid': 'success',
+                'refunded': 'info'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getPaymentStatusLabel(status) {
+            const labels = {
+                'unpaid': 'Chưa thanh toán',
+                'partial': 'Thanh toán một phần',
+                'paid': 'Đã thanh toán',
+                'refunded': 'Đã hoàn tiền'
+            };
+            return labels[status] || status;
+        }
+
+        function getDeliveryStatusColor(status) {
+            const colors = {
+                'pending': 'secondary',
+                'preparing': 'warning',
+                'shipped': 'info',
+                'out_for_delivery': 'primary',
+                'delivered': 'success',
+                'failed': 'danger',
+                'returned': 'dark'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getDeliveryStatusLabel(status) {
+            const labels = {
+                'pending': 'Chờ giao hàng',
+                'preparing': 'Đang chuẩn bị',
+                'shipped': 'Đã gửi hàng',
+                'out_for_delivery': 'Đang giao hàng',
+                'delivered': 'Đã giao hàng',
+                'failed': 'Giao hàng thất bại',
+                'returned': 'Đã trả hàng'
+            };
+            return labels[status] || status;
+        }
+
+        function getChannelLabel(channel) {
+            const labels = {
+                'website': 'Website',
+                'mobile_app': 'Mobile App',
+                'facebook': 'Facebook',
+                'shopee': 'Shopee',
+                'lazada': 'Lazada',
+                'tiki': 'Tiki',
+                'phone': 'Điện thoại',
+                'store': 'Cửa hàng'
+            };
+            return labels[channel] || channel || 'N/A';
+        }
+
+        function initOrderSearch() {
+            const searchInput = document.querySelector('[data-kt-orders-table-filter="search"]');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    loadOrders({
+                        search: this.value
+                    });
+                }, 500);
+            });
+        }
+
+        function bindRowClickEvents() {
+            document.querySelectorAll('.order-row').forEach(row => {
+                row.addEventListener('click', function(e) {
+                    if (e.target.type === 'checkbox') return;
+
+                    const orderId = this.dataset.orderId;
+                    toggleOrderExpansion(orderId, this);
+                });
+            });
+        }
+
+        function toggleOrderExpansion(orderId, row) {
+            console.log('Toggling order expansion for:', orderId);
+            // Implementation for order detail expansion similar to invoices
+            // This will be implemented in the next step
+        }
+
+        function updatePagination(data) {
+            console.log('Updating pagination with data:', data);
+
+            // Update pagination info and controls
+            const info = document.querySelector('.dataTables_info');
+
+            if (info && data.recordsTotal !== undefined) {
+                const currentPage = data.current_page || 1;
+                const perPage = data.per_page || 10;
+                const total = data.recordsTotal || data.recordsFiltered || 0;
+                const dataLength = data.data ? data.data.length : 0;
+
+                const start = dataLength > 0 ? ((currentPage - 1) * perPage) + 1 : 0;
+                const end = Math.min(start + dataLength - 1, total);
+
+                console.log('Pagination calc:', { currentPage, perPage, total, dataLength, start, end });
+
+                if (dataLength > 0) {
+                    info.textContent = `Hiển thị ${start} đến ${end} của ${total} kết quả`;
+                } else {
+                    info.textContent = `Hiển thị 0 đến 0 của ${total} kết quả`;
+                }
+            }
+
+            // Update pagination controls (simplified)
+            // Full pagination implementation would go here
+        }
+
+        function applyColumnVisibility() {
+            console.log('Applying column visibility...');
+
+            if (orderColumnVisibility && typeof KTColumnVisibility !== 'undefined') {
+                KTColumnVisibility.apply({
+                    tableSelector: '#kt_orders_table'
+                }, orderColumnVisibility);
+                console.log('Column visibility applied successfully');
+
+                // Refresh scroll indicators after column visibility change
+                if (window.ordersTableManager) {
+                    setTimeout(() => {
+                        window.ordersTableManager.refreshScrollIndicators();
+
+                        // Dispatch custom event for column visibility change
+                        document.dispatchEvent(new CustomEvent('columnVisibilityChanged', {
+                            detail: {
+                                table: 'orders',
+                                visibility: orderColumnVisibility
+                            }
+                        }));
+                    }, 100);
+                }
+            } else {
+                console.warn('Column visibility not available or not initialized');
+            }
+        }
+
+        function bindRowClickEvents() {
+            console.log('Binding row click events...');
+
+            const tbody = document.querySelector('#kt_orders_table tbody');
+            if (!tbody) {
+                console.warn('Table tbody not found');
+                return;
+            }
+
+            // Use event delegation for better performance
+            tbody.addEventListener('click', function(e) {
+                console.log('Click event captured:', e.target);
+
+                // Find the closest order row
+                const $row = e.target.closest('.order-row');
+                if (!$row) {
+                    console.log('Not clicking on order row');
+                    return;
+                }
+
+                // Don't trigger if clicking on checkbox or action buttons
+                if (e.target.type === 'checkbox' ||
+                    e.target.closest('.form-check, .btn, .dropdown')) {
+                    console.log('Clicking on checkbox or button, ignoring');
+                    return;
+                }
+
+                const orderId = $row.dataset.orderId;
+                console.log('Row clicked, order ID:', orderId);
+
+                if (orderId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleOrderExpansion($row, orderId);
+                }
+            });
+
+            console.log('Row click events bound successfully');
+        }
+
+        function toggleOrderExpansion($row, orderId) {
+            console.log('Toggling order expansion for order:', orderId);
+
+            // Close any other open detail rows first
+            const openDetailRows = document.querySelectorAll('.order-detail-row');
+            openDetailRows.forEach(detailRow => {
+                detailRow.style.display = 'none';
+                setTimeout(() => detailRow.remove(), 300);
+            });
+
+            // Remove active class from all rows
+            document.querySelectorAll('.order-row-active').forEach(row => {
+                row.classList.remove('expanded', 'order-row-active');
+            });
+
+            // Check if this row is already expanded
+            const nextRow = $row.nextElementSibling;
+            if (nextRow && nextRow.classList.contains('order-detail-row')) {
+                console.log('Row already expanded, closing...');
+                return;
+            }
+
+            // Mark this row as active
+            $row.classList.add('expanded', 'order-row-active');
+
+            // Get column count for colspan
+            const columnCount = document.querySelectorAll('#kt_orders_table thead th').length;
+
+            // Create detail row with loading state
+            const detailRow = document.createElement('tr');
+            detailRow.className = 'order-detail-row';
+            detailRow.style.display = 'none';
+            detailRow.innerHTML = `
+                <td colspan="${columnCount}" class="p-0">
+                    <div class="order-detail-container p-5">
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <div class="ms-3 text-muted">Đang tải chi tiết đơn hàng...</div>
+                        </div>
+                    </div>
+                </td>
+            `;
+
+            // Insert detail row after clicked row
+            $row.parentNode.insertBefore(detailRow, $row.nextSibling);
+
+            // Show detail row with animation
+            setTimeout(() => {
+                detailRow.style.display = 'table-row';
+            }, 10);
+
+            // Load detail content via AJAX
+            loadOrderDetail(orderId, detailRow, $row);
+        }
+
+        function loadOrderDetail(orderId, detailRow, clickedRow) {
+            console.log('Loading order detail for ID:', orderId);
+
+            const url = orderRoutes.detail.replace(':id', orderId);
+            console.log('Fetching order detail from:', url);
+
+            fetch(url)
+                .then(response => {
+                    console.log('Order detail response:', response.status, response.ok);
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('Order detail loaded successfully');
+
+                    // Update the detail row content
+                    const container = detailRow.querySelector('.order-detail-container');
+                    if (container) {
+                        container.innerHTML = html;
+                    }
+
+                    // Get table container width and apply to detail container
+                    const tableContainer = document.getElementById('kt_orders_table_container');
+                    if (tableContainer && container) {
+                        const containerWidth = tableContainer.offsetWidth;
+                        container.style.width = containerWidth + 'px';
+                        container.style.maxWidth = containerWidth + 'px';
+                        container.style.overflow = 'visible';
+                        container.style.boxSizing = 'border-box';
+                    }
+
+                    // Initialize any JavaScript components in the detail panel
+                    initDetailPanelComponents(detailRow);
+                })
+                .catch(error => {
+                    console.error('Error loading order detail:', error);
+
+                    const container = detailRow.querySelector('.order-detail-container');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Không thể tải chi tiết đơn hàng. Vui lòng thử lại.
+                            </div>
+                        `;
+                    }
+                });
+        }
+
+        function initDetailPanelComponents(detailRow) {
+            console.log('Initializing detail panel components...');
+
+            // Initialize any Bootstrap components
+            const tooltips = detailRow.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltips.forEach(tooltip => {
+                new bootstrap.Tooltip(tooltip);
+            });
+
+            const popovers = detailRow.querySelectorAll('[data-bs-toggle="popover"]');
+            popovers.forEach(popover => {
+                new bootstrap.Popover(popover);
+            });
+
+            // Initialize any tabs
+            const tabs = detailRow.querySelectorAll('[data-bs-toggle="tab"]');
+            tabs.forEach(tab => {
+                new bootstrap.Tab(tab);
+            });
+
+            console.log('Detail panel components initialized');
+        }
+    </script>
+@endsection
+
+@section('vendor-script')
+    <script src="{{ asset('admin-assets/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+@endsection
+
+@section('scripts')
+    <script src="{{ asset('admin-assets/globals/orders-filter.js') }}"></script>
+    <script src="{{ asset('admin-assets/assets/js/custom/apps/orders/list/table.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+@endsection

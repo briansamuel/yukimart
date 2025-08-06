@@ -40,10 +40,12 @@ class SetLocale
         view()->share('availableLocales', $this->getAvailableLocales());
         
         $response = $next($request);
-        
-        // Set cookie for future visits (30 days)
-        $response->withCookie(Cookie::make('locale', $locale, 60 * 24 * 30));
-        
+
+        // Set cookie for future visits (30 days) - only for regular responses, not file downloads
+        if ($response instanceof \Illuminate\Http\Response || $response instanceof \Illuminate\Http\JsonResponse) {
+            $response->withCookie(Cookie::make('locale', $locale, 60 * 24 * 30));
+        }
+
         return $response;
     }
 

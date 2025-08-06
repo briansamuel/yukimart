@@ -1,0 +1,276 @@
+/* ===== ORDER-SPECIFIC STYLES ===== */
+/* Note: Common table styles moved to globals.css with .kt_table_responsive class */
+
+/* ===== ORDER-SPECIFIC COLUMN WIDTHS ===== */
+
+/* Order table specific column definitions */
+#kt_orders_table thead th:nth-child(1),  /* Checkbox */
+#kt_orders_table tbody td:nth-child(1) {
+    width: 40px !important;
+    min-width: 40px !important;
+}
+
+#kt_orders_table thead th:nth-child(2),  /* Mã đơn hàng */
+#kt_orders_table tbody td:nth-child(2) {
+    width: 180px !important;
+    min-width: 180px !important;
+}
+
+#kt_orders_table thead th:nth-child(3),  /* Khách hàng */
+#kt_orders_table tbody td:nth-child(3) {
+    width: 160px !important;
+    min-width: 160px !important;
+}
+
+#kt_orders_table thead th:nth-child(4),  /* Tổng tiền */
+#kt_orders_table tbody td:nth-child(4),
+#kt_orders_table thead th:nth-child(5),  /* Đã thanh toán */
+#kt_orders_table tbody td:nth-child(5) {
+    width: 120px !important;
+    min-width: 120px !important;
+    text-align: right !important;
+}
+
+#kt_orders_table thead th:nth-child(6),  /* Trạng thái */
+#kt_orders_table tbody td:nth-child(6),
+#kt_orders_table thead th:nth-child(7),  /* TT Thanh toán */
+#kt_orders_table tbody td:nth-child(7),
+#kt_orders_table thead th:nth-child(8),  /* TT Giao hàng */
+#kt_orders_table tbody td:nth-child(8) {
+    width: 130px !important;
+    min-width: 130px !important;
+}
+
+#kt_orders_table thead th:nth-child(9),  /* Kênh bán */
+#kt_orders_table tbody td:nth-child(9) {
+    width: 110px !important;
+    min-width: 110px !important;
+}
+
+#kt_orders_table thead th:nth-child(10), /* Ngày tạo */
+#kt_orders_table tbody td:nth-child(10) {
+    width: 140px !important;
+    min-width: 140px !important;
+}
+
+#kt_orders_table thead th:nth-child(11), /* Người bán */
+#kt_orders_table tbody td:nth-child(11),
+#kt_orders_table thead th:nth-child(12), /* Người tạo */
+#kt_orders_table tbody td:nth-child(12) {
+    width: 180px !important;
+    min-width: 180px !important;
+}
+
+#kt_orders_table thead th:nth-child(13), /* Email */
+#kt_orders_table tbody td:nth-child(13) {
+    width: 200px !important;
+    min-width: 200px !important;
+}
+
+#kt_orders_table thead th:nth-child(14), /* Chi nhánh */
+#kt_orders_table tbody td:nth-child(14) {
+    width: 160px !important;
+    min-width: 160px !important;
+}
+
+/* ===== ORDER-SPECIFIC RESPONSIVE ADJUSTMENTS ===== */
+
+/* Order table specific responsive column adjustments */
+@media (min-width: 1400px) {
+    /* Increase column widths for better readability on large screens */
+    #kt_orders_table thead th:nth-child(3),
+    #kt_orders_table tbody td:nth-child(3) {
+        width: 180px !important;
+        min-width: 180px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(11),
+    #kt_orders_table tbody td:nth-child(11),
+    #kt_orders_table thead th:nth-child(12),
+    #kt_orders_table tbody td:nth-child(12) {
+        width: 200px !important;
+        min-width: 200px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(13),
+    #kt_orders_table tbody td:nth-child(13) {
+        width: 220px !important;
+        min-width: 220px !important;
+    }
+}
+
+@media (max-width: 1199px) and (min-width: 992px) {
+    /* Slightly reduce column widths for tablet landscape */
+    #kt_orders_table thead th:nth-child(11),
+    #kt_orders_table tbody td:nth-child(11),
+    #kt_orders_table thead th:nth-child(12),
+    #kt_orders_table tbody td:nth-child(12) {
+        width: 160px !important;
+        min-width: 160px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(13),
+    #kt_orders_table tbody td:nth-child(13) {
+        width: 180px !important;
+        min-width: 180px !important;
+    }
+}
+
+@media (max-width: 991px) and (min-width: 768px) {
+    /* Further reduce column widths for tablet portrait */
+    #kt_orders_table thead th:nth-child(3),
+    #kt_orders_table tbody td:nth-child(3) {
+        width: 140px !important;
+        min-width: 140px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(11),
+    #kt_orders_table tbody td:nth-child(11),
+    #kt_orders_table thead th:nth-child(12),
+    #kt_orders_table tbody td:nth-child(12) {
+        width: 140px !important;
+        min-width: 140px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(13),
+    #kt_orders_table tbody td:nth-child(13) {
+        width: 160px !important;
+        min-width: 160px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(14),
+    #kt_orders_table tbody td:nth-child(14) {
+        width: 140px !important;
+        min-width: 140px !important;
+    }
+}
+
+@media (max-width: 767px) and (min-width: 576px) {
+    /* Compact column widths for mobile landscape */
+    #kt_orders_table thead th:nth-child(2),
+    #kt_orders_table tbody td:nth-child(2) {
+        width: 120px !important;
+        min-width: 120px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(3),
+    #kt_orders_table tbody td:nth-child(3) {
+        width: 120px !important;
+        min-width: 120px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(4),
+    #kt_orders_table tbody td:nth-child(4),
+    #kt_orders_table thead th:nth-child(5),
+    #kt_orders_table tbody td:nth-child(5) {
+        width: 100px !important;
+        min-width: 100px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(6),
+    #kt_orders_table tbody td:nth-child(6),
+    #kt_orders_table thead th:nth-child(7),
+    #kt_orders_table tbody td:nth-child(7),
+    #kt_orders_table thead th:nth-child(8),
+    #kt_orders_table tbody td:nth-child(8) {
+        width: 110px !important;
+        min-width: 110px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(9),
+    #kt_orders_table tbody td:nth-child(9) {
+        width: 90px !important;
+        min-width: 90px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(10),
+    #kt_orders_table tbody td:nth-child(10) {
+        width: 120px !important;
+        min-width: 120px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(11),
+    #kt_orders_table tbody td:nth-child(11),
+    #kt_orders_table thead th:nth-child(12),
+    #kt_orders_table tbody td:nth-child(12) {
+        width: 120px !important;
+        min-width: 120px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(13),
+    #kt_orders_table tbody td:nth-child(13) {
+        width: 140px !important;
+        min-width: 140px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(14),
+    #kt_orders_table tbody td:nth-child(14) {
+        width: 120px !important;
+        min-width: 120px !important;
+    }
+}
+
+@media (max-width: 575px) {
+    /* Very compact column widths for mobile portrait */
+    #kt_orders_table thead th:nth-child(2),
+    #kt_orders_table tbody td:nth-child(2) {
+        width: 100px !important;
+        min-width: 100px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(3),
+    #kt_orders_table tbody td:nth-child(3) {
+        width: 100px !important;
+        min-width: 100px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(4),
+    #kt_orders_table tbody td:nth-child(4),
+    #kt_orders_table thead th:nth-child(5),
+    #kt_orders_table tbody td:nth-child(5) {
+        width: 90px !important;
+        min-width: 90px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(6),
+    #kt_orders_table tbody td:nth-child(6),
+    #kt_orders_table thead th:nth-child(7),
+    #kt_orders_table tbody td:nth-child(7),
+    #kt_orders_table thead th:nth-child(8),
+    #kt_orders_table tbody td:nth-child(8) {
+        width: 100px !important;
+        min-width: 100px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(9),
+    #kt_orders_table tbody td:nth-child(9) {
+        width: 80px !important;
+        min-width: 80px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(10),
+    #kt_orders_table tbody td:nth-child(10) {
+        width: 100px !important;
+        min-width: 100px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(11),
+    #kt_orders_table tbody td:nth-child(11),
+    #kt_orders_table thead th:nth-child(12),
+    #kt_orders_table tbody td:nth-child(12) {
+        width: 100px !important;
+        min-width: 100px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(13),
+    #kt_orders_table tbody td:nth-child(13) {
+        width: 120px !important;
+        min-width: 120px !important;
+    }
+
+    #kt_orders_table thead th:nth-child(14),
+    #kt_orders_table tbody td:nth-child(14) {
+        width: 100px !important;
+        min-width: 100px !important;
+    }
+}

@@ -1,0 +1,249 @@
+/**
+ * Global CSS for Filter Panels
+ * Shared styles for time options panel and column visibility panel
+ * Used across orders, invoices, and other modules
+ */
+
+/* ===== TIME OPTIONS PANEL ===== */
+#time_options_panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #ffffff;
+    border: 1px solid #e4e6ef;
+    border-radius: 0.475rem;
+    box-shadow: 0 0.5rem 1.5rem 0.5rem rgba(0, 0, 0, 0.075);
+    padding: 1.5rem;
+    margin-top: 0.25rem;
+    min-width: 400px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+#time_options_panel .time-option-group {
+    margin-bottom: 1.5rem;
+}
+
+#time_options_panel .time-option-group:last-child {
+    margin-bottom: 0;
+}
+
+#time_options_panel .time-option-group h6 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #7e8299;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.035em;
+}
+
+#time_options_panel .time-option-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#time_options_panel .time-option-buttons .btn {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e4e6ef;
+    background: #ffffff;
+    color: #5e6278;
+    transition: all 0.15s ease;
+}
+
+#time_options_panel .time-option-buttons .btn:hover {
+    background: #f5f8fa;
+    border-color: #009ef7;
+    color: #009ef7;
+}
+
+#time_options_panel .time-option-buttons .btn.active {
+    background: #009ef7;
+    border-color: #009ef7;
+    color: #ffffff;
+}
+
+#time_options_panel .separator {
+    height: 1px;
+    background: #e4e6ef;
+    margin: 1rem 0;
+}
+
+/* Custom Date Range Section */
+#time_options_panel .custom-date-section {
+    border-top: 1px solid #e4e6ef;
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+#time_options_panel .date-input-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+#time_options_panel .date-input-group .form-control {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+}
+
+#time_options_panel .date-input-group .btn {
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+}
+
+/* ===== COLUMN VISIBILITY PANEL ===== */
+.column-visibility-panel {
+    min-width: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.column-visibility-panel .menu-content {
+    padding: 0.75rem 1rem 0.5rem;
+    border-bottom: 1px solid #e4e6ef;
+    margin-bottom: 0.5rem;
+}
+
+.column-visibility-panel .menu-content .text-muted {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.035em;
+    color: #7e8299;
+}
+
+.column-visibility-panel .separator {
+    height: 1px;
+    background: #e4e6ef;
+    margin: 0.5rem 0;
+}
+
+.column-visibility-panel .menu-item {
+    padding: 0;
+}
+
+.column-visibility-panel .menu-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.column-visibility-panel .menu-link:hover {
+    background: #f5f8fa;
+    color: #009ef7;
+}
+
+.column-visibility-panel .form-check-input {
+    margin: 0;
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.column-visibility-panel .menu-title {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #5e6278;
+    cursor: pointer;
+}
+
+.column-visibility-panel .menu-link:hover .menu-title {
+    color: #009ef7;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    #time_options_panel {
+        min-width: 300px;
+        padding: 1rem;
+    }
+    
+    #time_options_panel .time-option-buttons .btn {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    #time_options_panel .date-input-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .column-visibility-panel {
+        min-width: 180px;
+    }
+}
+
+/* ===== ANIMATION EFFECTS ===== */
+#time_options_panel {
+    animation: fadeInUp 0.2s ease-out;
+}
+
+.column-visibility-panel {
+    animation: fadeInDown 0.15s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+[data-bs-theme="dark"] #time_options_panel {
+    background: #1e1e2d;
+    border-color: #2b2b40;
+    box-shadow: 0 0.5rem 1.5rem 0.5rem rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme="dark"] #time_options_panel .time-option-buttons .btn {
+    background: #1e1e2d;
+    border-color: #2b2b40;
+    color: #92929f;
+}
+
+[data-bs-theme="dark"] #time_options_panel .time-option-buttons .btn:hover {
+    background: #2b2b40;
+    border-color: #009ef7;
+    color: #009ef7;
+}
+
+[data-bs-theme="dark"] .column-visibility-panel .menu-link:hover {
+    background: #2b2b40;
+    color: #009ef7;
+}
+
+[data-bs-theme="dark"] .column-visibility-panel .menu-title {
+    color: #92929f;
+}
+
+[data-bs-theme="dark"] .column-visibility-panel .menu-link:hover .menu-title {
+    color: #009ef7;
+}

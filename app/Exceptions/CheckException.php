@@ -24,7 +24,7 @@ class CheckException extends \Exception
 		return $this->code;
 	}
 
-	public function getContent($content)
+	public function getContent()
 	{
 		return $this->content;
 	}

@@ -3,13 +3,21 @@
     <div class="card">
         <div class="card-body">
             <!--begin::Tabs-->
+            @php
+                $paymentsCount = $invoice->payments()->where('payment_type', 'receipt')->count();
+            @endphp
             <ul class="nav nav-tabs nav-line-tabs nav-line-tabs-2x mb-5 fs-6">
                 <li class="nav-item">
                     <a class="nav-link active" data-bs-toggle="tab" href="#kt_tab_pane_info_{{ $invoice->id }}">Thông tin</a>
                 </li>
+                @if($paymentsCount > 0)
                 <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#kt_tab_pane_payment_{{ $invoice->id }}">Lịch sử thanh toán</a>
+                    <a class="nav-link" data-bs-toggle="tab" href="#kt_tab_pane_payment_{{ $invoice->id }}">
+                        Lịch sử thanh toán
+                        <span class="badge badge-light-primary ms-2">{{ $paymentsCount }}</span>
+                    </a>
                 </li>
+                @endif
             </ul>
             <!--end::Tabs-->
 
@@ -138,6 +146,7 @@
                 <!--end::Tab pane Info-->
 
                 <!--begin::Tab pane Payment-->
+                @if($paymentsCount > 0)
                 <div class="tab-pane fade" id="kt_tab_pane_payment_{{ $invoice->id }}" role="tabpanel">
                     <div class="d-flex flex-column">
                         <!--begin::Payment Summary-->
@@ -220,6 +229,7 @@
                     </div>
                 </div>
                 <!--end::Tab pane Payment-->
+                @endif
             </div>
             <!--end::Tab content-->
 

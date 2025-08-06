@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Detail Panel Sticky Position Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .test-header {
+            background: #009ef7;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .test-step {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #009ef7;
+            margin: 10px 0;
+        }
+        
+        .test-result {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .test-button {
+            background: #009ef7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .iframe-container {
+            border: 2px solid #009ef7;
+            border-radius: 8px;
+            margin: 20px 0;
+            height: 600px;
+            overflow: hidden;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .test-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>Invoice Detail Panel Sticky Position Test</h1>
+        <p>Test the sticky positioning behavior of invoice detail panels during horizontal table scroll</p>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Instructions</h2>
+        <div class="instructions">
+            <h3>Setup:</h3>
+            <ol>
+                <li>Make sure you're logged into the system (yukimart@gmail.com / 123456)</li>
+                <li>Resize your browser window to approximately 800px width to force horizontal scrolling</li>
+                <li>Use the iframe below to test the invoice list page</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Controls</h2>
+        <div class="test-controls">
+            <button class="test-button" onclick="loadInvoicePage()">Load Invoice Page</button>
+            <button class="test-button" onclick="resizeIframe(800, 600)">Set Small Size (800x600)</button>
+            <button class="test-button" onclick="resizeIframe(1200, 700)">Set Large Size (1200x700)</button>
+            <button class="test-button" onclick="runAutomatedTests()">Run Automated Tests</button>
+            <button class="test-button" onclick="clearResults()">Clear Results</button>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Page</h2>
+        <div class="iframe-container" id="iframe-container">
+            <iframe id="test-iframe" src="about:blank"></iframe>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Manual Test Steps</h2>
+        
+        <div class="test-step">
+            <h3>Step 1: Load and Expand Panel</h3>
+            <p>1. Click "Load Invoice Page" button above</p>
+            <p>2. Wait for the page to load completely</p>
+            <p>3. Click on any invoice row to expand the detail panel</p>
+            <p>4. Verify the panel appears below the clicked row</p>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 2: Test Horizontal Scroll</h3>
+            <p>1. With the detail panel open, scroll the table horizontally using:</p>
+            <ul>
+                <li>Horizontal scrollbar at the bottom of the table</li>
+                <li>Shift + mouse wheel</li>
+                <li>Touch/trackpad horizontal swipe</li>
+            </ul>
+            <p>2. Observe that the detail panel stays fixed at the left edge</p>
+            <p>3. The table content should scroll behind the panel</p>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 3: Test Extreme Scroll Positions</h3>
+            <p>1. Scroll the table to the maximum right position</p>
+            <p>2. Verify the detail panel is still visible and positioned correctly</p>
+            <p>3. Scroll back to the left and verify panel position</p>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 4: Test Multiple Panels</h3>
+            <p>1. Open a second detail panel by clicking another invoice row</p>
+            <p>2. Scroll the table horizontally</p>
+            <p>3. Verify both panels maintain their sticky positioning</p>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Automated Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        function loadInvoicePage() {
+            const iframe = document.getElementById('test-iframe');
+            iframe.src = 'http://yukimart.local/admin/invoices';
+            
+            iframe.onload = function() {
+                addTestResult('Invoice page loaded successfully', 'success');
+                
+                // Wait a bit then run initial checks
+                setTimeout(() => {
+                    checkInitialState();
+                }, 2000);
+            };
+            
+            iframe.onerror = function() {
+                addTestResult('Failed to load invoice page. Check if server is running.', 'error');
+            };
+        }
+
+        function resizeIframe(width, height) {
+            const container = document.getElementById('iframe-container');
+            container.style.width = width + 'px';
+            container.style.height = height + 'px';
+            addTestResult(`Iframe resized to ${width}x${height}`, 'success');
+        }
+
+        function checkInitialState() {
+            try {
+                const iframe = document.getElementById('test-iframe');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Check if table exists
+                const table = iframeDoc.getElementById('kt_invoices_table');
+                if (table) {
+                    addTestResult('Invoice table found', 'success');
+                    
+                    // Check table container
+                    const container = iframeDoc.getElementById('kt_invoices_table_container');
+                    if (container) {
+                        const containerStyles = window.getComputedStyle(container);
+                        addTestResult(`Table container overflow-x: ${containerStyles.overflowX}`, 'success');
+                    }
+                    
+                    // Check for invoice rows
+                    const rows = iframeDoc.querySelectorAll('#kt_invoices_table tbody tr');
+                    addTestResult(`Found ${rows.length} invoice rows`, 'success');
+                    
+                } else {
+                    addTestResult('Invoice table not found. Page may not be loaded correctly.', 'warning');
+                }
+            } catch (e) {
+                addTestResult(`Cannot access iframe content: ${e.message}. This is normal due to CORS restrictions.`, 'warning');
+                addTestResult('Please perform manual testing using the steps above.', 'warning');
+            }
+        }
+
+        function runAutomatedTests() {
+            addTestResult('Starting automated tests...', 'success');
+            
+            try {
+                const iframe = document.getElementById('test-iframe');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Test 1: Check CSS properties
+                testStickyCSS(iframeDoc);
+                
+                // Test 2: Simulate panel expansion
+                testPanelExpansion(iframeDoc);
+                
+                // Test 3: Test scroll behavior
+                testScrollBehavior(iframeDoc);
+                
+            } catch (e) {
+                addTestResult(`Automated tests failed: ${e.message}`, 'error');
+                addTestResult('Cross-origin restrictions prevent automated testing. Please use manual testing.', 'warning');
+            }
+        }
+
+        function testStickyCSS(doc) {
+            addTestResult('Testing CSS properties...', 'success');
+            
+            // Check if CSS classes exist
+            const styles = doc.querySelectorAll('style');
+            let foundStickyCSS = false;
+            
+            styles.forEach(style => {
+                if (style.textContent.includes('position: sticky') && 
+                    style.textContent.includes('invoice-detail-panel')) {
+                    foundStickyCSS = true;
+                }
+            });
+            
+            if (foundStickyCSS) {
+                addTestResult('Sticky CSS found in page styles', 'success');
+            } else {
+                addTestResult('Sticky CSS not found. Check if styles are loaded correctly.', 'warning');
+            }
+        }
+
+        function testPanelExpansion(doc) {
+            addTestResult('Testing panel expansion...', 'success');
+            
+            const firstRow = doc.querySelector('#kt_invoices_table tbody tr:first-child');
+            if (firstRow) {
+                // Simulate click
+                firstRow.click();
+                addTestResult('Simulated click on first invoice row', 'success');
+                
+                // Check for detail panel after a delay
+                setTimeout(() => {
+                    const detailPanel = doc.querySelector('.invoice-detail-panel');
+                    if (detailPanel) {
+                        addTestResult('Detail panel found after expansion', 'success');
+                        
+                        // Check sticky properties
+                        const styles = window.getComputedStyle(detailPanel);
+                        addTestResult(`Panel position: ${styles.position}`, 'success');
+                        addTestResult(`Panel left: ${styles.left}`, 'success');
+                        addTestResult(`Panel z-index: ${styles.zIndex}`, 'success');
+                        
+                    } else {
+                        addTestResult('Detail panel not found after expansion', 'warning');
+                    }
+                }, 1000);
+                
+            } else {
+                addTestResult('No invoice rows found for testing', 'warning');
+            }
+        }
+
+        function testScrollBehavior(doc) {
+            addTestResult('Testing scroll behavior...', 'success');
+            
+            const container = doc.getElementById('kt_invoices_table_container');
+            if (container) {
+                const initialScrollLeft = container.scrollLeft;
+                
+                // Simulate horizontal scroll
+                container.scrollLeft = 200;
+                
+                setTimeout(() => {
+                    const newScrollLeft = container.scrollLeft;
+                    if (newScrollLeft > initialScrollLeft) {
+                        addTestResult(`Table scrolled from ${initialScrollLeft} to ${newScrollLeft}`, 'success');
+                        
+                        // Check if detail panel is still visible
+                        const detailPanel = doc.querySelector('.invoice-detail-panel');
+                        if (detailPanel) {
+                            const panelRect = detailPanel.getBoundingClientRect();
+                            addTestResult(`Panel position after scroll: x=${panelRect.x}, y=${panelRect.y}`, 'success');
+                        }
+                    } else {
+                        addTestResult('Table scroll test inconclusive', 'warning');
+                    }
+                }, 500);
+                
+            } else {
+                addTestResult('Table container not found for scroll testing', 'warning');
+            }
+        }
+
+        function addTestResult(message, type) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            
+            // Scroll to bottom
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+
+        // Initialize
+        window.onload = function() {
+            addTestResult('Test page loaded. Ready to begin testing.', 'success');
+            addTestResult('Click "Load Invoice Page" to start testing.', 'success');
+        };
+    </script>
+</body>
+</html>

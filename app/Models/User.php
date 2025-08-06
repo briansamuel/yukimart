@@ -190,6 +190,8 @@ class User extends Authenticatable
         return $branchShop ? $branchShop->pivot->role_in_shop : null;
     }
 
+
+
     /**
      * Get formatted birth date for forms
      */
@@ -297,5 +299,45 @@ class User extends Authenticatable
         return Attribute::make(
             get: fn ($value) =>  Carbon::parse($value)->format('d/m/Y H:i:s'),
         );
+    }
+
+    /**
+     * Orders created by this user
+     */
+    public function createdOrders()
+    {
+        return $this->hasMany(\App\Models\Order::class, 'created_by');
+    }
+
+    /**
+     * Orders sold by this user
+     */
+    public function soldOrders()
+    {
+        return $this->hasMany(\App\Models\Order::class, 'sold_by');
+    }
+
+    /**
+     * Invoices created by this user
+     */
+    public function createdInvoices()
+    {
+        return $this->hasMany(\App\Models\Invoice::class, 'created_by');
+    }
+
+    /**
+     * Invoices sold by this user
+     */
+    public function soldInvoices()
+    {
+        return $this->hasMany(\App\Models\Invoice::class, 'sold_by');
+    }
+
+    /**
+     * Payments created by this user
+     */
+    public function createdPayments()
+    {
+        return $this->hasMany(\App\Models\Payment::class, 'created_by');
     }
 }

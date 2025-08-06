@@ -193,7 +193,7 @@
                                         </a>
                                     </div>
                                     <div class="menu-item">
-                                        <a class="menu-link py-3 {{ request()->routeIs('admin.return-order.*') ? 'active' : '' }}" href="{{ route('admin.return-order.list') }}">
+                                        <a class="menu-link py-3 {{ request()->routeIs('admin.return.*') ? 'active' : '' }}" href="{{ route('admin.return.list') }}">
                                             <span class="menu-icon">
                                                 <i class="ki-duotone ki-arrow-left fs-2">
                                                     <span class="path1"></span>

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\App;
 use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\WelcomeController;
+
 use App\Http\Controllers\Admin\CMS\MyProfileController;
 use App\Http\Controllers\Admin\CMS\PageController;
 use App\Http\Controllers\Admin\CMS\NewsController;
@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\CMS\ProductController;
 use App\Http\Controllers\Admin\CMS\InventoryController;
 use App\Http\Controllers\Admin\CMS\SupplierController;
 use App\Http\Controllers\Admin\CMS\OrderController;
+use App\Http\Controllers\Admin\CMS\OrderFilterController;
 use App\Http\Controllers\Admin\CMS\UsersController;
 use App\Http\Controllers\Admin\CMS\RoleController;
 use App\Http\Controllers\Admin\CMS\PermissionController;
@@ -35,18 +36,17 @@ use App\Http\Controllers\Admin\CMS\ContactController;
 use App\Http\Controllers\Admin\CMS\SettingController;
 use App\Http\Controllers\Admin\CMS\GalleryController;
 use App\Http\Controllers\Admin\CMS\CustomerController;
-use App\Http\Controllers\Admin\CMS\BannersController;
-use App\Http\Controllers\Admin\CMS\ReviewController;
-use App\Http\Controllers\Admin\CMS\MultiLanguageController;
-use App\Http\Controllers\Admin\CMS\MenusController;
-use App\Http\Controllers\Admin\CMS\ServiceController;
+
+
 use App\Http\Controllers\Admin\CMS\InvoiceController;
-use App\Http\Controllers\Admin\CMS\ReturnOrderController;
+
+use App\Http\Controllers\Admin\CMS\ReturnController;
 use App\Http\Controllers\Admin\CMS\PaymentController;
 use App\Http\Controllers\Admin\CMS\AuditLogController;
 use App\Http\Controllers\Admin\CMS\InventoryImportExportController;
 use App\Http\Controllers\Admin\CMS\ReportsController;
 use App\Http\Controllers\Admin\CMS\NotificationController;
+use App\Http\Controllers\Admin\FilterController;
 use App\Http\Controllers\Admin\CMS\BranchShopController;
 use App\Http\Controllers\Admin\CMS\WarehouseController;
 
@@ -293,42 +293,63 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
 
         // Order routes - API routes first to avoid conflicts
-        Route::get('/order', [OrderController::class, 'index'])->name('order.list');
-        Route::get('/order/add', [OrderController::class, 'add'])->name('order.add');
-        Route::post('/order/add', [OrderController::class, 'addAction'])->name('order.add.action');
-        Route::get('/order/ajax', [OrderController::class, 'ajaxGetOrders'])->name('order.ajax');
-        Route::get('/order/customers', [OrderController::class, 'getCustomers'])->name('order.customers');
-        Route::get('/order/products', [OrderController::class, 'getProducts'])->name('order.products');
-        Route::get('/order/initial-data', [OrderController::class, 'getInitialData'])->name('order.initial.data');
-        Route::get('/order/check-phone', [OrderController::class, 'checkPhoneExists'])->name('order.check.phone');
-        Route::get('/order/statistics', [OrderController::class, 'getStatistics'])->name('order.statistics');
-        Route::get('/order/product-details/{product_id}', [OrderController::class, 'getProductDetails'])->name('order.product.details');
-        Route::post('/order/create-customer', [OrderController::class, 'createNewCustomer'])->name('order.create.customer');
-        Route::post('/order/update-status/{order_id}', [OrderController::class, 'updateStatus'])->name('order.update.status');
-        Route::post('/order/delete-many', [OrderController::class, 'deleteMany'])->name('order.delete.many');
+        Route::get('/orders', [OrderController::class, 'index'])->name('order.list');
+        Route::get('/orders/add', [OrderController::class, 'add'])->name('order.add');
+        Route::post('/orders/add', [OrderController::class, 'addAction'])->name('order.add.action');
+        Route::get('/orders/ajax', [OrderController::class, 'ajaxGetOrders'])->name('order.ajax');
+        Route::get('/orders/customers', [OrderController::class, 'getCustomers'])->name('order.customers');
+        Route::get('/orders/products', [OrderController::class, 'getProducts'])->name('order.products');
+        Route::get('/orders/initial-data', [OrderController::class, 'getInitialData'])->name('order.initial.data');
+        Route::get('/orders/check-phone', [OrderController::class, 'checkPhoneExists'])->name('order.check.phone');
+        Route::get('/orders/statistics', [OrderController::class, 'getStatistics'])->name('order.statistics');
+        Route::get('/orders/product-details/{product_id}', [OrderController::class, 'getProductDetails'])->name('order.product.details');
+        Route::post('/orders/create-customer', [OrderController::class, 'createNewCustomer'])->name('order.create.customer');
+        Route::post('/orders/update-status/{order_id}', [OrderController::class, 'updateStatus'])->name('order.update.status');
+        Route::post('/orders/delete-many', [OrderController::class, 'deleteMany'])->name('order.delete.many');
+        Route::post('/orders/bulk-export', [OrderController::class, 'bulkExport'])->name('order.bulk.export');
+        Route::post('/orders/bulk-status-update', [OrderController::class, 'bulkStatusUpdate'])->name('order.bulk.status.update');
+        Route::get('/orders/test-export', [OrderController::class, 'testExport'])->name('order.test.export');
+        Route::get('/orders/create-test-data', [OrderController::class, 'createTestData'])->name('order.create.test.data');
+        Route::get('/orders/test-bulk-status-update', [OrderController::class, 'testBulkStatusUpdate'])->name('order.test.bulk.status.update');
+        Route::get('/orders/debug-orders', [OrderController::class, 'debugOrders'])->name('order.debug.orders');
 
         // Order CRUD routes with parameters - these should come after API routes
-        Route::get('/order/{id}', [OrderController::class, 'show'])->name('order.show');
-        Route::get('/order/edit/{order_id}', [OrderController::class, 'edit'])->name('order.edit');
-        Route::post('/order/edit/{order_id}', [OrderController::class, 'editAction'])->name('order.edit.action');
-        Route::get('/order/detail/{order_id}', [OrderController::class, 'detail'])->name('order.detail');
-        Route::delete('/order/delete/{order_id}', [OrderController::class, 'delete'])->name('order.delete');
+        Route::get('/orders/{id}', [OrderController::class, 'show'])->name('order.show');
+        Route::get('/orders/edit/{order_id}', [OrderController::class, 'edit'])->name('order.edit');
+        Route::post('/orders/edit/{order_id}', [OrderController::class, 'editAction'])->name('order.edit.action');
+        Route::get('/orders/detail/{order_id}', [OrderController::class, 'detail'])->name('order.detail');
+        Route::delete('/orders/delete/{order_id}', [OrderController::class, 'delete'])->name('order.delete');
 
         // Order detail actions
-        Route::post('/order/{id}/record-payment', [OrderController::class, 'recordPayment'])->name('order.record.payment');
-        Route::post('/order/{id}/cancel', [OrderController::class, 'cancelOrder'])->name('order.cancel');
-        Route::get('/order/{id}/print/{type}', [OrderController::class, 'printOrder'])->name('order.print');
-        Route::get('/order/{id}/export/{type}', [OrderController::class, 'exportOrder'])->name('order.export');
+        Route::post('/orders/{id}/record-payment', [OrderController::class, 'recordPayment'])->name('order.record.payment');
+        Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder'])->name('order.cancel');
+        Route::get('/orders/{id}/print/{type}', [OrderController::class, 'printOrder'])->name('order.print');
+        Route::get('/orders/{id}/export/{type}', [OrderController::class, 'exportOrder'])->name('order.export');
 
         // Test route for new customer feature
-        Route::get('/order/test-new-customer', function() {
+        Route::get('/orders/test-new-customer', function() {
             return view('admin.orders.test-new-customer');
         })->name('order.test.new.customer');
-        Route::post('/order/quick-update/{order_id}', [OrderController::class, 'quickUpdate'])->name('order.quick.update');
-        Route::get('/order/{order_id}/get', [OrderController::class, 'getOrder'])->name('order.get');
-        Route::get('/order/{order_id}/detail-modal', [OrderController::class, 'getOrderDetail'])->name('order.detail.modal');
-        Route::post('/order/bulk-delete', [OrderController::class, 'bulkDelete'])->name('order.bulk.delete');
-        Route::get('/order/print/{order_id}', [OrderController::class, 'print'])->name('order.print.simple');
+        Route::post('/orders/quick-update/{order_id}', [OrderController::class, 'quickUpdate'])->name('order.quick.update');
+        Route::get('/orders/{order_id}/get', [OrderController::class, 'getOrder'])->name('order.get');
+        Route::get('/orders/{order_id}/detail-modal', [OrderController::class, 'getOrderDetail'])->name('order.detail.modal');
+        Route::get('/orders/{order_id}/invoices', [OrderController::class, 'getOrderInvoices'])->name('order.invoices');
+        Route::post('/orders/bulk-delete', [OrderController::class, 'bulkDelete'])->name('order.bulk.delete');
+        Route::get('/orders/print/{order_id}', [OrderController::class, 'print'])->name('order.print.simple');
+
+        // Order Filter Options Routes
+        Route::prefix('orders/filter-options')->name('order.filter.')->group(function () {
+            Route::get('/statuses', [OrderFilterController::class, 'getStatusOptions'])->name('statuses');
+            Route::get('/payment-statuses', [OrderFilterController::class, 'getPaymentStatusOptions'])->name('payment.statuses');
+            Route::get('/payment-methods', [OrderFilterController::class, 'getPaymentMethodOptions'])->name('payment.methods');
+            Route::get('/creators', [OrderFilterController::class, 'getCreatorOptions'])->name('creators');
+            Route::get('/sellers', [OrderFilterController::class, 'getSellerOptions'])->name('sellers');
+            Route::get('/branches', [OrderFilterController::class, 'getBranchOptions'])->name('branches');
+            Route::get('/delivery-statuses', [OrderFilterController::class, 'getDeliveryStatusOptions'])->name('delivery.statuses');
+            Route::get('/channels', [OrderFilterController::class, 'getChannelOptions'])->name('channels');
+            Route::get('/customer-types', [OrderFilterController::class, 'getCustomerTypeOptions'])->name('customer.types');
+            Route::get('/all', [OrderFilterController::class, 'getAllFilterOptions'])->name('all');
+        });
         Route::get('/order/export/{order_id}', [OrderController::class, 'exportOrder'])->name('order.export.single');
 
         // Icon showcase route
@@ -346,40 +367,34 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             return view('admin.orders.test-detail');
         })->name('test.order.detail');
 
-        // Debug route for testing order API endpoints
-        Route::get('/debug-order-routes', function () {
-            $routes = [];
-            $allRoutes = \Illuminate\Support\Facades\Route::getRoutes();
+        // Debug routes (remove in production)
+        if (config('app.debug')) {
+            Route::get('/debug-order-routes', function () {
+                $routes = [];
+                $allRoutes = \Illuminate\Support\Facades\Route::getRoutes();
 
-            foreach ($allRoutes as $route) {
-                $uri = $route->uri();
-                if (strpos($uri, 'admin/order') !== false) {
-                    $routes[] = [
-                        'uri' => $uri,
-                        'name' => $route->getName(),
-                        'methods' => implode('|', $route->methods()),
-                        'action' => $route->getActionName()
-                    ];
+                foreach ($allRoutes as $route) {
+                    $uri = $route->uri();
+                    if (strpos($uri, 'admin/order') !== false) {
+                        $routes[] = [
+                            'uri' => $uri,
+                            'name' => $route->getName(),
+                            'methods' => implode('|', $route->methods()),
+                            'action' => $route->getActionName()
+                        ];
+                    }
                 }
-            }
 
-            // Sort by URI
-            usort($routes, function($a, $b) {
-                return strcmp($a['uri'], $b['uri']);
-            });
+                usort($routes, function($a, $b) {
+                    return strcmp($a['uri'], $b['uri']);
+                });
 
-            return response()->json([
-                'total_routes' => count($routes),
-                'routes' => $routes,
-                'test_urls' => [
-                    'customers' => url('/admin/order/customers'),
-                    'products' => url('/admin/order/products'),
-                    'initial_data' => url('/admin/order/initial-data'),
-                    'check_phone' => url('/admin/order/check-phone'),
-                    'statistics' => url('/admin/order/statistics')
-                ]
-            ]);
-        })->name('debug.order.routes');
+                return response()->json([
+                    'total_routes' => count($routes),
+                    'routes' => $routes
+                ]);
+            })->name('debug.order.routes');
+        }
 
         // Test direct API calls
         Route::get('/test-order-api', function () {
@@ -424,52 +439,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             }
         })->name('test.order.api');
 
-        // Direct test without middleware for debugging
-        Route::get('/direct-test-customers', function () {
-            try {
-                $orderController = app(\App\Http\Controllers\Admin\CMS\OrderController::class);
-                $response = $orderController->getCustomers();
-                return $response;
-            } catch (\Exception $e) {
-                return response()->json([
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ], 500);
-            }
-        })->name('direct.test.customers');
+        // Debug and demo routes (only in debug mode)
+        if (config('app.debug')) {
+            Route::get('/debug-order-page', function () {
+                return view('admin.debug.order-routes');
+            })->name('debug.order.page');
 
-        Route::get('/direct-test-products', function () {
-            try {
-                $orderController = app(\App\Http\Controllers\Admin\CMS\OrderController::class);
-                $response = $orderController->getProducts();
-                return $response;
-            } catch (\Exception $e) {
-                return response()->json([
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ], 500);
-            }
-        })->name('direct.test.products');
-
-        // Debug page
-        Route::get('/debug-order-page', function () {
-            return view('admin.debug.order-routes');
-        })->name('debug.order.page');
-
-        // Stock status demo page
-        Route::get('/stock-status-demo', function () {
-            return view('admin.examples.stock-status-demo');
-        })->name('stock.status.demo');
-
-        // Order inventory transaction demo page
-        Route::get('/order-inventory-demo', function () {
-            return view('admin.examples.order-inventory-demo');
-        })->name('order.inventory.demo');
-
-        // Order notifications demo page
-        Route::get('/order-notifications-demo', function () {
-            return view('admin.examples.order-notifications-demo');
-        })->name('order.notifications.demo');
+            Route::get('/stock-status-demo', function () {
+                return view('admin.examples.stock-status-demo');
+            })->name('stock.status.demo');
+        }
 
         // Branch Shops Management
         Route::prefix('branch-shops')->name('branch-shops.')->group(function () {
@@ -619,8 +598,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::get('/active/list', [CustomerController::class, 'getActiveCustomers'])->name('active-list');
             Route::get('/create', [CustomerController::class, 'create'])->name('create');
             Route::post('/', [CustomerController::class, 'store'])->name('store');
+            Route::get('/{customer}/info', [CustomerController::class, 'getCustomerInfo'])->name('info');
+            Route::get('/{customer}/order-history', [CustomerController::class, 'orderHistory'])->name('order-history');
+            Route::get('/{customer}/point-history', [CustomerController::class, 'pointHistory'])->name('point-history');
             Route::get('/{customer}/statistics', [CustomerController::class, 'statistics'])->name('statistics.detail');
             Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+            Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
             Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
             Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
             Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
@@ -628,9 +611,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
         // Invoice routes
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoice.list');
-        //Route::get('/invoices', [InvoiceController::class, 'index'])->name('admin.invoice.list'); // Alias for header menu
+        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoice.list'); // Backward compatibility
 
         Route::get('/invoices/ajax', [InvoiceController::class, 'getInvoicesAjax'])->name('invoice.ajax');
+        Route::get('/invoices/api/list', [InvoiceController::class, 'getInvoicesForReturn'])->name('invoice.api.list');
+        Route::get('/invoices/{id}/details', [InvoiceController::class, 'getInvoiceDetails'])->name('invoice.details');
+        Route::get('/invoices/{id}/items', [InvoiceController::class, 'getInvoiceItems'])->name('invoice.items');
         Route::get('/invoices/filter-users', [InvoiceController::class, 'getFilterUsers'])->name('invoice.filter-users');
         Route::get('/invoices/{id}/detail-panel', [InvoiceController::class, 'getDetailPanel'])->name('invoice.detail-panel');
         Route::get('/invoices/test-detail/{id}', function($id) {
@@ -644,41 +630,106 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoice.create');
         Route::post('/invoices/create', [InvoiceController::class, 'store'])->name('invoice.store');
         Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
+        Route::get('/invoices/{id}/payment-history', [InvoiceController::class, 'getPaymentHistory'])->name('invoice.payment-history');
         Route::get('/invoices/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
         Route::put('/invoices/{id}', [InvoiceController::class, 'update'])->name('invoice.update');
         Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])->name('invoice.delete');
         Route::post('/invoices/{id}/payment', [InvoiceController::class, 'recordPayment'])->name('invoice.payment');
         Route::post('/invoices/{id}/send', [InvoiceController::class, 'sendInvoice'])->name('invoice.send');
         Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancelInvoice'])->name('invoice.cancel');
+        Route::post('/invoices/bulk-cancel', [InvoiceController::class, 'bulkCancel'])->name('invoice.bulk-cancel');
+        Route::get('/invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoice.print');
+        Route::get('/invoices/statistics', [InvoiceController::class, 'getStatistics'])->name('invoice.statistics');
+        Route::post('/invoices/from-order/{order_id}', [InvoiceController::class, 'createFromOrder'])->name('invoice.from-order');
+        Route::get('/invoices/export/excel', [InvoiceController::class, 'exportExcel'])->name('invoice.export.excel');
+        Route::get('/invoices/export/pdf', [InvoiceController::class, 'exportPdf'])->name('invoice.export.pdf');
+
+        // Note: Main invoice routes are defined above (lines 657-686)
+        Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoice.create');
+        Route::post('/invoices/create', [InvoiceController::class, 'store'])->name('invoice.store');
+        Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
+        Route::get('/invoices/{id}/payment-history', [InvoiceController::class, 'getPaymentHistory'])->name('invoice.payment-history');
+        Route::get('/invoices/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
+        Route::put('/invoices/{id}', [InvoiceController::class, 'update'])->name('invoice.update');
+        Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])->name('invoice.delete');
+        Route::post('/invoices/{id}/payment', [InvoiceController::class, 'recordPayment'])->name('invoice.payment');
+        Route::post('/invoices/{id}/send', [InvoiceController::class, 'sendInvoice'])->name('invoice.send');
+        Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancelInvoice'])->name('invoice.cancel');
+        Route::post('/invoices/bulk-cancel', [InvoiceController::class, 'bulkCancel'])->name('invoice.bulk-cancel');
         Route::get('/invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoice.print');
         Route::get('/invoices/statistics', [InvoiceController::class, 'getStatistics'])->name('invoice.statistics');
         Route::post('/invoices/from-order/{order_id}', [InvoiceController::class, 'createFromOrder'])->name('invoice.from-order');
 
-        // Return Order routes
-        Route::prefix('return-orders')->name('return-order.')->group(function () {
-            Route::get('/', [ReturnOrderController::class, 'index'])->name('list');
-            Route::get('/data', [ReturnOrderController::class, 'getData'])->name('data');
-            Route::get('/create', [ReturnOrderController::class, 'create'])->name('create');
-            Route::post('/', [ReturnOrderController::class, 'store'])->name('store');
-            Route::get('/{returnOrder}', [ReturnOrderController::class, 'show'])->name('show');
-            Route::get('/{returnOrder}/edit', [ReturnOrderController::class, 'edit'])->name('edit');
-            Route::put('/{returnOrder}', [ReturnOrderController::class, 'update'])->name('update');
-            Route::post('/{returnOrder}/approve', [ReturnOrderController::class, 'approve'])->name('approve');
-            Route::post('/{returnOrder}/reject', [ReturnOrderController::class, 'reject'])->name('reject');
-            Route::post('/{returnOrder}/complete', [ReturnOrderController::class, 'complete'])->name('complete');
-            Route::get('/{returnOrder}/details', [ReturnOrderController::class, 'getDetails'])->name('details');
-            Route::get('/{returnOrder}/detail', [ReturnOrderController::class, 'getDetailPanel'])->name('detail.panel');
-            // New action routes
-            Route::put('/{returnOrder}/cancel', [ReturnOrderController::class, 'cancel'])->name('cancel');
-            Route::post('/{returnOrder}/copy', [ReturnOrderController::class, 'copy'])->name('copy');
-            Route::get('/{returnOrder}/export', [ReturnOrderController::class, 'export'])->name('export');
-            Route::get('/{returnOrder}/print', [ReturnOrderController::class, 'print'])->name('print');
-        });
+        // Returns routes
+        Route::get('/returns', [ReturnController::class, 'index'])->name('return.list');
+        Route::get('/returns/ajax', [ReturnController::class, 'getReturnsAjax'])->name('return.ajax');
+        Route::get('/returns/filter-users', [ReturnController::class, 'getFilterUsers'])->name('return.filter-users');
+        Route::get('/returns/{id}/detail-panel', [ReturnController::class, 'getDetailPanel'])->name('return.detail-panel');
+        Route::get('/returns/create', [ReturnController::class, 'create'])->name('return.create');
+        Route::post('/returns/create', [ReturnController::class, 'store'])->name('return.store');
+        Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('return.show');
+
+        // Return export routes
+        Route::get('/returns/export/excel', [ReturnController::class, 'exportExcel'])->name('return.export.excel');
+        Route::get('/returns/{id}/export/pdf', [ReturnController::class, 'exportPdf'])->name('return.export.pdf');
+
+        // Return additional routes (consistent naming)
+        Route::get('/returns/{id}/payment-history', [ReturnController::class, 'getPaymentHistory'])->name('return.payment-history');
+        Route::get('/returns/{id}/edit', [ReturnController::class, 'edit'])->name('return.edit');
+        Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('return.update');
+        Route::delete('/returns/{id}', [ReturnController::class, 'destroy'])->name('return.delete');
+        Route::post('/returns/{id}/payment', [ReturnController::class, 'recordPayment'])->name('return.payment');
+        Route::post('/returns/{id}/send', [ReturnController::class, 'sendReturn'])->name('return.send');
+        Route::post('/returns/{id}/cancel', [ReturnController::class, 'cancelReturn'])->name('return.cancel');
+        Route::get('/returns/{id}/print', [ReturnController::class, 'print'])->name('return.print');
+        Route::get('/returns/statistics', [ReturnController::class, 'getStatistics'])->name('return.statistics');
+        Route::post('/returns/from-invoice/{invoice_id}', [ReturnController::class, 'createFromInvoice'])->name('return.from-invoice');
+
+        // Return bulk actions
+        Route::post('/returns/bulk/update-status', [ReturnController::class, 'bulkUpdateStatus'])->name('return.bulk.update-status');
+        Route::post('/returns/bulk/cancel', [ReturnController::class, 'bulkCancel'])->name('return.bulk.cancel');
+        Route::post('/returns/bulk/delete', [ReturnController::class, 'bulkDelete'])->name('return.bulk.delete');
+
+        // Note: Export routes are defined above (lines 669-670)
+
+
 
         // Payment routes
         Route::prefix('payments')->name('payment.')->group(function () {
             Route::get('/', [PaymentController::class, 'index'])->name('list');
-            Route::get('/data', [PaymentController::class, 'getData'])->name('data');
+            Route::get('/test', function() { return view('admin.payment.test'); })->name('test');
+            Route::get('/test-summary-page', function() { return view('admin.payment.test-summary'); })->name('test-summary-page');
+            Route::get('/test-summary', function() {
+                try {
+                    $payments = \App\Models\Payment::take(5)->get();
+                    $totalIncome = \App\Models\Payment::where('payment_type', 'receipt')->sum('amount');
+                    $totalExpense = \App\Models\Payment::where('payment_type', 'payment')->sum('amount');
+
+                    $summary = [
+                        'total_payments' => \App\Models\Payment::count(),
+                        'total_income' => $totalIncome,
+                        'total_expense' => $totalExpense,
+                        'opening_balance' => 0,
+                        'closing_balance' => $totalIncome - $totalExpense,
+                        'sample_payments' => $payments->map(function($p) {
+                            return [
+                                'id' => $p->id,
+                                'payment_number' => $p->payment_number,
+                                'amount' => $p->amount,
+                                'payment_type' => $p->payment_type,
+                                'creator' => $p->creator ? $p->creator->full_name : 'N/A',
+                                'collector' => $p->collector ? $p->collector->full_name : 'N/A'
+                            ];
+                        })
+                    ];
+                    return response()->json(['success' => true, 'data' => $summary]);
+                } catch (\Exception $e) {
+                    return response()->json(['success' => false, 'error' => $e->getMessage()]);
+                }
+            })->name('test-summary');
+            Route::get('/ajax', [PaymentController::class, 'getPaymentsAjax'])->name('ajax');
+            Route::get('/summary', [PaymentController::class, 'getSummary'])->name('summary');
+            Route::get('/statistics/summary', [PaymentController::class, 'getStatistics'])->name('statistics');
             Route::get('/create', [PaymentController::class, 'create'])->name('create');
             Route::post('/', [PaymentController::class, 'store'])->name('store');
             Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
@@ -687,7 +738,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::post('/{payment}/approve', [PaymentController::class, 'approve'])->name('approve');
             Route::post('/{payment}/cancel', [PaymentController::class, 'cancel'])->name('cancel');
             Route::get('/{payment}/details', [PaymentController::class, 'getDetails'])->name('details');
-            Route::get('/statistics/summary', [PaymentController::class, 'getStatistics'])->name('statistics');
+            Route::get('/{payment}/test-print', [PaymentController::class, 'testPrint'])->name('test-print');
+            Route::get('/{payment}/print', [PaymentController::class, 'print'])->name('print');
             Route::post('/invoices/{invoice}/payment', [PaymentController::class, 'createInvoicePayment'])->name('invoice-payment');
         });
 
@@ -887,6 +939,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::get('/statistics', [QuickOrderController::class, 'getStatistics'])->name('statistics');
             Route::post('/validate', [QuickOrderController::class, 'validateOrder'])->name('validate');
             Route::post('/search-product', [QuickOrderController::class, 'searchProduct'])->name('search-product');
+            Route::get('/invoices-for-return', [QuickOrderController::class, 'getInvoicesForReturn'])->name('invoices-for-return');
+            Route::get('/invoice-items/{invoiceId}', [QuickOrderController::class, 'getInvoiceItems'])->name('invoice-items');
+            Route::post('/return-orders', [QuickOrderController::class, 'storeReturnOrder'])->name('return-orders.store');
+        });
+
+        // Test route để kiểm tra thumbnail
+        Route::get('/test-thumbnail', function() {
+            // Update iPhone product với thumbnail
+            $product = \App\Models\Product::where('sku', 'PHONE001')->first();
+            if ($product) {
+                $product->update([
+                    'product_thumbnail' => 'https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-thumbnew-600x600.jpg'
+                ]);
+                return "Updated iPhone with thumbnail: " . $product->product_thumbnail;
+            }
+            return "iPhone product not found";
         });
 
         // Quick Invoice Routes (same interface, different backend)
@@ -933,6 +1001,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         });
     });
 
+    // Global Filter API Routes
+    Route::prefix('filters')->name('filters.')->group(function () {
+        Route::get('/creators', [FilterController::class, 'getCreators'])->name('creators');
+        Route::get('/sellers', [FilterController::class, 'getSellers'])->name('sellers');
+        Route::get('/channels', [FilterController::class, 'getChannels'])->name('channels');
+        Route::get('/payment-methods', [FilterController::class, 'getPaymentMethods'])->name('payment-methods');
+        Route::get('/all', [FilterController::class, 'getAllFilters'])->name('all');
+    });
 
     // Route::namespace('General')->group(function () {
     //     Route::post('/upload-image', [UpLoadImageController::class, 'uploadImage'])->name('uploadImage');

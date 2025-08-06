@@ -8,11 +8,13 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\InventoryTransaction;
 use App\Services\InventoryService;
+use App\Services\BaseQuickOrderService;
+use App\Services\PrefixGeneratorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
-class OrderService
+class OrderService extends BaseQuickOrderService
 {
     protected $order;
     protected $orderItem;
@@ -37,21 +39,42 @@ class OrderService
     /**
      * Get all orders with filters and pagination.
      */
-    public function getOrders($filters = [], $perPage = 25)
+    public function getOrders($filters = [], $perPage = 25, $page = null)
     {
         $query = $this->order->with(['customer', 'branchShop', 'creator', 'seller']);
 
         // Apply filters
         if (isset($filters['status']) && $filters['status']) {
-            $query->where('status', $filters['status']);
+            if (is_array($filters['status'])) {
+                $query->whereIn('status', $filters['status']);
+            } else {
+                // Handle comma-separated string
+                $statuses = explode(',', $filters['status']);
+                $statuses = array_map('trim', $statuses);
+                $query->whereIn('status', $statuses);
+            }
         }
 
         if (isset($filters['delivery_status']) && $filters['delivery_status']) {
-            $query->where('delivery_status', $filters['delivery_status']);
+            if (is_array($filters['delivery_status'])) {
+                $query->whereIn('delivery_status', $filters['delivery_status']);
+            } else {
+                // Handle comma-separated string
+                $statuses = explode(',', $filters['delivery_status']);
+                $statuses = array_map('trim', $statuses);
+                $query->whereIn('delivery_status', $statuses);
+            }
         }
 
         if (isset($filters['payment_status']) && $filters['payment_status']) {
-            $query->where('payment_status', $filters['payment_status']);
+            if (is_array($filters['payment_status'])) {
+                $query->whereIn('payment_status', $filters['payment_status']);
+            } else {
+                // Handle comma-separated string
+                $statuses = explode(',', $filters['payment_status']);
+                $statuses = array_map('trim', $statuses);
+                $query->whereIn('payment_status', $statuses);
+            }
         }
 
         if (isset($filters['channel']) && $filters['channel']) {
@@ -62,12 +85,18 @@ class OrderService
             $query->where('branch_shop_id', $filters['branch_shop_id']);
         }
 
-        if (isset($filters['date_from']) && $filters['date_from']) {
-            $query->whereDate('created_at', '>=', $filters['date_from']);
-        }
+        // Handle time_filter_display parameter
+        if (isset($filters['time_filter_display']) && $filters['time_filter_display']) {
+            $this->applyTimeFilter($query, $filters['time_filter_display'], $filters);
+        } else {
+            // Fallback to explicit date range if provided
+            if (isset($filters['date_from']) && $filters['date_from']) {
+                $query->whereDate('created_at', '>=', $filters['date_from']);
+            }
 
-        if (isset($filters['date_to']) && $filters['date_to']) {
-            $query->whereDate('created_at', '<=', $filters['date_to']);
+            if (isset($filters['date_to']) && $filters['date_to']) {
+                $query->whereDate('created_at', '<=', $filters['date_to']);
+            }
         }
 
         if (isset($filters['amount_from']) && $filters['amount_from']) {
@@ -85,16 +114,32 @@ class OrderService
             });
         }
 
-        // Barcode search filter
-        if (isset($filters['Code']) && $filters['Code']) {
-            $barcode = $filters['Code'];
-            $query->whereHas('orderItems.product', function($q) use ($barcode) {
-                $q->where('barcode', $barcode);
-            });
+        // Order code search filter (Code or code parameter)
+        $orderCode = $filters['Code'] ?? $filters['code'] ?? null;
+        if (!empty($orderCode)) {
+            // Check if it's an order code (starts with ORD) or barcode
+            if (str_starts_with($orderCode, 'ORD')) {
+                // Search by order_code
+                $query->where('order_code', $orderCode);
+                Log::info('OrderService: Filtering by order code', ['order_code' => $orderCode]);
+            } else {
+                // Search by product barcode
+                $query->whereHas('orderItems.product', function($q) use ($orderCode) {
+                    $q->where('barcode', $orderCode);
+                });
+                Log::info('OrderService: Filtering by product barcode', ['barcode' => $orderCode]);
+            }
         }
 
         if (isset($filters['search']) && $filters['search']) {
             $query->search($filters['search']);
+        }
+
+        // Set current page if provided
+        if ($page !== null) {
+            \Illuminate\Pagination\Paginator::currentPageResolver(function () use ($page) {
+                return $page;
+            });
         }
 
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
@@ -106,6 +151,10 @@ class OrderService
     public function createOrder($data)
     {
         try {
+            // Debug logging
+            error_log('OrderService::createOrder - Starting order creation');
+            error_log('OrderService::createOrder - Data: ' . json_encode($data));
+
             // Handle new customer creation if needed
             if (isset($data['new_customer_data']) && !empty($data['new_customer_data'])) {
                 $customerResult = $this->createNewCustomer($data['new_customer_data']);
@@ -157,8 +206,8 @@ class OrderService
                 ];
             }
          
-            // Generate order code
-            $orderCode = Order::generateOrderCode();
+            // Generate order code using PrefixGeneratorService
+            $orderCode = PrefixGeneratorService::generateOrderCode();
           
             // Create order with notifications temporarily disabled
             $order = new \App\Models\Order([
@@ -186,21 +235,29 @@ class OrderService
 
             // Disable notifications temporarily
             $order->disableNotifications();
+            error_log('OrderService::createOrder - About to save order');
             $order->save();
+            error_log('OrderService::createOrder - Order saved with ID: ' . $order->id);
 
-            // Add order items
+            // Add order items manually to avoid BaseService issues
             if (isset($data['items'])) {
                 $order_items = is_array($data['items']) ? $data['items'] : json_decode($data['items'], true);
-                foreach ($order_items as $itemData) {
-                    $this->addOrderItem($order, $itemData);
+                foreach ($order_items as $index => $itemData) {
+                    $this->createOrderItem($order, $itemData, $index);
                 }
             }
 
             // Calculate totals (this will also trigger update events, so keep notifications disabled)
             $order->calculateTotals();
 
-            // Create inventory transactions for sale
-            $this->createSaleInventoryTransactions($order);
+            // Create inventory transactions for sale only if order status is processing or complete
+            if (in_array($order->status, ['processing', 'complete'])) {
+                try {
+                    $this->createSaleInventoryTransactions($order);
+                } catch (\Exception $e) {
+                    Log::warning('Inventory transaction creation failed but continuing', ['error' => $e->getMessage()]);
+                }
+            }
 
             // Re-enable notifications and trigger ONLY the creation notification with correct amounts
             $order->enableNotifications();
@@ -220,17 +277,45 @@ class OrderService
             DB::rollBack();
 
             // Log detailed error for debugging
-            Log::error('OrderService::createOrder failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'data' => $data,
-            ]);
+            error_log('OrderService::createOrder failed: ' . $e->getMessage());
+            error_log('OrderService::createOrder trace: ' . $e->getTraceAsString());
 
             return [
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại sau.'
+                'message' => 'Có lỗi xảy ra khi tạo đơn hàng. Error: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Create order item.
+     */
+    private function createOrderItem(Order $order, array $itemData, int $sortOrder = 0)
+    {
+        $product = null;
+        if (isset($itemData['product_id'])) {
+            $product = Product::find($itemData['product_id']);
+        }
+
+        // Handle both 'price' and 'unit_price' from frontend
+        $unitPrice = $itemData['unit_price'] ?? $itemData['price'] ?? $product?->product_price ?? 0;
+        $discount = $itemData['discount_amount'] ?? $itemData['discount'] ?? 0;
+
+        // Calculate total price
+        $quantity = $itemData['quantity'] ?? 1;
+        $subtotal = $quantity * $unitPrice;
+        $totalPrice = $subtotal - $discount;
+
+        $orderItem = OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $itemData['product_id'] ?? null,
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'discount' => $discount,
+            'total_price' => $totalPrice,
+        ]);
+
+        return $orderItem;
     }
 
     /**
@@ -766,6 +851,7 @@ class OrderService
                 'email' => !empty($customerData['email']) ? trim($customerData['email']) : null,
                 'address' => !empty($customerData['address']) ? trim($customerData['address']) : null,
                 'customer_type' => $customerData['customer_type'] ?? 'individual',
+                'branch_shop_id' => $customerData['branch_shop_id'] ?? null, // Set branch shop where customer was created
                 'status' => 'active',
                 'created_at' => now(),
                 'updated_at' => now()
@@ -1160,6 +1246,159 @@ class OrderService
                 'success' => false,
                 'message' => 'Không thể cập nhật trạng thái đơn hàng: ' . $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Get orders by IDs for export.
+     */
+    public function getOrdersByIds($orderIds)
+    {
+        return $this->order->with([
+            'customer',
+            'branchShop',
+            'creator',
+            'seller',
+            'orderItems.product'
+        ])->whereIn('id', $orderIds)->get();
+    }
+
+    /**
+     * Bulk update status for multiple orders.
+     */
+    public function bulkUpdateStatus($orderIds, $statusData)
+    {
+        try {
+            DB::beginTransaction();
+
+            $updatedCount = 0;
+            $errors = [];
+
+            foreach ($orderIds as $orderId) {
+                try {
+                    $order = $this->order->findOrFail($orderId);
+                    $updateData = [];
+
+                    // Only update non-empty status fields
+                    if (!empty($statusData['order_status'])) {
+                        $updateData['status'] = $statusData['order_status'];
+                    }
+
+                    if (!empty($statusData['payment_status'])) {
+                        $updateData['payment_status'] = $statusData['payment_status'];
+                    }
+
+                    if (!empty($statusData['delivery_status'])) {
+                        $updateData['delivery_status'] = $statusData['delivery_status'];
+                    }
+
+                    if (!empty($updateData)) {
+                        $order->update($updateData);
+                        $updatedCount++;
+                    }
+
+                } catch (\Exception $e) {
+                    $errors[] = "Lỗi khi cập nhật đơn hàng ID {$orderId}: " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            $message = "Đã cập nhật {$updatedCount} đơn hàng thành công";
+            if (!empty($errors)) {
+                $message .= ". Lỗi: " . implode(', ', $errors);
+            }
+
+            return [
+                'success' => true,
+                'message' => $message,
+                'updated_count' => $updatedCount,
+                'errors' => $errors
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return [
+                'success' => false,
+                'message' => 'Lỗi khi cập nhật trạng thái: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Apply time filter to query
+     */
+    private function applyTimeFilter($query, $timeFilter, $filters = [])
+    {
+        $now = now();
+
+        \Log::info('OrderService: Applying time filter', [
+            'time_filter' => $timeFilter,
+            'current_time' => $now->toDateTimeString()
+        ]);
+
+        switch ($timeFilter) {
+            case 'all':
+                // Don't apply any time filter - show all records
+                \Log::info('OrderService: All time filter applied - no date restrictions');
+                break;
+
+            case 'today':
+                $query->whereDate('created_at', $now->toDateString());
+                \Log::info('OrderService: Today filter applied', ['date' => $now->toDateString()]);
+                break;
+
+            case 'yesterday':
+                $yesterday = $now->copy()->subDay()->toDateString();
+                $query->whereDate('created_at', $yesterday);
+                \Log::info('OrderService: Yesterday filter applied', ['date' => $yesterday]);
+                break;
+
+            case 'this_week':
+                $startOfWeek = $now->copy()->startOfWeek()->toDateString();
+                $endOfWeek = $now->copy()->endOfWeek()->toDateString();
+                $query->whereBetween('created_at', [$startOfWeek, $endOfWeek]);
+                \Log::info('OrderService: This week filter applied', ['start' => $startOfWeek, 'end' => $endOfWeek]);
+                break;
+
+            case 'last_week':
+                $startOfLastWeek = $now->copy()->subWeek()->startOfWeek()->toDateString();
+                $endOfLastWeek = $now->copy()->subWeek()->endOfWeek()->toDateString();
+                $query->whereBetween('created_at', [$startOfLastWeek, $endOfLastWeek]);
+                \Log::info('OrderService: Last week filter applied', ['start' => $startOfLastWeek, 'end' => $endOfLastWeek]);
+                break;
+
+            case 'this_month':
+                $query->whereMonth('created_at', $now->month)
+                      ->whereYear('created_at', $now->year);
+                \Log::info('OrderService: This month filter applied', ['month' => $now->month, 'year' => $now->year]);
+                break;
+
+            case 'last_month':
+                $lastMonth = $now->copy()->subMonth();
+                $query->whereMonth('created_at', $lastMonth->month)
+                      ->whereYear('created_at', $lastMonth->year);
+                \Log::info('OrderService: Last month filter applied', ['month' => $lastMonth->month, 'year' => $lastMonth->year]);
+                break;
+
+            case 'custom':
+                // Handle custom date range
+                if (!empty($filters['date_from'])) {
+                    $query->whereDate('created_at', '>=', $filters['date_from']);
+                    \Log::info('OrderService: Custom date from applied', ['date_from' => $filters['date_from']]);
+                }
+                if (!empty($filters['date_to'])) {
+                    $query->whereDate('created_at', '<=', $filters['date_to']);
+                    \Log::info('OrderService: Custom date to applied', ['date_to' => $filters['date_to']]);
+                }
+                break;
+
+            default:
+                // Default to this month if no valid filter provided
+                $query->whereMonth('created_at', $now->month)
+                      ->whereYear('created_at', $now->year);
+                \Log::info('OrderService: Default this month filter applied', ['month' => $now->month, 'year' => $now->year]);
+                break;
         }
     }
 }

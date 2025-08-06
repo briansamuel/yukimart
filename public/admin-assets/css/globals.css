@@ -1,0 +1,987 @@
+/**
+ * Global Styles
+ * Shared styles for admin interface components
+ */
+
+:root {
+    --kt-success: #50cd89;
+    --kt-primary: #009ef7;
+    --kt-warning: #f1bc00;
+    --kt-danger: #f1416c;
+    --kt-info: #009ef7;
+    --kt-light: #f8f9fa;
+    --kt-dark: #3f4254;
+    --kt-muted: #a1a5b7;
+    --kt-border: #e4e6ef;
+}
+
+/* ==============================================
+   FILTER COMPONENTS - Shared across modules
+   ============================================== */
+
+/* Filter form styling - applies to all filter forms */
+.filter-form .card,
+.filter-block {
+    border: 1px solid var(--kt-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 0.1rem 1rem 0.25rem rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+}
+
+.filter-form .card-header,
+.filter-block .card-header {
+    border-bottom: 1px solid var(--kt-border);
+    padding: 1rem 1.5rem 0.5rem;
+}
+
+.filter-form .card-body,
+.filter-block .card-body {
+    padding: 0.5rem 1.5rem 1.5rem;
+}
+
+/* Filter block specific styling */
+#time_filter_block,
+#status_filter_block,
+#creator_filter_block,
+#seller_filter_block,
+#delivery_status_filter_block,
+#payment_method_filter_block {
+    transition: all 0.3s ease;
+}
+
+#time_filter_block:hover,
+#status_filter_block:hover,
+#creator_filter_block:hover,
+#seller_filter_block:hover,
+#delivery_status_filter_block:hover,
+#payment_method_filter_block:hover {
+    box-shadow: 0 0.2rem 1.5rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Filter form styling */
+.filter-form .form-check-label {
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.filter-form .form-check-input:checked {
+    background-color: var(--kt-primary);
+    border-color: var(--kt-primary);
+}
+
+.filter-form .form-check-input:focus {
+    border-color: var(--kt-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 158, 247, 0.25);
+}
+
+/* Filter section headers */
+.filter-form h3,
+.filter-block h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--kt-dark);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Status filter styling */
+.filter-form .form-check,
+.filter-block .form-check {
+    margin-bottom: 0.75rem;
+}
+
+.filter-form .form-check-label,
+.filter-block .form-check-label {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--kt-dark);
+    transition: color 0.2s ease;
+}
+
+.filter-form .form-check-label:hover,
+.filter-block .form-check-label:hover {
+    color: var(--kt-primary);
+}
+
+.filter-form .form-check-input:checked,
+.filter-block .form-check-input:checked {
+    background-color: var(--kt-primary);
+    border-color: var(--kt-primary);
+}
+
+.filter-form .form-check-input:focus,
+.filter-block .form-check-input:focus {
+    border-color: var(--kt-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 158, 247, 0.25);
+}
+
+/* ==============================================
+   TIME FILTER COMPONENT - Shared across modules
+   ============================================== */
+
+/* Time filter container */
+.time-filter-container {
+    position: relative !important;
+}
+
+/* Time panel styling - Hidden by default, absolute position popup */
+.time-options-panel {
+    position: absolute !important;
+    top: 100% !important;
+    left: 100% !important;
+    z-index: 1055 !important;
+    margin-top: 0.5rem !important;
+    width: 800px !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    transform: translateY(-10px) !important;
+    transition: all 0.3s ease !important;
+}
+
+.time-options-panel.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+.time-options-panel .card-body {
+    background-color: #ffffff;
+    border: 1px solid var(--kt-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1.5rem 0.5rem rgba(0, 0, 0, 0.15);
+    padding: 1.25rem;
+}
+
+.time-options-panel .time-option {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    border: 1px solid var(--kt-border);
+    background-color: #ffffff;
+    color: var(--kt-dark);
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.time-options-panel .time-option:hover {
+    background-color: var(--kt-primary);
+    color: white;
+    border-color: var(--kt-primary);
+    transform: translateY(-1px);
+    text-decoration-color: white;
+}
+
+.time-options-panel .time-option.active {
+    background-color: var(--kt-primary) !important;
+    color: white !important;
+    border-color: var(--kt-primary) !important;
+    text-decoration-color: white !important;
+}
+
+.time-options-panel .time-option.selecting {
+    text-decoration-color: var(--kt-success) !important;
+}
+
+.time-options-panel h6 {
+    font-size: 0.875rem;
+    color: var(--kt-dark);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--kt-border);
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.time-filter-trigger:hover {
+    background-color: var(--kt-light);
+    text-decoration-color: var(--kt-primary);
+}
+
+.time-filter-trigger.selecting {
+    text-decoration-color: var(--kt-success) !important;
+    background-color: #f8f9fa;
+}
+
+/* Column Visibility Panel Styling - Shared across modules */
+.column-visibility-panel {
+    position: fixed !important;
+    top: 100px !important;
+    right: 100px !important;
+    z-index: 99999 !important;
+    background: white !important;
+    border: 1px solid var(--kt-border) !important;
+    border-radius: 0.75rem !important;
+    width: 500px !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    transform: translateY(-10px) !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.5) !important;
+    padding: 1.5rem !important;
+}
+
+.column-visibility-panel.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* Force show when JavaScript sets inline styles */
+.column-visibility-panel[style*="display: block"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+.column-visibility-panel .panel-content {
+    background-color: #ffffff;
+    border: 1px solid var(--kt-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.column-visibility-panel .panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--kt-border);
+    background: #f8f9fa;
+}
+
+.column-visibility-panel .panel-header h6 {
+    font-size: 0.875rem;
+    color: var(--kt-dark);
+    margin-bottom: 0;
+    font-weight: 600;
+}
+
+.column-visibility-panel .panel-body {
+    padding: 1.25rem;
+}
+
+.column-visibility-panel .form-check {
+    margin-bottom: 0.75rem;
+}
+
+.column-visibility-panel .form-check-label {
+    color: var(--kt-dark);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.column-visibility-panel .form-check-label:hover {
+    color: var(--kt-primary);
+}
+
+.column-visibility-panel .form-check-input {
+    margin-top: 0.125rem;
+}
+
+.column-visibility-panel .form-check-input:checked {
+    background-color: var(--kt-primary);
+    border-color: var(--kt-primary);
+}
+
+.column-visibility-panel .form-check-input:focus {
+    border-color: var(--kt-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 158, 247, 0.25);
+}
+
+/* Column visibility trigger button styling */
+.column-visibility-trigger {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.column-visibility-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.column-visibility-trigger.active {
+    background-color: var(--kt-primary) !important;
+    border-color: var(--kt-primary) !important;
+    color: white !important;
+}
+
+/* ===== RESPONSIVE TABLE SYSTEM ===== */
+
+/* Table Container with Horizontal Scroll */
+#kt_invoices_container_body {position: relative !important;}
+.kt_table_container_body {position: relative !important;}
+.kt_table_responsive_container {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    width: 100% !important;
+    position: static !important;
+    /* Custom scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: #e1e5e9 #f5f8fa;
+}
+
+.kt_table_responsive_container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.kt_table_responsive_container::-webkit-scrollbar-track {
+    background: #f5f8fa;
+    border-radius: 4px;
+}
+
+.kt_table_responsive_container::-webkit-scrollbar-thumb {
+    background: #e1e5e9;
+    border-radius: 4px;
+}
+
+.kt_table_responsive_container::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}
+
+/* Table Base Styles */
+.kt_table_responsive {
+    min-width: 1400px !important; /* Minimum width to ensure all columns are visible */
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+/* Header Styles */
+.kt_table_responsive thead th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: var(--kt-primary-light) !important;
+    z-index: 10 !important;
+    border-bottom: 1px solid #e1e5e9 !important;
+    white-space: nowrap !important;
+    padding: 12px 8px !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    color: #7e8299 !important;
+    vertical-align: middle !important;
+}
+
+/* Checkbox Column - Fixed Width */
+.kt_table_responsive thead th:first-child,
+.kt_table_responsive tbody tr:not(.kt-table-detail-row) td:first-child {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    text-align: center !important;
+    padding: 8px 4px !important;
+}
+
+/* Body Cell Styles */
+.kt_table_responsive tbody tr:not(.kt-table-detail-row) td {
+    padding: 12px 8px !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #f1f1f2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Row Hover Effects */
+.kt_table_responsive tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+.kt_table_responsive tbody tr:hover td {
+    background-color: transparent !important;
+}
+
+/* Row Active States */
+.kt_table_responsive tbody tr.table-active {
+    background-color: #e1f0ff !important;
+}
+
+.kt_table_responsive tbody tr.table-active:hover {
+    background-color: #d6ebff !important;
+}
+
+/* ===== STATUS BADGES SYSTEM ===== */
+
+/* Base Badge Styles */
+.status-badge {
+    display: inline-block !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+}
+
+/* Status Badge Colors */
+.badge-light-success,
+.status-badge-success {
+    background-color: #e8fff3 !important;
+    color: #0bb783 !important;
+}
+
+.badge-light-warning,
+.status-badge-warning {
+    background-color: #fff8dd !important;
+    color: #f1bc00 !important;
+}
+
+.badge-light-danger,
+.status-badge-danger {
+    background-color: #ffe2e5 !important;
+    color: #f1416c !important;
+}
+
+.badge-light-info,
+.status-badge-info {
+    background-color: #e1f0ff !important;
+    color: #009ef7 !important;
+}
+
+.badge-light-primary,
+.status-badge-primary {
+    background-color: #e1f0ff !important;
+    color: #009ef7 !important;
+}
+
+.badge-light-secondary,
+.status-badge-secondary {
+    background-color: #f1f1f2 !important;
+    color: #7e8299 !important;
+}
+
+.badge-light-dark,
+.status-badge-dark {
+    background-color: #f1f1f2 !important;
+    color: #181c32 !important;
+}
+
+/* ===== TYPOGRAPHY SYSTEM ===== */
+
+/* Currency Formatting */
+.currency-amount {
+    font-weight: 600 !important;
+    color: #181c32 !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Date Formatting */
+.date-display {
+    font-size: 13px !important;
+    color: #7e8299 !important;
+    font-weight: 500 !important;
+}
+
+.time-display {
+    font-size: 11px !important;
+    color: #a1a5b7 !important;
+    display: block !important;
+    margin-top: 2px !important;
+    font-weight: 400 !important;
+}
+
+/* ID/Code Formatting */
+.id-code {
+    font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #181c32 !important;
+}
+
+.id-code:hover {
+    color: #009ef7 !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+}
+
+/* User/Name Formatting */
+.user-name {
+    font-weight: 500 !important;
+    color: #181c32 !important;
+    font-size: 13px !important;
+}
+
+.user-email {
+    font-size: 11px !important;
+    color: #a1a5b7 !important;
+    display: block !important;
+    margin-top: 1px !important;
+}
+
+/* Status Text */
+.status-text {
+    font-weight: 500 !important;
+    font-size: 12px !important;
+}
+
+/* ===== TABLE-SPECIFIC COLUMN WIDTHS ===== */
+
+/* Invoice table specific column definitions */
+#kt_invoices_table thead th:nth-child(2),  /* Mã hóa đơn */
+#kt_invoices_table tbody td:nth-child(2) {
+    width: 140px !important;
+    min-width: 140px !important;
+}
+
+#kt_invoices_table thead th:nth-child(3),  /* Khách hàng */
+#kt_invoices_table tbody td:nth-child(3) {
+    width: 160px !important;
+    min-width: 160px !important;
+}
+
+#kt_invoices_table thead th:nth-child(4),  /* Tổng tiền */
+#kt_invoices_table tbody td:nth-child(4),
+#kt_invoices_table thead th:nth-child(5),  /* Đã thanh toán */
+#kt_invoices_table tbody td:nth-child(5) {
+    width: 120px !important;
+    min-width: 120px !important;
+    text-align: right !important;
+}
+
+#kt_invoices_table thead th:nth-child(6),  /* Trạng thái */
+#kt_invoices_table tbody td:nth-child(6),
+#kt_invoices_table thead th:nth-child(7),  /* TT Thanh toán */
+#kt_invoices_table tbody td:nth-child(7) {
+    width: 130px !important;
+    min-width: 130px !important;
+}
+
+#kt_invoices_table thead th:nth-child(8),  /* Ngày tạo */
+#kt_invoices_table tbody td:nth-child(8) {
+    width: 140px !important;
+    min-width: 140px !important;
+}
+
+#kt_invoices_table thead th:nth-child(9),  /* Người tạo */
+#kt_invoices_table tbody td:nth-child(9) {
+    width: 180px !important;
+    min-width: 180px !important;
+}
+
+#kt_invoices_table thead th:nth-child(10), /* Email */
+#kt_invoices_table tbody td:nth-child(10) {
+    width: 200px !important;
+    min-width: 200px !important;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Large Desktop (1400px and up) */
+@media (min-width: 1400px) {
+    .kt_table_responsive {
+        min-width: 1600px !important;
+    }
+}
+
+/* Desktop (1200px to 1399px) */
+@media (max-width: 1399px) and (min-width: 1200px) {
+    .kt_table_responsive {
+        min-width: 1300px !important;
+    }
+}
+
+/* Tablet Landscape (992px to 1199px) */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .kt_table_responsive {
+        min-width: 1200px !important;
+    }
+}
+
+/* Tablet Portrait (768px to 991px) */
+@media (max-width: 991px) and (min-width: 768px) {
+    .kt_table_responsive {
+        min-width: 1100px !important;
+    }
+}
+
+/* Mobile Landscape (576px to 767px) */
+@media (max-width: 767px) and (min-width: 576px) {
+    .kt_table_responsive {
+        min-width: 1000px !important;
+    }
+
+    /* Adjust font sizes for mobile */
+    .kt_table_responsive thead th {
+        font-size: 11px !important;
+        padding: 10px 6px !important;
+    }
+
+    .kt_table_responsive tbody td {
+        font-size: 12px !important;
+        padding: 10px 6px !important;
+    }
+}
+
+/* Mobile Portrait (up to 575px) */
+@media (max-width: 575px) {
+    .kt_table_responsive {
+        min-width: 900px !important;
+    }
+
+    /* Very compact for mobile */
+    .kt_table_responsive thead th {
+        font-size: 10px !important;
+        padding: 8px 4px !important;
+    }
+
+    .kt_table_responsive tbody td {
+        font-size: 11px !important;
+        padding: 8px 4px !important;
+    }
+}
+
+/* ===== COLUMN VISIBILITY SYSTEM ===== */
+
+/* Hidden columns should not take up space */
+.kt_table_responsive th[style*="display: none"],
+.kt_table_responsive td[style*="display: none"] {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+}
+
+/* ===== SCROLL INDICATORS ===== */
+
+/* Add subtle shadow to indicate scrollable content */
+.kt_table_responsive_container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to left, rgba(0,0,0,0.1), transparent);
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.kt_table_responsive_container.has-scroll::before {
+    opacity: 1;
+}
+
+.kt_table_responsive_container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.kt_table_responsive_container.has-scroll-left::after {
+    opacity: 1;
+}
+
+/* ===== LOADING STATES ===== */
+
+.kt_table_responsive_loading {
+    position: relative;
+}
+
+.kt_table_responsive_loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kt_table_responsive_loading::after {
+    content: 'Đang tải...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 101;
+    font-weight: 500;
+    color: #7e8299;
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+    .kt_table_responsive_container {
+        overflow: visible !important;
+    }
+
+    .kt_table_responsive {
+        min-width: auto !important;
+        width: 100% !important;
+        table-layout: auto !important;
+    }
+
+    .kt_table_responsive thead th,
+    .kt_table_responsive tbody td {
+        width: auto !important;
+        min-width: auto !important;
+        max-width: none !important;
+        white-space: normal !important;
+        font-size: 10px !important;
+        padding: 4px 2px !important;
+    }
+
+    /* Hide non-essential columns when printing */
+    .kt_table_responsive thead th:first-child,
+    .kt_table_responsive tbody td:first-child {
+        display: none !important;
+    }
+}
+
+/* Hide DataTables sizing div that interferes with checkbox */
+.kt_table_responsive thead th:first-child .dataTables_sizing {
+    display: none !important;
+}
+
+/* Force checkbox to be visible */
+.kt_table_responsive thead th:first-child .form-check {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
+    z-index: 10 !important;
+    margin: 0 !important;
+}
+
+.kt_table_responsive thead th:first-child .form-check-input {
+    position: relative !important;
+    z-index: 10 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure the first table (main table) shows checkbox */
+.dataTables_wrapper table:first-of-type thead th:first-child::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: white;
+    z-index: 1;
+}
+
+/* Add checkbox appearance to first table if missing */
+.dataTables_wrapper table:first-of-type thead th:first-child:empty::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* Hide the second table completely */
+.dataTables_wrapper table:nth-of-type(2) {
+    display: none !important;
+}
+
+/* Force the first table to show checkbox content */
+.dataTables_wrapper table:first-of-type thead th:first-child {
+    position: relative !important;
+}
+
+/* Create a visual checkbox in the first table */
+.dataTables_wrapper table:first-of-type thead th:first-child::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    border: 1px solid #d1d3e0;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+/* Hover effect for the visual checkbox */
+.dataTables_wrapper table:first-of-type thead th:first-child:hover::before {
+    border-color: #009ef7;
+    background-color: #f8f9fa;
+}
+
+/* Checked state for the visual checkbox */
+.dataTables_wrapper table:first-of-type thead th:first-child.checkbox-checked::before {
+    background-color: #009ef7;
+    border-color: #009ef7;
+}
+
+/* Checkmark for checked state */
+.dataTables_wrapper table:first-of-type thead th:first-child.checkbox-checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 11;
+    pointer-events: none;
+}
+
+/* Responsive adjustments for column panel */
+@media (max-width: 991.98px) {
+    .column-visibility-panel {
+        right: 0 !important;
+        width: 400px !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .column-visibility-panel {
+        right: 0 !important;
+        width: 350px !important;
+        max-height: 60vh !important;
+    }
+
+    .column-visibility-panel .panel-body {
+        padding: 1rem;
+    }
+
+    .column-visibility-panel .form-check-label {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .column-visibility-panel {
+        right: -50px !important;
+        width: 300px !important;
+    }
+
+    .column-visibility-panel .panel-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .column-visibility-panel .panel-body {
+        padding: 0.75rem;
+    }
+}
+
+/* Responsive adjustments for time panel */
+@media (max-width: 991.98px) {
+    .time-options-panel {
+        right: 0 !important;
+        width: 700px !important;
+        transform: translateY(-10px) !important;
+    }
+
+    .time-options-panel.show {
+        transform: translateY(0) !important;
+    }
+
+    .time-options-panel.hiding {
+        transform: translateY(-10px) !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .time-options-panel {
+        right: 0 !important;
+        width: 600px !important;
+        max-height: 60vh !important;
+        transform: translateY(-10px) !important;
+    }
+
+    .time-options-panel.show {
+        transform: translateY(0) !important;
+    }
+
+    .time-options-panel.hiding {
+        transform: translateY(-10px) !important;
+    }
+
+    .time-options-panel .row {
+        flex-direction: column;
+    }
+
+    .time-options-panel .col {
+        margin-bottom: 1rem;
+    }
+
+    .time-options-panel .time-option {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .time-options-panel .card-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .time-options-panel {
+        right: -50px !important;
+        width: 400px !important;
+        transform: translateY(-10px) !important;
+    }
+
+    .time-options-panel.show {
+        transform: translateY(0) !important;
+    }
+
+    .time-options-panel.hiding {
+        transform: translateY(-10px) !important;
+    }
+}
+
+/* Utility Classes - Shared across modules */
+.text-nowrap {
+    white-space: nowrap !important;
+}
+
+.cursor-pointer {
+    cursor: pointer !important;
+}

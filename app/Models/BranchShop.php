@@ -202,6 +202,14 @@ class BranchShop extends Model
     }
 
     /**
+     * Relationship with customers created at this branch shop
+     */
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    /**
      * Get managers of this branch shop
      */
     public function managers()

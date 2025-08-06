@@ -805,12 +805,12 @@ var KTOrderAdd = function () {
     // Auto-generate order code
     var generateOrderCode = function() {
         const now = new Date();
-        const year = now.getFullYear().toString().slice(-2);
+        const year = now.getFullYear().toString();
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
         const day = now.getDate().toString().padStart(2, '0');
-        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
 
-        return `ORD${year}${month}${day}${random}`;
+        return `DH${year}${month}${day}${random}`;
     }
 
     // Show loading indicator
