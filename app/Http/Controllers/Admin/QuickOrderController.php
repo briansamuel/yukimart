@@ -9,6 +9,7 @@ use App\Services\ReturnOrderService;
 use App\Models\Customer;
 use App\Models\BranchShop;
 use App\Models\BankAccount;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -417,13 +418,43 @@ class QuickOrderController extends Controller
             $timeFilter = $request->input('time_filter', 'this_month');
             $customerFilter = $request->input('customer_filter');
 
-            // Get user's branch shops
+            // Get user's branch shops with better error handling
+            $userBranchShops = collect();
             try {
-                $userBranchShops = Auth::user()->currentBranchShops()->pluck('id');
+                $user = Auth::user();
+
+                // Check if user is super admin
+                if ($user && $user->is_root == 1) {
+                    // Super admin can see all invoices
+                    $userBranchShops = \App\Models\BranchShop::pluck('id');
+                    Log::info('Super admin accessing all branch shops for invoice selection');
+                } else {
+                    // Regular user - get their assigned branch shops
+                    $userBranchShops = $user->currentBranchShops()->pluck('branch_shops.id');
+
+                    // If no branch shops assigned, check for legacy branch_shop_id
+                    if ($userBranchShops->isEmpty() && $user->branch_shop_id) {
+                        $userBranchShops = collect([$user->branch_shop_id]);
+                        Log::info('Using legacy branch_shop_id for user', ['branch_shop_id' => $user->branch_shop_id]);
+                    }
+                }
+
+                Log::info('User branch shops for invoice selection', [
+                    'user_id' => $user->id ?? 'unknown',
+                    'is_root' => $user->is_root ?? 0,
+                    'branch_shops' => $userBranchShops->toArray()
+                ]);
+
             } catch (\Exception $e) {
                 Log::error('Error getting user branch shops', ['error' => $e->getMessage()]);
-                // Fallback: get all branch shops for now
-                $userBranchShops = collect([1]); // Temporary fallback
+                // Emergency fallback: get all branch shops
+                $userBranchShops = \App\Models\BranchShop::pluck('id');
+            }
+
+            // Ensure we have at least one branch shop
+            if ($userBranchShops->isEmpty()) {
+                Log::warning('No branch shops found for user, using all available');
+                $userBranchShops = \App\Models\BranchShop::pluck('id');
             }
 
             // Build query

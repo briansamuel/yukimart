@@ -118,14 +118,20 @@ class ReturnController extends Controller
         try {
             Log::info('Return AJAX request received', $request->all());
 
-            // Get search parameters
-            $searchValue = $request->get('search')['value'] ?? '';
+            // Get search parameters - support both formats
+            $searchValue = '';
+            if ($request->has('search') && is_array($request->get('search'))) {
+                $searchValue = $request->get('search')['value'] ?? '';
+            } else {
+                $searchValue = $request->get('search', '');
+            }
             $searchTerm = $request->get('searchTerm', '');
 
-            // Get pagination parameters
-            $start = (int) $request->get('start', 0);
-            $length = (int) $request->get('length', 10);
-            $page = ($start / $length) + 1;
+            // Get pagination parameters - support both formats
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('per_page', 10);
+            $start = (int) $request->get('start', ($page - 1) * $perPage);
+            $length = (int) $request->get('length', $perPage);
 
             // Build base query
             $query = ReturnOrder::with(['customer', 'creator', 'branchShop']);
@@ -187,11 +193,17 @@ class ReturnController extends Controller
                 ];
             }
 
+            // Return response in format compatible with both DataTables and custom pagination
             return response()->json([
-                'draw' => (int) $request->get('draw'),
+                'success' => true,
+                'draw' => (int) $request->get('draw', 1),
                 'recordsTotal' => ReturnOrder::count(),
                 'recordsFiltered' => $totalRecords,
-                'data' => $data
+                'data' => $data,
+                'page' => $page,
+                'per_page' => $length,
+                'total' => $totalRecords,
+                'last_page' => ceil($totalRecords / $length)
             ]);
 
         } catch (\Exception $e) {

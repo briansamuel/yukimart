@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class Customer extends Model
 {
@@ -205,41 +206,63 @@ class Customer extends Model
     public function getStats()
     {
         try {
-            // Use optimized queries instead of loading all orders
-            $orderStats = $this->orders()
+            // Get all invoices for this customer (excluding cancelled and draft)
+            $invoices = $this->invoices()
+                ->whereNotIn('status', ['cancelled', 'draft'])
+                ->get();
+
+            // Calculate statistics from the collection
+            $totalInvoices = $invoices->count();
+            $completedInvoices = $invoices->whereIn('status', ['completed', 'paid'])->count();
+            $totalSales = $invoices->whereIn('status', ['completed', 'paid'])->sum('total_amount');
+
+            // Calculate debt: sum of unpaid amounts (total_amount - paid_amount for unpaid/partial invoices)
+            $totalDebt = $invoices->filter(function($invoice) {
+                $paymentStatus = $invoice->payment_status; // Uses accessor
+                return in_array($paymentStatus, ['unpaid', 'partial']);
+            })->sum(function($invoice) {
+                return $invoice->total_amount - $invoice->paid_amount; // Uses accessor
+            });
+
+            // Get return order statistics (if table exists)
+            $totalReturns = 0;
+            if (Schema::hasTable('return_orders')) {
+                $totalReturns = $this->returnOrders()
+                    ->where('status', 'completed')
+                    ->sum('total_amount') ?? 0;
+            }
+
+            // Get point statistics from point_transactions
+            $pointStats = $this->pointTransactions()
                 ->selectRaw('
-                    COUNT(*) as total_orders,
-                    COUNT(CASE WHEN status = "completed" THEN 1 END) as completed_orders,
-                    COALESCE(SUM(CASE WHEN status = "completed" THEN final_amount END), 0) as total_sales,
-                    COALESCE(SUM(CASE WHEN status = "returned" THEN final_amount END), 0) as total_returns,
-                    COALESCE(SUM(CASE WHEN payment_status IN ("unpaid", "partial") AND status NOT IN ("cancelled", "returned") THEN (final_amount - COALESCE(amount_paid, 0)) END), 0) as total_debt,
-                    COALESCE(AVG(CASE WHEN status = "completed" THEN final_amount END), 0) as avg_order_value
+                    COALESCE(SUM(points), 0) as current_points_balance,
+                    COALESCE(SUM(CASE WHEN points > 0 THEN points END), 0) as total_points_earned
                 ')
                 ->first();
 
-            // Get last order date efficiently
-            $lastOrderDate = $this->orders()
+            // Get last invoice date efficiently
+            $lastInvoiceDate = $this->invoices()
                 ->latest()
                 ->value('created_at');
 
-            // Calculate derived values from optimized query
-            $totalSales = $orderStats->total_sales ?? 0;
-            $totalReturns = $orderStats->total_returns ?? 0;
-            $totalDebt = $orderStats->total_debt ?? 0;
-            $netSales = $totalSales - $totalReturns;
-            $totalPoints = $this->points ?? 0;
+            // Calculate derived values
+            $netSales = $totalSales - $totalReturns; // Tổng bán trừ trả hàng
+            $currentPoints = $pointStats->current_points_balance ?? 0; // Điểm hiện tại (số dư)
+            $totalPointsEarned = $pointStats->total_points_earned ?? 0; // Tổng điểm tích lũy (chỉ điểm cộng)
+            $avgInvoiceValue = $completedInvoices > 0 ? $totalSales / $completedInvoices : 0;
 
             return [
-                'total_orders' => $orderStats->total_orders ?? 0,
-                'completed_orders' => $orderStats->completed_orders ?? 0,
+                'total_invoices' => $totalInvoices,
+                'completed_invoices' => $completedInvoices, // Số lần mua (hóa đơn thành công)
                 'total_spent' => $totalSales,
                 'total_returns' => $totalReturns,
-                'net_sales' => $netSales,
-                'total_debt' => max(0, $totalDebt),
-                'total_points' => $totalPoints,
-                'purchase_count' => $orderStats->completed_orders ?? 0,
-                'average_order_value' => $orderStats->avg_order_value ?? 0,
-                'last_order_date' => $lastOrderDate,
+                'net_sales' => $netSales, // Tổng bán trừ trả hàng
+                'total_debt' => max(0, $totalDebt), // Nợ: Số tiền hóa đơn chưa thanh toán
+                'current_points' => $currentPoints, // Điểm: Số điểm tích lũy hiện tại (số dư)
+                'total_points_earned' => $totalPointsEarned, // Tổng điểm: Tổng số điểm tích lũy (không bao gồm điểm bị trừ)
+                'purchase_count' => $completedInvoices, // Số lần mua
+                'average_invoice_value' => $avgInvoiceValue,
+                'last_invoice_date' => $lastInvoiceDate,
             ];
         } catch (\Exception $e) {
             Log::error('Customer::getStats - Error calculating stats', [
@@ -250,16 +273,16 @@ class Customer extends Model
 
             // Return default values on error
             return [
-                'total_orders' => 0,
-                'completed_orders' => 0,
+                'total_invoices' => 0,
+                'completed_invoices' => 0,
                 'total_spent' => 0,
                 'total_returns' => 0,
                 'net_sales' => 0,
                 'total_debt' => 0,
                 'total_points' => $this->points ?? 0,
                 'purchase_count' => 0,
-                'average_order_value' => 0,
-                'last_order_date' => null,
+                'average_invoice_value' => 0,
+                'last_invoice_date' => null,
             ];
         }
     }

@@ -2510,12 +2510,8 @@ function setupCustomerModalTabs(customerId) {
     $('#customerInfoModal .nav-link').on('shown.bs.tab.customerTabs', function(e) {
         const tabId = $(this).attr('data-bs-target');
 
-        // Handle different tabs
-        if (tabId === '#customer-history') {
-            loadCustomerOrderHistoryNew(customerId);
-        } else if (tabId === '#customer-points') {
-            loadCustomerPointHistoryNew(customerId);
-        }
+        // Note: All customer modal tabs are now handled by quick-order-modals.js
+        // This handler is disabled to prevent conflicts
         // Other tabs are handled by existing code
     });
 }

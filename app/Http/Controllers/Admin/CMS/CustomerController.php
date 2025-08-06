@@ -621,9 +621,9 @@ class CustomerController extends Controller
                     // Determine seller name - prioritize sold_by, fallback to created_by
                     $sellerName = 'N/A';
                     if ($invoice->seller) {
-                        $sellerName = $invoice->seller->name;
+                        $sellerName = $invoice->seller->full_name;
                     } elseif ($invoice->creator) {
-                        $sellerName = $invoice->creator->name;
+                        $sellerName = $invoice->creator->full_name;
                     }
 
                     return [
@@ -636,7 +636,7 @@ class CustomerController extends Controller
                         'seller' => $sellerName,
                         'formatted_amount' => number_format($invoice->total_amount, 0, ',', '.'),
                         'formatted_date' => $invoice->created_at->format('d/m/Y H:i'),
-                        'status_text' => $this->getInvoiceStatusText($invoice->status)
+                        'status_text' => ucfirst($invoice->status)
                     ];
                 });
 
@@ -644,16 +644,14 @@ class CustomerController extends Controller
             $returnOrders = collect();
             if (Schema::hasTable('return_orders')) {
                 $returnOrders = $customer->returnOrders()
-                    ->with(['seller', 'creator']) // Load seller relationships
-                    ->select('id', 'return_number', 'total_amount', 'status', 'created_at', 'sold_by', 'created_by')
+                    ->with(['creator']) // Load creator relationship only
+                    ->select('id', 'return_number', 'total_amount', 'status', 'created_at', 'created_by')
                     ->get()
                     ->map(function ($returnOrder) {
-                        // Determine seller name - prioritize sold_by, fallback to created_by
+                        // Use creator as seller for return orders
                         $sellerName = 'N/A';
-                        if ($returnOrder->seller) {
-                            $sellerName = $returnOrder->seller->name;
-                        } elseif ($returnOrder->creator) {
-                            $sellerName = $returnOrder->creator->name;
+                        if ($returnOrder->creator) {
+                            $sellerName = $returnOrder->creator->full_name;
                         }
 
                         return [
@@ -666,7 +664,7 @@ class CustomerController extends Controller
                             'seller' => $sellerName,
                             'formatted_amount' => number_format($returnOrder->total_amount, 0, ',', '.'),
                             'formatted_date' => $returnOrder->created_at->format('d/m/Y H:i'),
-                            'status_text' => $this->getReturnOrderStatusText($returnOrder->status)
+                            'status_text' => ucfirst($returnOrder->status)
                         ];
                     });
             }
@@ -701,7 +699,8 @@ class CustomerController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể lấy lịch sử đơn hàng: ' . $e->getMessage()
+                'message' => 'Không thể lấy lịch sử đơn hàng: ' . $e->getMessage(),
+                'error' => $e->getTraceAsString()
             ], 500);
         }
     }

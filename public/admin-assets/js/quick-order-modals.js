@@ -143,31 +143,42 @@ function showCustomerInfo(customerId) {
 /**
  * Populate customer modal
  */
-function populateCustomerModal(customer) {
-    // Header
-    $('#customerModalName').text(customer.name);
+function populateCustomerModal(data) {
+    const customer = data.customer;
+    const statistics = data.statistics;
+    const branchShop = data.branch_shop;
+
+    // Header with branch shop info
+    let headerText = customer.name;
+    if (branchShop) {
+        headerText += ` Chi nhánh hiện tại: ${branchShop.name}`;
+    }
+    $('#customerModalName').text(headerText);
     $('#customerModalCode').text(`(${customer.customer_code || 'N/A'})`);
-    
-    // Stats
-    $('#customerDebtAmount').text(formatCurrency(customer.debt_amount || 0));
-    $('#customerPointCount').text(customer.point_count || 0);
-    $('#customerTotalSpent').text(formatCurrency(customer.total_spent || 0));
-    $('#customerPurchaseCount').text(customer.purchase_count || 0);
-    $('#customerNetSales').text(formatCurrency(customer.net_sales || 0));
-    
+
+    // Store customer ID for other functions
+    $('#customerModalName').data('customer-id', customer.id);
+
+    // Stats - Updated according to requirements
+    $('#customerDebtAmount').text(formatCurrency(statistics.total_debt || 0)); // Nợ: Số tiền hóa đơn chưa thanh toán
+    $('#customerPointCount').text(statistics.current_points || 0); // Điểm: Số điểm tích lũy hiện tại (số dư)
+    $('#customerTotalSpent').text(statistics.total_points_earned || 0); // Tổng điểm: Tổng số điểm tích lũy (không bao gồm điểm bị trừ)
+    $('#customerPurchaseCount').text(statistics.completed_invoices || 0); // Số lần mua: Tổng số hóa đơn thành công
+    $('#customerNetSales').text(formatCurrency(statistics.net_sales || 0)); // Tổng bán trừ trả hàng
+
     // Info tab
-    $('#customerModalCustomerCode').text(customer.customer_code || 'N/A');
-    $('#customerModalFullName').text(customer.name || 'N/A');
-    $('#customerModalPhone').text(customer.phone || 'N/A');
-    $('#customerModalAddress').text(customer.address || 'N/A');
-    $('#customerModalArea').text(customer.area || 'N/A');
-    $('#customerModalType').text(customer.type || 'N/A');
-    $('#customerModalTaxCode').text(customer.tax_code || 'N/A');
-    $('#customerModalEmail').text(customer.email || 'N/A');
-    $('#customerModalFacebook').text(customer.facebook || 'N/A');
-    $('#customerModalGroup').text(customer.group || 'N/A');
-    $('#customerModalNotes').text(customer.notes || 'N/A');
-    $('#customerModalBirthday').text(customer.birthday || 'N/A');
+    $('#customerModalCustomerCode').val(customer.customer_code || '');
+    $('#customerModalFullName').val(customer.name || '');
+    $('#customerModalPhone').val(customer.phone || '');
+    $('#customerModalAddress').val(customer.address || '');
+    $('#customerModalArea').val(customer.area || '');
+    $('#customerModalType').val(customer.customer_type || '');
+    $('#customerModalTaxCode').val(customer.tax_code || '');
+    $('#customerModalEmail').val(customer.email || '');
+    $('#customerModalFacebook').val(customer.facebook || '');
+    $('#customerModalGroup').val(customer.customer_group || '');
+    $('#customerModalNotes').val(customer.notes || '');
+    $('#customerModalBirthday').val(customer.birthday || '');
 }
 
 /**
@@ -203,12 +214,19 @@ function populateCustomerHistory(orders) {
     } else {
         orders.forEach(order => {
             const statusBadge = getStatusBadge(order.status, order.status_text);
+
+            // Create link for invoice code
+            let codeDisplay = order.code || 'N/A';
+            if (order.code && order.code !== 'N/A') {
+                codeDisplay = `<a href="/admin/invoices?code=${order.code}" target="_blank" class="text-primary fw-bold">${order.code}</a>`;
+            }
+
             html += `
                 <tr>
-                    <td><strong>${order.code}</strong></td>
+                    <td>${codeDisplay}</td>
                     <td>${order.formatted_date}</td>
-                    <td>${order.seller}</td>
-                    <td class="text-end"><strong>${order.formatted_amount}</strong></td>
+                    <td>${order.seller || 'N/A'}</td>
+                    <td class="text-end"><strong>${order.formatted_amount || '0'}</strong></td>
                     <td>${statusBadge}</td>
                 </tr>
             `;
@@ -330,14 +348,29 @@ function populateCustomerPoints(points) {
         html = '<tr><td colspan="6" class="text-center">Chưa có lịch sử điểm</td></tr>';
     } else {
         points.forEach(point => {
+            // Create link for transaction code
+            let codeDisplay = point.code || 'N/A';
+            if (point.code) {
+                if (point.code.startsWith('HD')) {
+                    // Invoice link
+                    codeDisplay = `<a href="/admin/invoices?code=${point.code}" target="_blank" class="text-primary fw-bold">${point.code}</a>`;
+                } else if (point.code.startsWith('TH')) {
+                    // Return order link
+                    codeDisplay = `<a href="/admin/returns?code=${point.code}" target="_blank" class="text-primary fw-bold">${point.code}</a>`;
+                } else {
+                    // No link for other codes (like PT - point adjustments)
+                    codeDisplay = `<strong>${point.code}</strong>`;
+                }
+            }
+
             html += `
                 <tr>
-                    <td><strong>${point.code}</strong></td>
+                    <td>${codeDisplay}</td>
                     <td>${point.formatted_date}</td>
                     <td>${point.type_text}</td>
-                    <td class="text-end"><strong>${point.formatted_value}</strong></td>
-                    <td class="text-end ${point.points_class}">${point.formatted_points}</td>
-                    <td class="text-end"><strong>${point.formatted_balance}</strong></td>
+                    <td class="text-end"><strong>${point.formatted_value || '0'}</strong></td>
+                    <td class="text-end ${point.points_class || ''}">${point.formatted_points || '0'}</td>
+                    <td class="text-end"><strong>${point.formatted_balance || '0'}</strong></td>
                 </tr>
             `;
         });
