@@ -23,12 +23,12 @@ jobs:
       - name: Sync code via rsync
         run: |
           rsync -az --delete --exclude=".git" --exclude=".env" --exclude="node_modules" --exclude="vendor" --exclude=".user.ini" \
-            -e "ssh -i ~/.ssh/id_rsa" ./ root@103.180.134.48:/www/wwwroot/yukimart.hethongseovn.com
+            -e "ssh -i ~/.ssh/id_rsa" ./ root@103.180.134.48:/www/wwwroot/saas.techcura.net
 
       - name: Post-deploy Laravel commands
         run: |
           ssh -i ~/.ssh/id_rsa root@103.180.134.48 "
-            cd /www/wwwroot/yukimart.hethongseovn.com &&
+            cd /www/wwwroot/saas.techcura.net &&
             composer install --no-dev --optimize-autoloader &&
             php artisan migrate --force &&
             php artisan config:cache &&
