@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use App\Http\Resources\V1\UserResource;
@@ -14,7 +15,7 @@ use App\Http\Requests\Api\V1\LoginRequest;
 class AuthController extends Controller
 {
     /**
-     * Login user and create token
+     * Login user and create tokens (access + refresh)
      */
     public function login(LoginRequest $request)
     {
@@ -24,29 +25,43 @@ class AuthController extends Controller
             if (!Auth::attempt($credentials)) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Invalid credentials'
+                    'message' => 'Invalid credentials',
+                    'errors' => [
+                        'email' => ['The provided credentials are incorrect.']
+                    ]
                 ], 401);
             }
 
             $user = Auth::user();
+            $deviceName = $request->input('device_name', 'YukiMart API');
 
             // Load relationships for complete user data
             $user->load(['branchShops', 'roles']);
 
-            $token = $user->createToken('YukiMart API Token')->plainTextToken;
+            // Delete old tokens for this device to prevent token accumulation
+            $user->tokens()->where('name', 'like', $deviceName . '%')->delete();
+
+            // Create access token (expires in 1 hour)
+            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addHour())->plainTextToken;
+
+            // Create refresh token (expires in 30 days)
+            $refreshToken = $user->createToken($deviceName . '_refresh', ['refresh'], now()->addDays(30))->plainTextToken;
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Login successful',
                 'data' => [
                     'user' => new UserResource($user),
-                    'token' => $token,
+                    'access_token' => $accessToken,
+                    'refresh_token' => $refreshToken,
                     'token_type' => 'Bearer',
-                    'expires_in' => null // Sanctum tokens don't expire by default
+                    'expires_in' => 3600, // 1 hour in seconds
+                    'refresh_expires_in' => 2592000 // 30 days in seconds
                 ]
             ], 200);
 
         } catch (\Exception $e) {
+            Log::error('Login failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Login failed',
@@ -84,12 +99,19 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user (revoke token)
+     * Logout user (revoke all tokens for device)
      */
     public function logout(Request $request)
     {
         try {
-            $request->user()->currentAccessToken()->delete();
+            $user = $request->user();
+            $currentToken = $user->currentAccessToken();
+
+            // Get device name to delete both access and refresh tokens
+            $deviceName = str_replace(['_access', '_refresh'], '', $currentToken->name);
+
+            // Delete all tokens for this device (both access and refresh)
+            $user->tokens()->where('name', 'like', $deviceName . '%')->delete();
 
             return response()->json([
                 'status' => 'success',
@@ -97,6 +119,7 @@ class AuthController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            Log::error('Logout failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Logout failed',
@@ -106,29 +129,42 @@ class AuthController extends Controller
     }
 
     /**
-     * Refresh token
+     * Refresh access token using refresh token
      */
     public function refresh(Request $request)
     {
         try {
             $user = $request->user();
-            
-            // Revoke current token
-            $request->user()->currentAccessToken()->delete();
-            
-            // Create new token
-            $token = $user->createToken('YukiMart API Token')->plainTextToken;
+            $currentToken = $request->user()->currentAccessToken();
+
+            // Check if current token has refresh ability
+            if (!$currentToken->can('refresh')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid refresh token. Please login again.'
+                ], 401);
+            }
+
+            $deviceName = str_replace('_refresh', '', $currentToken->name);
+
+            // Delete old access tokens for this device
+            $user->tokens()->where('name', $deviceName . '_access')->delete();
+
+            // Create new access token (expires in 1 hour)
+            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addHour())->plainTextToken;
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Token refreshed successfully',
                 'data' => [
-                    'token' => $token,
-                    'token_type' => 'Bearer'
+                    'access_token' => $accessToken,
+                    'token_type' => 'Bearer',
+                    'expires_in' => 3600 // 1 hour in seconds
                 ]
             ], 200);
 
         } catch (\Exception $e) {
+            Log::error('Token refresh failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Token refresh failed',

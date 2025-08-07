@@ -27,6 +27,7 @@ class ApiTestCommand extends Command
     private $baseUrl;
     private $testCredentials;
     private $authToken;
+    private $refreshToken;
 
     public function __construct()
     {
@@ -67,6 +68,7 @@ class ApiTestCommand extends Command
             'Health Check' => [$this, 'testHealthCheck'],
             'Authentication - Login' => [$this, 'testLogin'],
             'Authentication - Profile' => [$this, 'testProfile'],
+            'Authentication - Refresh Token' => [$this, 'testRefreshToken'],
             'Authentication - Logout' => [$this, 'testLogout'],
             'Invoice - List' => [$this, 'testInvoiceList'],
             'Invoice - Statistics' => [$this, 'testInvoiceStatistics'],
@@ -137,6 +139,7 @@ class ApiTestCommand extends Command
             'health' => 'testHealthCheck',
             'login' => 'testLogin',
             'profile' => 'testProfile',
+            'refresh' => 'testRefreshToken',
             'logout' => 'testLogout',
             'invoices' => 'testInvoiceList',
             'invoice-statistics' => 'testInvoiceStatistics',
@@ -219,11 +222,12 @@ class ApiTestCommand extends Command
             
             if ($response->successful()) {
                 $data = $response->json();
-                if ($data['status'] === 'success' && isset($data['data']['token'])) {
-                    $this->authToken = $data['data']['token'];
+                if ($data['status'] === 'success' && isset($data['data']['access_token'])) {
+                    $this->authToken = $data['data']['access_token'];
+                    $this->refreshToken = $data['data']['refresh_token'] ?? null;
                     return [
                         'success' => true,
-                        'message' => 'Login successful, token received',
+                        'message' => 'Login successful, tokens received',
                         'response' => $data
                     ];
                 }
@@ -289,6 +293,53 @@ class ApiTestCommand extends Command
     }
 
     /**
+     * Test refresh token endpoint
+     */
+    private function testRefreshToken()
+    {
+        if (!$this->refreshToken) {
+            $loginResult = $this->testLogin();
+            if (!$loginResult['success']) {
+                return [
+                    'success' => false,
+                    'message' => 'Cannot test refresh token - Login failed'
+                ];
+            }
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->withToken($this->refreshToken)
+                ->post("{$this->baseUrl}/auth/refresh");
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if ($data['status'] === 'success' && isset($data['data']['access_token'])) {
+                    // Update access token with new one
+                    $this->authToken = $data['data']['access_token'];
+                    return [
+                        'success' => true,
+                        'message' => 'Token refreshed successfully',
+                        'response' => $data
+                    ];
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Token refresh failed - Invalid response',
+                'response' => $response->json()
+            ];
+
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Token refresh failed - ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Test logout endpoint
      */
     private function testLogout()
@@ -307,11 +358,12 @@ class ApiTestCommand extends Command
             $response = Http::timeout(10)
                 ->withToken($this->authToken)
                 ->post("{$this->baseUrl}/auth/logout");
-            
+
             if ($response->successful()) {
                 $data = $response->json();
                 if ($data['status'] === 'success') {
-                    $this->authToken = null; // Clear token
+                    $this->authToken = null; // Clear tokens
+                    $this->refreshToken = null;
                     return [
                         'success' => true,
                         'message' => 'Logout successful',
@@ -319,13 +371,13 @@ class ApiTestCommand extends Command
                     ];
                 }
             }
-            
+
             return [
                 'success' => false,
                 'message' => 'Logout failed - Invalid response',
                 'response' => $response->json()
             ];
-            
+
         } catch (Exception $e) {
             return [
                 'success' => false,
