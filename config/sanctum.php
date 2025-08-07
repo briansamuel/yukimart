@@ -17,7 +17,7 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
+        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1,yukimart.local',
         Sanctum::currentApplicationUrlWithPort()
     ))),
 
@@ -63,5 +63,31 @@ return [
         'verify_csrf_token' => App\Http\Middleware\VerifyCsrfToken::class,
         'encrypt_cookies' => App\Http\Middleware\EncryptCookies::class,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Token Expiration
+    |--------------------------------------------------------------------------
+    |
+    | This value controls the number of minutes until an issued token will be
+    | considered expired. If this value is null, personal access tokens do
+    | not expire. This won't tweak the lifetime of first-party sessions.
+    |
+    */
+
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION', 1440), // 24 hours
+
+    /*
+    |--------------------------------------------------------------------------
+    | Token Prefix
+    |--------------------------------------------------------------------------
+    |
+    | Sanctum can prefix new tokens in order to take advantage of numerous
+    | security scanning initiatives maintained by open source platforms
+    | that notify developers if they commit tokens into repositories.
+    |
+    */
+
+    'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 
 ];

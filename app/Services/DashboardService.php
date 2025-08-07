@@ -200,13 +200,80 @@ class DashboardService
         }
     }
 
+    // Helper method to get period name
+    private static function getPeriodName($period) {
+        switch ($period) {
+            case 'today':
+                return 'hôm nay';
+            case 'yesterday':
+                return 'hôm qua';
+            case 'month':
+                return 'tháng này';
+            case 'last_month':
+                return 'tháng trước';
+            case 'year':
+                return 'năm nay';
+            default:
+                return 'tháng này';
+        }
+    }
+
+    // Helper method to get date range for period
+    private static function getDateRangeForPeriod($period) {
+        switch ($period) {
+            case 'today':
+                return [
+                    'start' => \Carbon\Carbon::today(),
+                    'end' => \Carbon\Carbon::today()->endOfDay()
+                ];
+            case 'yesterday':
+                return [
+                    'start' => \Carbon\Carbon::yesterday(),
+                    'end' => \Carbon\Carbon::yesterday()->endOfDay()
+                ];
+            case 'month':
+                return [
+                    'start' => \Carbon\Carbon::now()->startOfMonth(),
+                    'end' => \Carbon\Carbon::now()->endOfMonth()
+                ];
+            case 'last_month':
+                return [
+                    'start' => \Carbon\Carbon::now()->subMonth()->startOfMonth(),
+                    'end' => \Carbon\Carbon::now()->subMonth()->endOfMonth()
+                ];
+            case 'year':
+                return [
+                    'start' => \Carbon\Carbon::now()->startOfYear(),
+                    'end' => \Carbon\Carbon::now()->endOfYear()
+                ];
+            default:
+                return [
+                    'start' => \Carbon\Carbon::now()->startOfMonth(),
+                    'end' => \Carbon\Carbon::now()->endOfMonth()
+                ];
+        }
+    }
+
     // Top products chart data
-    public static function getTopProductsChartData($type = 'revenue') {
+    public static function getTopProductsChartData($type = 'revenue', $period = 'month') {
+        // Get date range based on period
+        $dateRange = self::getDateRangeForPeriod($period);
+
         if ($type === 'quantity') {
             // Top 10 products by quantity sold
-            $products = \App\Models\OrderItem::select('product_id', DB::raw('SUM(quantity) as total_quantity'))
+            $query = \App\Models\OrderItem::select('product_id', DB::raw('SUM(quantity) as total_quantity'))
                 ->with('product')
-                ->groupBy('product_id')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->whereIn('orders.status', ['processing', 'completed']); // Chỉ lấy orders đã confirmed
+
+            // Apply date filter
+            if ($dateRange['start'] && $dateRange['end']) {
+                $query->whereBetween('orders.created_at', [$dateRange['start'], $dateRange['end']]);
+            } elseif ($dateRange['start']) {
+                $query->where('orders.created_at', '>=', $dateRange['start']);
+            }
+
+            $products = $query->groupBy('product_id')
                 ->orderBy('total_quantity', 'desc')
                 ->limit(10)
                 ->get();
@@ -214,26 +281,37 @@ class DashboardService
             $categories = $products->pluck('product.product_name')->toArray();
             $data = $products->pluck('total_quantity')->toArray();
 
-            // If no data, provide sample data
+            // Nếu không có dữ liệu thì để rỗng (không dùng sample data)
             if (empty($categories) || empty($data)) {
-                $categories = [
-                    'Sản phẩm A', 'Sản phẩm B', 'Sản phẩm C',
-                    'Sản phẩm D', 'Sản phẩm E'
-                ];
-                $data = [150, 120, 100, 80, 60];
+                $categories = [];
+                $data = [];
             }
+
+            // Get period name for series
+            $periodName = self::getPeriodName($period);
 
             return [
                 'categories' => $categories,
                 'data' => $data,
-                'series_name' => 'Số lượng bán',
-                'type' => 'quantity'
+                'series_name' => 'Số lượng bán ' . $periodName,
+                'type' => 'quantity',
+                'period' => $period
             ];
         } else {
             // Top 10 products by revenue
-            $products = \App\Models\OrderItem::select('product_id', DB::raw('SUM(quantity * unit_price) as total_revenue'))
+            $query = \App\Models\OrderItem::select('product_id', DB::raw('SUM(quantity * unit_price) as total_revenue'))
                 ->with('product')
-                ->groupBy('product_id')
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->whereIn('orders.status', ['processing', 'completed']); // Chỉ lấy orders đã confirmed
+
+            // Apply date filter
+            if ($dateRange['start'] && $dateRange['end']) {
+                $query->whereBetween('orders.created_at', [$dateRange['start'], $dateRange['end']]);
+            } elseif ($dateRange['start']) {
+                $query->where('orders.created_at', '>=', $dateRange['start']);
+            }
+
+            $products = $query->groupBy('product_id')
                 ->orderBy('total_revenue', 'desc')
                 ->limit(10)
                 ->get();
@@ -243,20 +321,21 @@ class DashboardService
                 return $revenue / 1000000; // Convert to millions
             })->toArray();
 
-            // If no data, provide sample data
+            // Nếu không có dữ liệu thì để rỗng (không dùng sample data)
             if (empty($categories) || empty($data)) {
-                $categories = [
-                    'Sản phẩm A', 'Sản phẩm B', 'Sản phẩm C',
-                    'Sản phẩm D', 'Sản phẩm E'
-                ];
-                $data = [15.5, 12.3, 10.8, 8.9, 6.7]; // In millions
+                $categories = [];
+                $data = [];
             }
+
+            // Get period name for series
+            $periodName = self::getPeriodName($period);
 
             return [
                 'categories' => $categories,
                 'data' => $data,
-                'series_name' => 'Doanh thu',
-                'type' => 'revenue'
+                'series_name' => 'Doanh thu ' . $periodName,
+                'type' => 'revenue',
+                'period' => $period
             ];
         }
     }
@@ -274,7 +353,8 @@ class DashboardService
             $revenue = \App\Models\Order::whereBetween('created_at', [
                 $hour,
                 $hour->copy()->addHour()
-            ])->sum('final_amount');
+            ])->whereIn('status', ['processing', 'completed'])
+            ->sum('final_amount');
 
             $data[] = $revenue / 1000000; // Convert to millions
         }
@@ -298,7 +378,8 @@ class DashboardService
             $revenue = \App\Models\Order::whereBetween('created_at', [
                 $hour,
                 $hour->copy()->addHour()
-            ])->sum('final_amount');
+            ])->whereIn('status', ['processing', 'completed'])
+            ->sum('final_amount');
 
             $data[] = $revenue / 1000000; // Convert to millions
         }
@@ -312,27 +393,18 @@ class DashboardService
 
     private static function getMonthRevenueChart() {
         $startOfMonth = \Carbon\Carbon::now()->startOfMonth();
-        $endOfMonth = \Carbon\Carbon::now()->endOfMonth();
+        $today = \Carbon\Carbon::now(); // Chỉ hiển thị đến ngày hiện tại
         $days = [];
         $data = [];
 
-        for ($date = $startOfMonth->copy(); $date->lte($endOfMonth); $date->addDay()) {
+        // Loop từ đầu tháng đến ngày hiện tại (không phải cuối tháng)
+        for ($date = $startOfMonth->copy(); $date->lte($today); $date->addDay()) {
             $days[] = $date->format('d/m');
 
-            $revenue = \App\Models\Order::whereDate('created_at', $date)->sum('final_amount');
+            $revenue = \App\Models\Order::whereDate('created_at', $date)
+                ->whereIn('status', ['processing', 'completed'])
+                ->sum('final_amount');
             $data[] = $revenue / 1000000; // Convert to millions
-        }
-
-        // If no data, provide sample data for demonstration
-        if (empty($data) || array_sum($data) == 0) {
-            $days = [];
-            $data = [];
-            $sampleDays = min(15, $endOfMonth->day); // Show up to 15 days or current day
-
-            for ($i = 1; $i <= $sampleDays; $i++) {
-                $days[] = sprintf('%02d/%02d', $i, $startOfMonth->month);
-                $data[] = rand(50, 500) / 100; // Random data between 0.5 and 5 million
-            }
         }
 
         return [
@@ -351,7 +423,9 @@ class DashboardService
         for ($date = $startOfLastMonth->copy(); $date->lte($endOfLastMonth); $date->addDay()) {
             $days[] = $date->format('d/m');
 
-            $revenue = \App\Models\Order::whereDate('created_at', $date)->sum('final_amount');
+            $revenue = \App\Models\Order::whereDate('created_at', $date)
+                ->whereIn('status', ['processing', 'completed'])
+                ->sum('final_amount');
             $data[] = $revenue / 1000000; // Convert to millions
         }
 
@@ -372,6 +446,7 @@ class DashboardService
 
             $revenue = \App\Models\Order::whereYear('created_at', $month->year)
                 ->whereMonth('created_at', $month->month)
+                ->whereIn('status', ['processing', 'completed'])
                 ->sum('final_amount');
 
             $data[] = $revenue / 1000000; // Convert to millions

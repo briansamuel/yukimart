@@ -90,6 +90,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/revenue-data', [DashboardController::class, 'getRevenueData'])->name('dashboard.revenue-data');
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
+    Route::get('/dashboard/revenue-chart', [DashboardController::class, 'getRevenueChart'])->name('dashboard.revenue-chart');
+    Route::get('/dashboard/top-products', [\App\Http\Controllers\Api\V1\DashboardController::class, 'getTopProducts'])->name('dashboard.top-products');
     Route::get('/dashboard/top-products-data', [DashboardController::class, 'getTopProductsData'])->name('dashboard.top-products-data');
     
    

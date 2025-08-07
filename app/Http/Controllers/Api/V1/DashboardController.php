@@ -158,53 +158,52 @@ class DashboardController extends Controller
         try {
             $limit = $request->get('limit', 10);
             $type = $request->get('type', 'quantity'); // quantity or revenue
-            
-            if ($type === 'revenue') {
-                $products = Product::select('products.*')
-                    ->selectRaw('COALESCE(SUM(order_items.quantity * order_items.unit_price), 0) as total_revenue')
-                    ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-                    ->leftJoin('orders', function($join) {
-                        $join->on('order_items.order_id', '=', 'orders.id')
-                             ->whereIn('orders.status', ['processing', 'completed']);
-                    })
-                    ->groupBy('products.id')
-                    ->orderBy('total_revenue', 'desc')
-                    ->limit($limit)
-                    ->get()
-                    ->map(function($product) {
-                        return [
-                            'id' => $product->id,
-                            'name' => $product->product_name,
-                            'sku' => $product->sku,
-                            'price' => (float) $product->sale_price,
-                            'total_revenue' => (float) ($product->total_revenue ?? 0),
-                            'formatted_revenue' => number_format($product->total_revenue ?? 0, 0, ',', '.') . '₫',
-                            'image' => $product->product_image ? asset('storage/' . $product->product_image) : null
-                        ];
-                    });
-            } else {
-                $products = Product::select('products.*')
-                    ->selectRaw('COALESCE(SUM(order_items.quantity), 0) as sold_quantity')
-                    ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-                    ->leftJoin('orders', function($join) {
-                        $join->on('order_items.order_id', '=', 'orders.id')
-                             ->whereIn('orders.status', ['processing', 'completed']);
-                    })
-                    ->groupBy('products.id')
-                    ->orderBy('sold_quantity', 'desc')
-                    ->limit($limit)
-                    ->get()
-                    ->map(function($product) {
-                        return [
-                            'id' => $product->id,
-                            'name' => $product->product_name,
-                            'sku' => $product->sku,
-                            'price' => (float) $product->sale_price,
-                            'sold_quantity' => (int) ($product->sold_quantity ?? 0),
-                            'image' => $product->product_image ? asset('storage/' . $product->product_image) : null
-                        ];
-                    });
-            }
+            $period = $request->get('period', 'month'); // today, yesterday, month, last_month, year
+
+            // Get date range for period filter
+            $dateRange = $this->getDateRangeForPeriod($period);
+
+            // Build query based on invoices and invoice_items
+            $orderByField = $type === 'revenue' ? 'total_revenue' : 'sold_quantity';
+
+            // Query from invoice_items to get products that actually have sales
+            $query = \App\Models\InvoiceItem::select('invoice_items.product_id')
+                ->selectRaw('products.product_name as name')
+                ->selectRaw('products.sku')
+                ->selectRaw('products.product_thumbnail as image')
+                ->selectRaw('COALESCE(SUM(invoice_items.line_total), 0) as total_revenue')
+                ->selectRaw('COALESCE(SUM(invoice_items.quantity), 0) as sold_quantity')
+                ->join('invoices', function($join) use ($dateRange) {
+                    $join->on('invoice_items.invoice_id', '=', 'invoices.id')
+                         ->whereIn('invoices.status', ['paid', 'completed']);
+
+                    // Apply date filter
+                    if ($dateRange['start'] && $dateRange['end']) {
+                        $join->whereBetween('invoices.created_at', [$dateRange['start'], $dateRange['end']]);
+                    } elseif ($dateRange['start']) {
+                        $join->where('invoices.created_at', '>=', $dateRange['start']);
+                    }
+                })
+                ->leftJoin('products', 'invoice_items.product_id', '=', 'products.id')
+                ->groupBy('invoice_items.product_id', 'products.product_name', 'products.sku', 'products.product_thumbnail')
+                ->orderBy($orderByField, 'desc')
+                ->limit($limit);
+
+            $products = $query->get()
+                ->map(function($item) {
+                    return [
+                        'id' => $item->product_id,
+                        'name' => $item->name ?? 'Unknown Product',
+                        'sku' => $item->sku ?? 'N/A',
+                        'total_revenue' => (float) ($item->total_revenue ?? 0),
+                        'image' => $item->image ?  $item->image : null,
+                        'sold_quantity' => (int) ($item->sold_quantity ?? 0)
+                    ];
+                });
+
+
+
+
 
             return response()->json([
                 'status' => 'success',
@@ -212,7 +211,13 @@ class DashboardController extends Controller
                 'data' => $products,
                 'meta' => [
                     'type' => $type,
-                    'limit' => $limit
+                    'period' => $period,
+                    'period_name' => $this->getPeriodName($period),
+                    'limit' => $limit,
+                    'date_range' => [
+                        'start' => $dateRange['start'] ? $dateRange['start']->format('Y-m-d H:i:s') : null,
+                        'end' => $dateRange['end'] ? $dateRange['end']->format('Y-m-d H:i:s') : null
+                    ]
                 ]
             ], 200);
 
@@ -223,6 +228,64 @@ class DashboardController extends Controller
                 'message' => 'Failed to retrieve top products',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Helper method to get date range for period
+     */
+    private function getDateRangeForPeriod($period) {
+        switch ($period) {
+            case 'today':
+                return [
+                    'start' => \Carbon\Carbon::today(),
+                    'end' => \Carbon\Carbon::today()->endOfDay()
+                ];
+            case 'yesterday':
+                return [
+                    'start' => \Carbon\Carbon::yesterday(),
+                    'end' => \Carbon\Carbon::yesterday()->endOfDay()
+                ];
+            case 'month':
+                return [
+                    'start' => \Carbon\Carbon::now()->startOfMonth(),
+                    'end' => \Carbon\Carbon::now()->endOfMonth()
+                ];
+            case 'last_month':
+                return [
+                    'start' => \Carbon\Carbon::now()->subMonth()->startOfMonth(),
+                    'end' => \Carbon\Carbon::now()->subMonth()->endOfMonth()
+                ];
+            case 'year':
+                return [
+                    'start' => \Carbon\Carbon::now()->startOfYear(),
+                    'end' => \Carbon\Carbon::now()->endOfYear()
+                ];
+            default:
+                return [
+                    'start' => \Carbon\Carbon::now()->startOfMonth(),
+                    'end' => \Carbon\Carbon::now()->endOfMonth()
+                ];
+        }
+    }
+
+    /**
+     * Helper method to get period name
+     */
+    private function getPeriodName($period) {
+        switch ($period) {
+            case 'today':
+                return 'hôm nay';
+            case 'yesterday':
+                return 'hôm qua';
+            case 'month':
+                return 'tháng này';
+            case 'last_month':
+                return 'tháng trước';
+            case 'year':
+                return 'năm nay';
+            default:
+                return 'tháng này';
         }
     }
 
@@ -261,7 +324,8 @@ class DashboardController extends Controller
     {
         try {
             $type = $request->get('type', 'revenue'); // revenue or quantity
-            $chartData = DashboardService::getTopProductsChartData($type);
+            $period = $request->get('period', 'month'); // today, yesterday, month, last_month, year
+            $chartData = DashboardService::getTopProductsChartData($type, $period);
 
             return response()->json([
                 'status' => 'success',

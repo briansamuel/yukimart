@@ -78,6 +78,14 @@ return [
             'level' => env('LOG_LEVEL', 'critical'),
         ],
 
+        'api' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/api.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30,
+            'tap' => [App\Logging\ApiLogFormatter::class],
+        ],
+
         'papertrail' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),

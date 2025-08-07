@@ -17,6 +17,110 @@
     .activity-item.recent {
         border-left-color: #50cd89;
     }
+
+    /* Loading States */
+    .chart-loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        border-radius: 0.475rem;
+    }
+
+    .chart-loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .spinner-border-custom {
+        width: 3rem;
+        height: 3rem;
+        border: 0.25em solid #e4e6ef;
+        border-top: 0.25em solid #009ef7;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        color: #7e8299;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* Disabled Dropdown States */
+    .dropdown-disabled {
+        opacity: 0.6;
+        pointer-events: none;
+        cursor: not-allowed;
+        transition: opacity 0.3s ease;
+    }
+
+    .dropdown-disabled select {
+        background-color: #f5f8fa;
+        cursor: not-allowed;
+    }
+
+    /* Smooth Dropdown Animations */
+    .form-select {
+        transition: all 0.3s ease;
+        border: 1px solid #e4e6ef;
+    }
+
+    .form-select:hover:not(:disabled) {
+        border-color: #009ef7;
+        box-shadow: 0 0 0 0.1rem rgba(0, 158, 247, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .form-select:focus {
+        border-color: #009ef7;
+        box-shadow: 0 0 0 0.2rem rgba(0, 158, 247, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .form-select:disabled {
+        background-color: #f5f8fa;
+        border-color: #e4e6ef;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Card Toolbar Animations */
+    .card-toolbar {
+        transition: all 0.3s ease;
+    }
+
+    .card-toolbar .form-select {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-toolbar .form-select:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Chart Container */
+    .chart-container {
+        position: relative;
+        min-height: 350px;
+    }
+
+    .chart-container.loading {
+        overflow: hidden;
+    }
 </style>
 @endsection
 @section('content')
@@ -193,7 +297,15 @@
                     </div>
                 </div>
                 <div class="card-body d-flex justify-content-between flex-column pb-1 px-0">
-                    <div id="revenue_chart" style="height: 350px;"></div>
+                    <div class="chart-container">
+                        <div id="revenue_chart" style="height: 350px;"></div>
+                        <div id="revenue-chart-loading" class="chart-loading-overlay" style="display: none;">
+                            <div class="chart-loading-spinner">
+                                <div class="spinner-border-custom"></div>
+                                <div class="loading-text">Đang tải biểu đồ doanh thu...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -342,15 +454,30 @@
                         <span class="card-label fw-bold text-gray-900">Top 10 sản phẩm bán chạy</span>
                         <span class="text-gray-500 mt-1 fw-semibold fs-6">Thống kê sản phẩm theo doanh thu hoặc số lượng</span>
                     </h3>
-                    <div class="card-toolbar">
-                        <select class="form-select form-select-sm" id="top-products-type-select" style="width: 150px;">
+                    <div class="card-toolbar d-flex gap-3">
+                        <select class="form-select form-select-sm" id="top-products-period-select" style="width: 140px;">
+                            <option value="today">Hôm nay</option>
+                            <option value="yesterday">Hôm qua</option>
+                            <option value="month" selected>Tháng này</option>
+                            <option value="last_month">Tháng trước</option>
+                            <option value="year">Năm nay</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="top-products-type-select" style="width: 140px;">
                             <option value="revenue" selected>Theo doanh thu</option>
                             <option value="quantity">Theo số lượng</option>
                         </select>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="top_products_chart" style="height: 400px;"></div>
+                    <div class="chart-container">
+                        <div id="top_products_chart" style="height: 400px;"></div>
+                        <div id="top-products-chart-loading" class="chart-loading-overlay" style="display: none;">
+                            <div class="chart-loading-spinner">
+                                <div class="spinner-border-custom"></div>
+                                <div class="loading-text">Đang tải biểu đồ sản phẩm...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -378,13 +505,62 @@
                 updateRevenueChart(this.value);
             });
 
+            document.getElementById('top-products-period-select').addEventListener('change', function() {
+                const type = document.getElementById('top-products-type-select').value;
+                updateTopProductsChart(type, this.value);
+            });
+
             document.getElementById('top-products-type-select').addEventListener('change', function() {
-                updateTopProductsChart(this.value);
+                const period = document.getElementById('top-products-period-select').value;
+                updateTopProductsChart(this.value, period);
             });
         });
 
         let revenueChart;
         let topProductsChart;
+
+        // Loading state management functions
+        function showChartLoading(chartType) {
+            const loadingElement = document.getElementById(`${chartType}-chart-loading`);
+            const dropdownElement = document.getElementById(`${chartType}-period-select`) ||
+                                  document.getElementById(`${chartType}-type-select`);
+
+            if (loadingElement) {
+                loadingElement.style.display = 'flex';
+            }
+
+            if (dropdownElement) {
+                dropdownElement.disabled = true;
+                dropdownElement.parentElement.classList.add('dropdown-disabled');
+            }
+        }
+
+        function hideChartLoading(chartType) {
+            const loadingElement = document.getElementById(`${chartType}-chart-loading`);
+            const dropdownElement = document.getElementById(`${chartType}-period-select`) ||
+                                  document.getElementById(`${chartType}-type-select`);
+
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            if (dropdownElement) {
+                dropdownElement.disabled = false;
+                dropdownElement.parentElement.classList.remove('dropdown-disabled');
+            }
+        }
+
+        function setDropdownLoading(dropdownId, isLoading) {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                dropdown.disabled = isLoading;
+                if (isLoading) {
+                    dropdown.parentElement.classList.add('dropdown-disabled');
+                } else {
+                    dropdown.parentElement.classList.remove('dropdown-disabled');
+                }
+            }
+        }
 
         function initRevenueChart() {
             const chartData = @json($chartData ?? []);
@@ -617,13 +793,8 @@
             console.log('Updating revenue chart for period:', period);
 
             // Show loading state
-            if (revenueChart) {
-                revenueChart.updateOptions({
-                    noData: {
-                        text: 'Đang tải dữ liệu...'
-                    }
-                });
-            }
+            showChartLoading('revenue');
+            setDropdownLoading('revenue-period-select', true);
 
             fetch(`{{ route('admin.dashboard.revenue-data') }}?period=${period}`)
                 .then(response => {
@@ -671,22 +842,23 @@
                             }
                         });
                     }
+                })
+                .finally(() => {
+                    // Hide loading state
+                    hideChartLoading('revenue');
+                    setDropdownLoading('revenue-period-select', false);
                 });
         }
 
-        function updateTopProductsChart(type) {
-            console.log('Updating top products chart for type:', type);
+        function updateTopProductsChart(type, period = 'month') {
+            console.log('Updating top products chart for type:', type, 'period:', period);
 
             // Show loading state
-            if (topProductsChart) {
-                topProductsChart.updateOptions({
-                    noData: {
-                        text: 'Đang tải dữ liệu...'
-                    }
-                });
-            }
+            showChartLoading('top-products');
+            setDropdownLoading('top-products-type-select', true);
+            setDropdownLoading('top-products-period-select', true);
 
-            fetch(`{{ route('admin.dashboard.top-products-data') }}?type=${type}`)
+            fetch(`{{ route('admin.dashboard.top-products-data') }}?type=${type}&period=${period}`)
                 .then(response => {
                     console.log('Top products response status:', response.status);
                     if (!response.ok) {
@@ -747,6 +919,12 @@
                             }
                         });
                     }
+                })
+                .finally(() => {
+                    // Hide loading state
+                    hideChartLoading('top-products');
+                    setDropdownLoading('top-products-type-select', false);
+                    setDropdownLoading('top-products-period-select', false);
                 });
         }
     </script>

@@ -76,7 +76,7 @@ trait HasRolesAndPermissions
         $directPermissions = $this->permissions()
             ->wherePivot('is_active', true)
             ->wherePivot('type', 'grant')
-            ->wherePivot(function ($query) {
+            ->where(function ($query) {
                 $query->whereNull('expires_at')
                       ->orWhere('expires_at', '>', now());
             })
@@ -86,7 +86,7 @@ trait HasRolesAndPermissions
         $deniedPermissions = $this->permissions()
             ->wherePivot('is_active', true)
             ->wherePivot('type', 'deny')
-            ->wherePivot(function ($query) {
+            ->where(function ($query) {
                 $query->whereNull('expires_at')
                       ->orWhere('expires_at', '>', now());
             })

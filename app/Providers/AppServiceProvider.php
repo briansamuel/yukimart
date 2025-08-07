@@ -20,7 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Register API services
+        $this->app->singleton(\App\Services\CodeGeneratorService::class);
+        $this->app->singleton(\App\Services\PostmanSyncService::class);
 
         foreach (glob(app_path() . '/Helpers/*.php') as $file) {
             require_once($file);
