@@ -41,8 +41,8 @@ class AuthController extends Controller
             // Delete old tokens for this device to prevent token accumulation
             $user->tokens()->where('name', 'like', $deviceName . '%')->delete();
 
-            // Create access token (expires in 1 hour)
-            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addHour())->plainTextToken;
+            // Create access token (expires in 1 day)
+            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addDay())->plainTextToken;
 
             // Create refresh token (expires in 30 days)
             $refreshToken = $user->createToken($deviceName . '_refresh', ['refresh'], now()->addDays(30))->plainTextToken;
@@ -55,7 +55,7 @@ class AuthController extends Controller
                     'access_token' => $accessToken,
                     'refresh_token' => $refreshToken,
                     'token_type' => 'Bearer',
-                    'expires_in' => 3600, // 1 hour in seconds
+                    'expires_in' => 86400, // 1 day in seconds
                     'refresh_expires_in' => 2592000 // 30 days in seconds
                 ]
             ], 200);
@@ -150,8 +150,8 @@ class AuthController extends Controller
             // Delete old access tokens for this device
             $user->tokens()->where('name', $deviceName . '_access')->delete();
 
-            // Create new access token (expires in 1 hour)
-            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addHour())->plainTextToken;
+            // Create new access token (expires in 1 day)
+            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addDay())->plainTextToken;
 
             return response()->json([
                 'status' => 'success',
@@ -159,7 +159,7 @@ class AuthController extends Controller
                 'data' => [
                     'access_token' => $accessToken,
                     'token_type' => 'Bearer',
-                    'expires_in' => 3600 // 1 hour in seconds
+                    'expires_in' => 86400 // 1 day in seconds
                 ]
             ], 200);
 

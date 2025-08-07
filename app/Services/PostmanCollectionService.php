@@ -246,9 +246,11 @@ class PostmanCollectionService
                                         'roles' => [],
                                         'branch_shops' => []
                                     ],
-                                    'token' => '29|8j8MAOjMWXeiZ0DvI48OlwNtOrHjYGVebfoSiFVF6dfd9a0a',
+                                    'access_token' => '29|8j8MAOjMWXeiZ0DvI48OlwNtOrHjYGVebfoSiFVF6dfd9a0a',
+                                    'refresh_token' => '30|9k9NBPkNXYfjZ1EwJ59PmxOuPsIkZHWfcgpTjGWG7ege0b1b',
                                     'token_type' => 'Bearer',
-                                    'expires_in' => null
+                                    'expires_in' => 86400,
+                                    'refresh_expires_in' => 2592000
                                 ]
                             ], JSON_PRETTY_PRINT)
                         ],
@@ -333,6 +335,60 @@ class PostmanCollectionService
                                         'branch_shops' => []
                                     ]
                                 ]
+                            ], JSON_PRETTY_PRINT)
+                        ]
+                    ]
+                ],
+                [
+                    'name' => 'Refresh Token',
+                    'request' => [
+                        'auth' => [
+                            'type' => 'bearer',
+                            'bearer' => [
+                                [
+                                    'key' => 'token',
+                                    'value' => '{{refresh_token}}',
+                                    'type' => 'string'
+                                ]
+                            ]
+                        ],
+                        'method' => 'POST',
+                        'header' => [
+                            [
+                                'key' => 'Accept',
+                                'value' => 'application/json',
+                                'type' => 'text'
+                            ]
+                        ],
+                        'url' => [
+                            'raw' => '{{base_url}}/auth/refresh',
+                            'host' => ['{{base_url}}'],
+                            'path' => ['auth', 'refresh']
+                        ],
+                        'description' => 'Refresh access token using refresh token'
+                    ],
+                    'response' => [
+                        [
+                            'name' => 'Token Refreshed',
+                            'status' => 'OK',
+                            'code' => 200,
+                            'body' => json_encode([
+                                'status' => 'success',
+                                'message' => 'Token refreshed successfully',
+                                'data' => [
+                                    'access_token' => '31|0l0OCQlOYZgkZ2FxK60QnyPvQtJlZIXgdhqUkHXH8fhf1c2c',
+                                    'token_type' => 'Bearer',
+                                    'expires_in' => 86400
+                                ]
+                            ], JSON_PRETTY_PRINT)
+                        ],
+                        [
+                            'name' => 'Invalid Refresh Token',
+                            'status' => 'Unauthorized',
+                            'code' => 401,
+                            'body' => json_encode([
+                                'status' => 'error',
+                                'message' => 'Invalid refresh token. Please login again.'
                             ], JSON_PRETTY_PRINT)
                         ]
                     ]

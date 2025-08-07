@@ -82,8 +82,10 @@ class ApiTestCommand extends Command
             'Dashboard - Index' => [$this, 'testDashboardIndex'],
             'Dashboard - Stats' => [$this, 'testDashboardStats'],
             'Dashboard - Recent Orders' => [$this, 'testDashboardRecentOrders'],
-            'Error - Unauthorized' => [$this, 'testUnauthorized'],
+            'Error - Invalid Token' => [$this, 'testInvalidToken'],
+            'Error - No Token' => [$this, 'testNoToken'],
             'Error - Not Found' => [$this, 'testNotFound'],
+            'Error - Method Not Allowed' => [$this, 'testMethodNotAllowed'],
         ];
 
         $passed = 0;
@@ -477,31 +479,71 @@ class ApiTestCommand extends Command
     }
 
     /**
-     * Test unauthorized access
+     * Test invalid token access
      */
-    private function testUnauthorized()
+    private function testInvalidToken()
     {
         try {
-            $response = Http::timeout(10)->get("{$this->baseUrl}/auth/profile");
-            
+            $response = Http::timeout(10)
+                ->withToken('invalid_token_here')
+                ->get("{$this->baseUrl}/auth/profile");
+
             if ($response->status() === 401) {
-                return [
-                    'success' => true,
-                    'message' => 'Unauthorized access properly blocked',
-                    'response' => $response->json()
-                ];
+                $data = $response->json();
+                if ($data['status'] === 'error' && $data['error_code'] === 'UNAUTHENTICATED') {
+                    return [
+                        'success' => true,
+                        'message' => 'Invalid token properly rejected with RESTful response',
+                        'response' => $data
+                    ];
+                }
             }
-            
+
             return [
                 'success' => false,
-                'message' => 'Unauthorized access not properly blocked',
+                'message' => 'Invalid token test failed - Expected 401 with UNAUTHENTICATED error',
                 'response' => $response->json()
             ];
-            
+
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Unauthorized test failed - ' . $e->getMessage()
+                'message' => 'Invalid token test failed - ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Test no token access
+     */
+    private function testNoToken()
+    {
+        try {
+            $response = Http::timeout(10)
+                ->withHeaders(['Accept' => 'application/json'])
+                ->get("{$this->baseUrl}/auth/profile");
+
+            if ($response->status() === 401) {
+                $data = $response->json();
+                if ($data['status'] === 'error' && $data['error_code'] === 'UNAUTHENTICATED') {
+                    return [
+                        'success' => true,
+                        'message' => 'No token properly rejected with RESTful response',
+                        'response' => $data
+                    ];
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => 'No token test failed - Expected 401 with UNAUTHENTICATED error',
+                'response' => $response->json()
+            ];
+
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'No token test failed - ' . $e->getMessage()
             ];
         }
     }
@@ -996,6 +1038,53 @@ class ApiTestCommand extends Command
             return [
                 'success' => false,
                 'message' => 'Dashboard recent orders failed - ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Test method not allowed error
+     */
+    private function testMethodNotAllowed()
+    {
+        if (!$this->authToken) {
+            $loginResult = $this->testLogin();
+            if (!$loginResult['success']) {
+                return [
+                    'success' => false,
+                    'message' => 'Cannot test method not allowed - Login failed'
+                ];
+            }
+        }
+
+        try {
+            // Use PUT method on GET endpoint
+            $response = Http::timeout(10)
+                ->withToken($this->authToken)
+                ->withHeaders(['Accept' => 'application/json'])
+                ->put("{$this->baseUrl}/auth/profile");
+
+            if ($response->status() === 405) {
+                $data = $response->json();
+                if ($data['status'] === 'error' && $data['error_code'] === 'METHOD_NOT_ALLOWED') {
+                    return [
+                        'success' => true,
+                        'message' => 'Method not allowed properly handled with RESTful response',
+                        'response' => $data
+                    ];
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Method not allowed test failed - Expected 405 with METHOD_NOT_ALLOWED error',
+                'response' => $response->json()
+            ];
+
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Method not allowed test failed - ' . $e->getMessage()
             ];
         }
     }
