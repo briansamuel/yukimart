@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use App\Services\PostmanCollectionService;
 use Exception;
 
 class PostmanSyncCommand extends Command
@@ -12,24 +13,20 @@ class PostmanSyncCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'postman:sync 
-                            {--collection= : Collection file to sync (default: enhanced)}
+    protected $signature = 'postman:sync
                             {--force : Force sync without confirmation}
-                            {--create : Create new collection instead of updating}
-                            {--dry-run : Show what would be synced without actually syncing}';
+                            {--dry-run : Show what would be synced without actually syncing}
+                            {--save-only : Only save collection to file without syncing}
+                            {--test : Run API tests after sync}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sync YukiMart API collection to Postman workspace';
+    protected $description = 'Generate and sync YukiMart API v1 collection to Postman workspace';
 
-    private $baseUrl = 'https://api.getpostman.com';
-    private $apiKey;
-    private $workspaceId;
-    private $collectionId;
-    private $config = [];
+    private $postmanService;
 
     /**
      * Execute the console command.

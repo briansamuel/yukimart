@@ -6,6 +6,10 @@
 /vendor
 .env
 .env.backup
+.env.postman
+.env.production
+.env.local
+.env.testing
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
@@ -15,3 +19,21 @@ yarn-error.log
 /.idea
 /.vscode
 composer.lock
+
+# Security - API Keys and Sensitive Data
+*.key
+*.pem
+*.p12
+**/config/secrets.php
+**/storage/app/keys/
+**/storage/logs/sensitive/
+
+# Postman Collections with API Keys
+**/postman-collections-with-keys/
+**/storage/app/testing/postman/*-with-keys.json
+
+# Backup files that might contain sensitive data
+*.backup
+*.bak
+*.old
+*.orig

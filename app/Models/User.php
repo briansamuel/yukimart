@@ -10,11 +10,12 @@ use Illuminate\Notifications\Notifiable;
 use App\Traits\HasRolesAndPermissions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Laravel\Sanctum\HasApiTokens;
 use Carbon\Carbon;
 
 class User extends Authenticatable
 {
-    use Notifiable, HasFactory, HasRolesAndPermissions;
+    use Notifiable, HasFactory, HasRolesAndPermissions, HasApiTokens;
 
 
     /**

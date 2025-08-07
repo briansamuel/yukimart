@@ -1,0 +1,93 @@
+<?php
+
+namespace App\Http\Resources\V1;
+
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class InvoiceResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
+     */
+    public function toArray($request)
+    {
+        return [
+            'id' => $this->id,
+            'invoice_number' => $this->invoice_number,
+            'invoice_type' => $this->invoice_type,
+            'status' => $this->status,
+            'payment_status' => $this->payment_status,
+            'invoice_date' => $this->invoice_date?->format('Y-m-d'),
+            'due_date' => $this->due_date?->format('Y-m-d'),
+            
+            // Customer information
+            'customer' => $this->whenLoaded('customer', function () {
+                return new CustomerResource($this->customer);
+            }),
+            'customer_id' => $this->customer_id,
+            'customer_name' => $this->customer_name,
+            
+            // Branch shop information
+            'branch_shop' => $this->whenLoaded('branchShop', function () {
+                return new BranchShopResource($this->branchShop);
+            }),
+            'branch_shop_id' => $this->branch_shop_id,
+            
+            // Financial information
+            'subtotal' => (float) $this->subtotal,
+            'tax_rate' => (float) $this->tax_rate,
+            'tax_amount' => (float) $this->tax_amount,
+            'discount_rate' => (float) $this->discount_rate,
+            'discount_amount' => (float) $this->discount_amount,
+            'total_amount' => (float) $this->total_amount,
+            'amount_paid' => (float) $this->amount_paid,
+            'amount_due' => (float) ($this->total_amount - $this->amount_paid),
+            
+            // Additional information
+            'notes' => $this->notes,
+            'terms_conditions' => $this->terms_conditions,
+            'payment_terms' => $this->payment_terms,
+            'reference_number' => $this->reference_number,
+            
+            // Invoice items
+            'items' => $this->whenLoaded('invoiceItems', function () {
+                return InvoiceItemResource::collection($this->invoiceItems);
+            }),
+            'items_count' => $this->when($this->relationLoaded('invoiceItems'), function () {
+                return $this->invoiceItems->count();
+            }),
+            
+            // Payments
+            'payments' => $this->whenLoaded('payments', function () {
+                return PaymentResource::collection($this->payments);
+            }),
+            
+            // User information
+            'created_by' => $this->whenLoaded('creator', function () {
+                return new UserResource($this->creator);
+            }),
+            'sold_by' => $this->whenLoaded('seller', function () {
+                return new UserResource($this->seller);
+            }),
+            
+            // Timestamps
+            'sent_at' => $this->sent_at,
+            'cancelled_at' => $this->cancelled_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            
+            // Computed properties
+            'is_overdue' => $this->when($this->due_date, function () {
+                return $this->due_date->isPast() && $this->payment_status !== 'paid';
+            }),
+            'days_overdue' => $this->when($this->due_date && $this->due_date->isPast(), function () {
+                return $this->due_date->diffInDays(now());
+            }),
+            'payment_percentage' => $this->total_amount > 0 ? 
+                round(($this->amount_paid / $this->total_amount) * 100, 2) : 0,
+        ];
+    }
+}
