@@ -80,8 +80,12 @@ class DashboardService
 
         return [
             'orders_count' => \App\Models\Order::whereDate('created_at', $today)->count(),
-            'revenue' => \App\Models\Order::whereDate('created_at', $today)->sum('final_amount'),
+            // Revenue lấy từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            'revenue' => \App\Models\Invoice::whereDate('created_at', $today)
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_amount'),
             'customers_count' => \App\Models\Order::whereDate('created_at', $today)->distinct('customer_id')->count(),
+            // Average order value vẫn lấy từ orders vì đây là thống kê đơn hàng
             'avg_order_value' => \App\Models\Order::whereDate('created_at', $today)->avg('final_amount') ?? 0,
         ];
     }
@@ -298,17 +302,17 @@ class DashboardService
                 'period' => $period
             ];
         } else {
-            // Top 10 products by revenue
-            $query = \App\Models\OrderItem::select('product_id', DB::raw('SUM(quantity * unit_price) as total_revenue'))
+            // Top 10 products by revenue - Lấy từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $query = \App\Models\InvoiceItem::select('product_id', DB::raw('SUM(line_total) as total_revenue'))
                 ->with('product')
-                ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                ->whereIn('orders.status', ['processing', 'completed']); // Chỉ lấy orders đã confirmed
+                ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+                ->whereIn('invoices.status', ['paid', 'completed']); // Chỉ lấy invoices đã hoàn thành
 
             // Apply date filter
             if ($dateRange['start'] && $dateRange['end']) {
-                $query->whereBetween('orders.created_at', [$dateRange['start'], $dateRange['end']]);
+                $query->whereBetween('invoices.created_at', [$dateRange['start'], $dateRange['end']]);
             } elseif ($dateRange['start']) {
-                $query->where('orders.created_at', '>=', $dateRange['start']);
+                $query->where('invoices.created_at', '>=', $dateRange['start']);
             }
 
             $products = $query->groupBy('product_id')
@@ -350,11 +354,12 @@ class DashboardService
             $hour = $today->copy()->addHours($i);
             $hours[] = $hour->format('H:i');
 
-            $revenue = \App\Models\Order::whereBetween('created_at', [
+            // Lấy revenue từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $revenue = \App\Models\Invoice::whereBetween('created_at', [
                 $hour,
                 $hour->copy()->addHour()
-            ])->whereIn('status', ['processing', 'completed'])
-            ->sum('final_amount');
+            ])->whereIn('status', ['paid', 'completed'])
+            ->sum('total_amount');
 
             $data[] = $revenue / 1000000; // Convert to millions
         }
@@ -375,11 +380,12 @@ class DashboardService
             $hour = $yesterday->copy()->addHours($i);
             $hours[] = $hour->format('H:i');
 
-            $revenue = \App\Models\Order::whereBetween('created_at', [
+            // Lấy revenue từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $revenue = \App\Models\Invoice::whereBetween('created_at', [
                 $hour,
                 $hour->copy()->addHour()
-            ])->whereIn('status', ['processing', 'completed'])
-            ->sum('final_amount');
+            ])->whereIn('status', ['paid', 'completed'])
+            ->sum('total_amount');
 
             $data[] = $revenue / 1000000; // Convert to millions
         }
@@ -401,9 +407,10 @@ class DashboardService
         for ($date = $startOfMonth->copy(); $date->lte($today); $date->addDay()) {
             $days[] = $date->format('d/m');
 
-            $revenue = \App\Models\Order::whereDate('created_at', $date)
-                ->whereIn('status', ['processing', 'completed'])
-                ->sum('final_amount');
+            // Lấy revenue từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $revenue = \App\Models\Invoice::whereDate('created_at', $date)
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_amount');
             $data[] = $revenue / 1000000; // Convert to millions
         }
 
@@ -423,9 +430,10 @@ class DashboardService
         for ($date = $startOfLastMonth->copy(); $date->lte($endOfLastMonth); $date->addDay()) {
             $days[] = $date->format('d/m');
 
-            $revenue = \App\Models\Order::whereDate('created_at', $date)
-                ->whereIn('status', ['processing', 'completed'])
-                ->sum('final_amount');
+            // Lấy revenue từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $revenue = \App\Models\Invoice::whereDate('created_at', $date)
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_amount');
             $data[] = $revenue / 1000000; // Convert to millions
         }
 
@@ -444,10 +452,11 @@ class DashboardService
             $month = \Carbon\Carbon::now()->subMonths($i);
             $months[] = $month->format('M Y');
 
-            $revenue = \App\Models\Order::whereYear('created_at', $month->year)
+            // Lấy revenue từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $revenue = \App\Models\Invoice::whereYear('created_at', $month->year)
                 ->whereMonth('created_at', $month->month)
-                ->whereIn('status', ['processing', 'completed'])
-                ->sum('final_amount');
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_amount');
 
             $data[] = $revenue / 1000000; // Convert to millions
         }
