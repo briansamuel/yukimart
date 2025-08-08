@@ -100,8 +100,11 @@ class DashboardController extends Controller
                     })->count(),
             ];
 
-            // Combine period stats with overall stats
-            $stats = array_merge($overallStats, $periodStats, [
+        // Get inventory statistics
+        $inventoryStats = $this->calculateInventoryStats();
+
+            // Combine period stats with overall stats and inventory stats
+            $stats = array_merge($overallStats, $periodStats, $inventoryStats, [
                 'period' => $period,
                 'period_name' => $this->getPeriodName($period),
                 'date_range' => [
@@ -508,6 +511,37 @@ class DashboardController extends Controller
             'total_orders' => Order::count(), // Overall total
             'total_invoices' => Invoice::count(), // Overall total
             'total_returns' => \App\Models\ReturnOrder::count(), // Overall total
+        ];
+    }
+
+    /**
+     * Calculate inventory statistics
+     */
+    private function calculateInventoryStats()
+    {
+        // Get total inventory quantity from inventories table
+        $totalInventoryQuantity = \App\Models\Inventory::sum('quantity');
+
+        // Calculate total inventory value using cost_price
+        $totalInventoryValue = \App\Models\Inventory::join('products', 'inventories.product_id', '=', 'products.id')
+            ->selectRaw('SUM(inventories.quantity * products.cost_price) as total_value')
+            ->value('total_value') ?? 0;
+
+        // Get products with positive inventory
+        $productsInStock = \App\Models\Inventory::where('quantity', '>', 0)
+            ->distinct('product_id')
+            ->count('product_id');
+
+        // Get products with zero or negative inventory
+        $productsOutOfStock = \App\Models\Inventory::where('quantity', '<=', 0)
+            ->distinct('product_id')
+            ->count('product_id');
+
+        return [
+            'total_inventory_quantity' => (int) $totalInventoryQuantity,
+            'total_inventory_value' => (float) $totalInventoryValue,
+            'products_in_stock' => $productsInStock,
+            'products_out_of_stock' => $productsOutOfStock,
         ];
     }
 }
