@@ -369,6 +369,71 @@ class Notification extends Model
             'priority' => $options['priority'] ?? 'normal',
             'channels' => $options['channels'] ?? ['web'],
             'expires_at' => $options['expires_at'] ?? null,
+            'action_url' => $options['action_url'] ?? null,
+            'action_text' => $options['action_text'] ?? null,
+            'icon' => $options['icon'] ?? null,
+            'color' => $options['color'] ?? null,
         ]);
+    }
+
+    /**
+     * Create notification with FCM support.
+     */
+    public static function createWithFCM($user, $type, $title, $message, $data = [], $options = [])
+    {
+        // Add FCM to channels if not already present
+        $channels = $options['channels'] ?? ['web'];
+        if (!in_array('fcm', $channels) && !in_array('push', $channels)) {
+            $channels[] = 'fcm';
+        }
+        $options['channels'] = $channels;
+
+        $notification = self::createForUser($user, $type, $title, $message, $data, $options);
+
+        // Dispatch FCM job
+        \App\Jobs\SendFCMNotificationJob::dispatch($notification->id)->delay(now()->addSeconds(2));
+
+        return $notification;
+    }
+
+    /**
+     * Create notification for all users with FCM support.
+     */
+    public static function createForAllWithFCM($type, $title, $message, $data = [], $options = [])
+    {
+        $users = \App\Models\User::where('status', 'active')->get();
+        $notifications = [];
+
+        foreach ($users as $user) {
+            $notifications[] = self::createWithFCM($user, $type, $title, $message, $data, $options);
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Check if notification supports FCM.
+     */
+    public function supportsFCM()
+    {
+        $channels = $this->channels ?? [];
+        return in_array('fcm', $channels) || in_array('push', $channels);
+    }
+
+    /**
+     * Get FCM delivery status.
+     */
+    public function getFCMStatus()
+    {
+        $data = $this->data ?? [];
+
+        return [
+            'sent' => isset($data['fcm_sent_at']),
+            'sent_at' => $data['fcm_sent_at'] ?? null,
+            'sent_count' => $data['fcm_sent_count'] ?? 0,
+            'failed_count' => $data['fcm_failed_count'] ?? 0,
+            'failed' => isset($data['fcm_failed_permanently_at']),
+            'error' => $data['fcm_final_error'] ?? null,
+        ];
     }
 }

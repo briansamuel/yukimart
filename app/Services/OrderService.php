@@ -13,6 +13,7 @@ use App\Services\PrefixGeneratorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Events\OrderCreated;
 
 class OrderService extends BaseQuickOrderService
 {
@@ -264,6 +265,9 @@ class OrderService extends BaseQuickOrderService
             // Load relationships needed for notification
             $order->load(['customer', 'orderItems', 'seller', 'branchShop']);
             $order->createNotificationForEvent('created');
+
+            // Dispatch FCM events for new order
+            OrderCreated::dispatch($order, true, false);
 
             DB::commit();
 

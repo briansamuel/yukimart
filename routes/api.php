@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\FCMController;
 
 /*
 |--------------------------------------------------------------------------
@@ -123,6 +124,17 @@ Route::prefix('v1')->group(function () {
             Route::post('/{id}/unread', [NotificationController::class, 'markAsUnread'])->name('api.v1.notifications.mark_unread');
             Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('api.v1.notifications.destroy');
             Route::post('/', [NotificationController::class, 'store'])->name('api.v1.notifications.store'); // Admin only
+        });
+
+        // FCM (Firebase Cloud Messaging) Routes
+        Route::prefix('fcm')->group(function () {
+            Route::post('/register-token', [FCMController::class, 'registerToken'])->name('api.v1.fcm.register-token');
+            Route::post('/unregister-token', [FCMController::class, 'unregisterToken'])->name('api.v1.fcm.unregister-token');
+            Route::get('/tokens', [FCMController::class, 'getTokens'])->name('api.v1.fcm.tokens');
+            Route::post('/test-notification', [FCMController::class, 'sendTestNotification'])->name('api.v1.fcm.test-notification');
+            Route::get('/statistics', [FCMController::class, 'getStatistics'])->name('api.v1.fcm.statistics');
+            Route::post('/send-notification', [FCMController::class, 'sendNotification'])->name('api.v1.fcm.send-notification');
+            Route::get('/test-config', [FCMController::class, 'testConfiguration'])->name('api.v1.fcm.test-config');
         });
     });
 });

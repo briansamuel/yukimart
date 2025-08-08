@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Traits\UserTimeStamp;
 use App\Traits\HasNotifications;
 use Carbon\Carbon;
+use App\Events\OrderCreated;
+use App\Events\OrderStatusChanged;
 
 class Order extends Model
 {
@@ -45,6 +47,38 @@ class Order extends Model
         'other_amount' => 0,
         'total_quantity' => 0,
     ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Dispatch event when order is created
+        static::created(function ($order) {
+            if ($order->notificationsEnabled()) {
+                OrderCreated::dispatch($order, true, false);
+            }
+        });
+
+        // Dispatch event when order status is updated
+        static::updating(function ($order) {
+            if ($order->notificationsEnabled() && $order->isDirty('status')) {
+                $oldStatus = $order->getOriginal('status');
+                $newStatus = $order->status;
+
+                // Store old status for the updated event
+                $order->_oldStatus = $oldStatus;
+            }
+        });
+
+        static::updated(function ($order) {
+            if ($order->notificationsEnabled() && isset($order->_oldStatus)) {
+                OrderStatusChanged::dispatch($order, $order->_oldStatus, $order->status);
+            }
+        });
+    }
 
     /**
      * Relationship with customer.

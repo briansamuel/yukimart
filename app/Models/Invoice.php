@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Events\InvoiceCreated;
+use App\Events\InvoiceStatusChanged;
 
 class Invoice extends Model
 {
@@ -578,6 +580,27 @@ class Invoice extends Model
 
         static::updating(function ($invoice) {
             $invoice->updated_by = auth()->id();
+
+            // Track status changes for notifications
+            if ($invoice->isDirty('status')) {
+                $oldStatus = $invoice->getOriginal('status');
+                $newStatus = $invoice->status;
+
+                // Store old status for the updated event
+                $invoice->_oldStatus = $oldStatus;
+            }
+        });
+
+        // Dispatch event when invoice is created
+        static::created(function ($invoice) {
+            InvoiceCreated::dispatch($invoice, true, false);
+        });
+
+        // Dispatch event when invoice status is updated
+        static::updated(function ($invoice) {
+            if (isset($invoice->_oldStatus)) {
+                InvoiceStatusChanged::dispatch($invoice, $invoice->_oldStatus, $invoice->status);
+            }
         });
     }
 }
