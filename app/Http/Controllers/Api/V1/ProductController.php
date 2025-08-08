@@ -18,20 +18,14 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Product::with(['category', 'brand', 'supplier', 'inventory']);
+            $query = Product::with(['category', 'inventory']);
             
             // Apply filters
             if ($request->filled('category_id')) {
                 $query->where('category_id', $request->category_id);
             }
             
-            if ($request->filled('brand_id')) {
-                $query->where('brand_id', $request->brand_id);
-            }
-            
-            if ($request->filled('supplier_id')) {
-                $query->where('supplier_id', $request->supplier_id);
-            }
+            // Note: brand_id and supplier_id filters removed as these relationships don't exist in current model
             
             if ($request->filled('product_status')) {
                 $query->where('product_status', $request->product_status);
@@ -118,9 +112,7 @@ class ProductController extends Controller
     {
         try {
             $product = Product::with([
-                'category', 
-                'brand', 
-                'supplier', 
+                'category',
                 'inventory',
                 'variants.inventory'
             ])->findOrFail($id);
@@ -205,7 +197,7 @@ class ProductController extends Controller
             DB::commit();
             
             // Load relationships for response
-            $product->load(['category', 'brand', 'supplier', 'inventory']);
+            $product->load(['category', 'inventory']);
             
             return response()->json([
                 'status' => 'success',
@@ -355,7 +347,7 @@ class ProductController extends Controller
                 ], 422);
             }
             
-            $product = Product::with(['category', 'brand', 'supplier', 'inventory'])
+            $product = Product::with(['category', 'inventory'])
                 ->where('barcode', $request->barcode)
                 ->first();
             

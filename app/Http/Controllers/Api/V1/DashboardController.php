@@ -65,20 +65,32 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get dashboard statistics (equivalent to getStats)
+     * Get dashboard statistics with period filter
      */
     public function getStats(Request $request)
     {
         try {
-            $todayStats = DashboardService::getTodaySalesStats();
-            
-            $stats = [
-                'total_orders' => DashboardService::totalOrders(),
-                'total_invoices' => Invoice::count(),
+            $period = $request->get('period', 'today'); // today, yesterday, month, last_month, year
+
+            // Validate period
+            $validPeriods = ['today', 'yesterday', 'month', 'last_month', 'year'];
+            if (!in_array($period, $validPeriods)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid period. Valid periods: ' . implode(', ', $validPeriods)
+                ], 400);
+            }
+
+            // Get date range for period filter
+            $dateRange = $this->getDateRangeForPeriod($period);
+
+            // Calculate period-specific statistics
+            $periodStats = $this->calculatePeriodStats($dateRange, $period);
+
+            // Get overall statistics (not period-dependent)
+            $overallStats = [
                 'total_products' => DashboardService::totalProducts(),
                 'active_products' => DashboardService::activeProducts(),
-                'total_revenue' => $todayStats['revenue'] ?? 0,
-                'orders_today' => $todayStats['orders_count'] ?? 0,
                 'total_customers' => DashboardService::totalCustomers(),
                 'total_users' => DashboardService::totalUsers(),
                 'active_users' => DashboardService::activeUsers(),
@@ -86,14 +98,30 @@ class DashboardController extends Controller
                     ->whereHas('inventory', function($query) {
                         $query->whereRaw('quantity <= reorder_point');
                     })->count(),
-                'avg_order_value' => $todayStats['avg_order_value'] ?? 0,
-                'customers_today' => $todayStats['customers_count'] ?? 0,
             ];
+
+            // Combine period stats with overall stats
+            $stats = array_merge($overallStats, $periodStats, [
+                'period' => $period,
+                'period_name' => $this->getPeriodName($period),
+                'date_range' => [
+                    'start' => $dateRange['start']->toDateString(),
+                    'end' => $dateRange['end']->toDateString(),
+                ]
+            ]);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Statistics retrieved successfully',
-                'data' => $stats
+                'data' => $stats,
+                'meta' => [
+                    'period' => $period,
+                    'period_name' => $this->getPeriodName($period),
+                    'date_range' => [
+                        'start' => $dateRange['start']->format('Y-m-d H:i:s'),
+                        'end' => $dateRange['end']->format('Y-m-d H:i:s'),
+                    ]
+                ]
             ], 200);
 
         } catch (\Exception $e) {
@@ -422,5 +450,51 @@ class DashboardController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Calculate period-specific statistics
+     */
+    private function calculatePeriodStats($dateRange, $period)
+    {
+        // Get orders for the period
+        $orders = Order::whereIn('status', ['processing', 'completed'])
+            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->get();
+
+        // Get invoices for the period
+        $invoices = Invoice::whereIn('status', ['paid', 'completed'])
+            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->get();
+
+        // Calculate statistics
+        $ordersRevenue = $orders->sum('final_amount');
+        $invoicesRevenue = $invoices->sum('total_amount');
+        $totalRevenue = $ordersRevenue + $invoicesRevenue;
+
+        $ordersCount = $orders->count();
+        $invoicesCount = $invoices->count();
+        $totalTransactions = $ordersCount + $invoicesCount;
+
+        $uniqueCustomers = $orders->pluck('customer_id')
+            ->merge($invoices->pluck('customer_id'))
+            ->filter()
+            ->unique()
+            ->count();
+
+        $avgTransactionValue = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
+
+        return [
+            'period_revenue' => (float) $totalRevenue,
+            'period_orders' => $ordersCount,
+            'period_invoices' => $invoicesCount,
+            'period_transactions' => $totalTransactions,
+            'period_customers' => $uniqueCustomers,
+            'avg_transaction_value' => (float) $avgTransactionValue,
+            'orders_revenue' => (float) $ordersRevenue,
+            'invoices_revenue' => (float) $invoicesRevenue,
+            'total_orders' => Order::count(), // Overall total
+            'total_invoices' => Invoice::count(), // Overall total
+        ];
     }
 }

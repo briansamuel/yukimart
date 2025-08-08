@@ -41,11 +41,11 @@ class AuthController extends Controller
             // Delete old tokens for this device to prevent token accumulation
             $user->tokens()->where('name', 'like', $deviceName . '%')->delete();
 
-            // Create access token (expires in 1 day)
-            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addDay())->plainTextToken;
+            // Create access token (expires in 30 days)
+            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addDays(30))->plainTextToken;
 
-            // Create refresh token (expires in 30 days)
-            $refreshToken = $user->createToken($deviceName . '_refresh', ['refresh'], now()->addDays(30))->plainTextToken;
+            // Create refresh token (expires in 90 days)
+            $refreshToken = $user->createToken($deviceName . '_refresh', ['refresh'], now()->addDays(90))->plainTextToken;
 
             return response()->json([
                 'status' => 'success',
@@ -150,8 +150,8 @@ class AuthController extends Controller
             // Delete old access tokens for this device
             $user->tokens()->where('name', $deviceName . '_access')->delete();
 
-            // Create new access token (expires in 1 day)
-            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addDay())->plainTextToken;
+            // Create new access token (expires in 30 days)
+            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addDays(30))->plainTextToken;
 
             return response()->json([
                 'status' => 'success',

@@ -36,6 +36,21 @@ class Kernel extends ConsoleKernel
                 });
         }
 
+        // Auto-sync API documentation and Postman collection
+        $schedule->command('api:auto-sync')
+            ->hourly()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/api-auto-sync.log'));
+
+        // Daily comprehensive sync with force flag
+        $schedule->command('api:auto-sync --force')
+            ->daily()
+            ->at('09:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/api-auto-sync-daily.log'));
+
         // Check Shopee tokens - twice daily with auto-refresh (using jobs)
         $schedule->job(new \App\Jobs\CheckShopeeTokensJob(true, true))
             ->twiceDaily(9, 21) // 9 AM and 9 PM

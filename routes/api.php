@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\DashboardController;
 
 /*
@@ -35,7 +36,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/register', [AuthController::class, 'register'])->name('api.v1.auth.register');
 
         // Protected auth routes
-        Route::middleware(['auth.api:sanctum'])->group(function () {
+        Route::middleware(['auth.api:api'])->group(function () {
             Route::get('/profile', [AuthController::class, 'profile'])->name('api.v1.auth.profile');
             Route::post('/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
             Route::post('/refresh', [AuthController::class, 'refresh'])->name('api.v1.auth.refresh');
@@ -43,7 +44,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Protected API routes
-    Route::middleware(['auth.api:sanctum'])->group(function () {
+    Route::middleware(['auth.api:api'])->group(function () {
         Route::get('/user', function (Request $request) {
             return response()->json([
                 'status' => 'success',
@@ -110,6 +111,18 @@ Route::prefix('v1')->group(function () {
             Route::get('/top-products-data', [DashboardController::class, 'getTopProductsData'])->name('api.v1.dashboard.top-products-data');
             Route::get('/recent-activities', [DashboardController::class, 'getRecentActivities'])->name('api.v1.dashboard.recent-activities');
             Route::get('/low-stock-products', [DashboardController::class, 'getLowStockProducts'])->name('api.v1.dashboard.low-stock-products');
+        });
+
+        // Notifications
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index'])->name('api.v1.notifications.index');
+            Route::get('/statistics', [NotificationController::class, 'statistics'])->name('api.v1.notifications.statistics');
+            Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('api.v1.notifications.mark_all_read');
+            Route::get('/{id}', [NotificationController::class, 'show'])->name('api.v1.notifications.show');
+            Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('api.v1.notifications.mark_read');
+            Route::post('/{id}/unread', [NotificationController::class, 'markAsUnread'])->name('api.v1.notifications.mark_unread');
+            Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('api.v1.notifications.destroy');
+            Route::post('/', [NotificationController::class, 'store'])->name('api.v1.notifications.store'); // Admin only
         });
     });
 });

@@ -57,21 +57,240 @@ class PostmanCollectionService
             'item' => []
         ];
 
-        // Add all folders and requests
-        $collection['item'] = [
-            $this->createHealthCheckFolder(),
-            $this->createAuthenticationFolder(),
-            $this->createInvoiceManagementFolder(),
-            $this->createProductsFolder(),
-            $this->createOrdersFolder(),
-            $this->createCustomersFolder(),
-            $this->createPaymentsFolder(),
-            $this->createDashboardFolder(),
-            $this->createPlaygroundFolder(),
-            $this->createErrorScenariosFolder()
-        ];
+        // Use auto-discovery for dynamic collection generation
+        $collection['item'] = $this->generateDynamicFolders();
 
         return $collection;
+    }
+
+    /**
+     * Generate folders dynamically from discovered routes
+     */
+    private function generateDynamicFolders(): array
+    {
+        $discoveryService = new \App\Services\AutoApiDiscoveryService();
+        $organizedRoutes = $discoveryService->discoverRoutes();
+
+        $folders = [];
+
+        foreach ($organizedRoutes as $groupName => $group) {
+            $folder = [
+                'name' => $this->getFolderIcon($groupName) . ' ' . $group['name'],
+                'description' => $group['description'],
+                'item' => []
+            ];
+
+            foreach ($group['routes'] as $route) {
+                $folder['item'][] = $this->createRequestFromRoute($route);
+            }
+
+            $folders[] = $folder;
+        }
+
+        // Add static folders for testing scenarios
+        $folders[] = $this->createPlaygroundFolder();
+        $folders[] = $this->createErrorScenariosFolder();
+
+        return $folders;
+    }
+
+    /**
+     * Create Postman request from discovered route
+     */
+    private function createRequestFromRoute(array $route): array
+    {
+        $methods = explode('|', $route['method']);
+        $primaryMethod = $methods[0];
+
+        $request = [
+            'name' => $this->generateRequestName($route),
+            'request' => [
+                'method' => $primaryMethod,
+                'header' => $this->convertHeadersToPostman($route['examples'][0]['headers'] ?? []),
+                'url' => [
+                    'raw' => '{{base_url}}/' . str_replace('api/v1/', '', $route['uri']),
+                    'host' => ['{{base_url}}'],
+                    'path' => explode('/', str_replace('api/v1/', '', $route['uri']))
+                ],
+                'description' => $route['description']
+            ],
+            'response' => []
+        ];
+
+        // Add body for POST/PUT/PATCH requests
+        if (in_array($primaryMethod, ['POST', 'PUT', 'PATCH'])) {
+            $exampleBody = $route['examples'][0]['body'] ?? [];
+            if (!empty($exampleBody)) {
+                $request['request']['body'] = [
+                    'mode' => 'raw',
+                    'raw' => json_encode($exampleBody, JSON_PRETTY_PRINT),
+                    'options' => [
+                        'raw' => [
+                            'language' => 'json'
+                        ]
+                    ]
+                ];
+            }
+        }
+
+        // Add query parameters for GET requests
+        if ($primaryMethod === 'GET') {
+            $queryParams = $route['examples'][0]['query_params'] ?? [];
+            if (!empty($queryParams)) {
+                $request['request']['url']['query'] = [];
+                foreach ($queryParams as $key => $value) {
+                    $request['request']['url']['query'][] = [
+                        'key' => $key,
+                        'value' => (string) $value,
+                        'disabled' => true
+                    ];
+                }
+            }
+        }
+
+        // Add response examples if available
+        if (isset($route['examples'][0]['response_examples'])) {
+            $request['response'] = $this->createPostmanResponseExamples($route['examples'][0]['response_examples']);
+        }
+
+        return $request;
+    }
+
+    /**
+     * Create Postman response examples
+     */
+    private function createPostmanResponseExamples(array $responseExamples): array
+    {
+        $responses = [];
+
+        foreach ($responseExamples as $name => $example) {
+            if (isset($example['body'])) {
+                $responses[] = [
+                    'name' => ucfirst(str_replace('_', ' ', $name)),
+                    'originalRequest' => [
+                        'method' => $example['method'] ?? 'GET',
+                        'header' => [
+                            [
+                                'key' => 'Accept',
+                                'value' => 'application/json'
+                            ],
+                            [
+                                'key' => 'Authorization',
+                                'value' => 'Bearer {{auth_token}}'
+                            ]
+                        ],
+                        'url' => [
+                            'raw' => '{{base_url}}' . ($example['url'] ?? ''),
+                            'host' => ['{{base_url}}'],
+                            'path' => explode('/', trim($example['url'] ?? '', '/'))
+                        ]
+                    ],
+                    'status' => $this->getStatusText($example['status_code'] ?? 200),
+                    'code' => $example['status_code'] ?? 200,
+                    '_postman_previewlanguage' => 'json',
+                    'header' => [
+                        [
+                            'key' => 'Content-Type',
+                            'value' => 'application/json'
+                        ]
+                    ],
+                    'cookie' => [],
+                    'body' => json_encode($example['body'], JSON_PRETTY_PRINT)
+                ];
+            }
+        }
+
+        return $responses;
+    }
+
+    /**
+     * Get status text from code
+     */
+    private function getStatusText(int $code): string
+    {
+        $statusTexts = [
+            200 => 'OK',
+            201 => 'Created',
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            404 => 'Not Found',
+            422 => 'Unprocessable Entity',
+            500 => 'Internal Server Error'
+        ];
+
+        return $statusTexts[$code] ?? 'Unknown';
+    }
+
+    /**
+     * Generate request name from route info
+     */
+    private function generateRequestName(array $route): string
+    {
+        $method = explode('|', $route['method'])[0];
+        $uri = $route['uri'];
+
+        // Extract meaningful name from URI
+        $parts = explode('/', str_replace('api/v1/', '', $uri));
+        $name = '';
+
+        foreach ($parts as $part) {
+            if (!str_contains($part, '{')) {
+                $name .= ucfirst($part) . ' ';
+            }
+        }
+
+        $name = trim($name);
+
+        // Add method prefix for clarity
+        $methodPrefixes = [
+            'GET' => 'Get',
+            'POST' => 'Create',
+            'PUT' => 'Update',
+            'PATCH' => 'Update',
+            'DELETE' => 'Delete'
+        ];
+
+        $prefix = $methodPrefixes[$method] ?? $method;
+
+        return $prefix . ' ' . ($name ?: 'Resource');
+    }
+
+    /**
+     * Convert headers array to Postman format
+     */
+    private function convertHeadersToPostman(array $headers): array
+    {
+        $postmanHeaders = [];
+
+        foreach ($headers as $key => $value) {
+            $postmanHeaders[] = [
+                'key' => $key,
+                'value' => $value,
+                'type' => 'text'
+            ];
+        }
+
+        return $postmanHeaders;
+    }
+
+    /**
+     * Get folder icon for group
+     */
+    private function getFolderIcon(string $groupName): string
+    {
+        $icons = [
+            'auth' => '🔐',
+            'dashboard' => '📊',
+            'invoices' => '📄',
+            'products' => '📦',
+            'orders' => '🛒',
+            'customers' => '👥',
+            'payments' => '💰',
+            'docs' => '📚',
+            'health' => '🏥'
+        ];
+
+        return $icons[$groupName] ?? '📁';
     }
 
     /**
