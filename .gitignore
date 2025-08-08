@@ -37,3 +37,4 @@ composer.lock
 *.bak
 *.old
 *.orig
+storage/firebase/

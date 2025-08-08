@@ -36,7 +36,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/register', [AuthController::class, 'register'])->name('api.v1.auth.register');
 
         // Protected auth routes
-        Route::middleware(['auth.api:api'])->group(function () {
+        Route::middleware(['api.token'])->group(function () {
             Route::get('/profile', [AuthController::class, 'profile'])->name('api.v1.auth.profile');
             Route::post('/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
             Route::post('/refresh', [AuthController::class, 'refresh'])->name('api.v1.auth.refresh');
@@ -44,7 +44,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Protected API routes
-    Route::middleware(['auth.api:api'])->group(function () {
+    Route::middleware(['api.token'])->group(function () {
         Route::get('/user', function (Request $request) {
             return response()->json([
                 'status' => 'success',

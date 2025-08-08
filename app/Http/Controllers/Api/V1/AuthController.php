@@ -38,14 +38,8 @@ class AuthController extends Controller
             // Load relationships for complete user data
             $user->load(['branchShops', 'roles']);
 
-            // Delete old tokens for this device to prevent token accumulation
-            $user->tokens()->where('name', 'like', $deviceName . '%')->delete();
-
-            // Create access token (expires in 30 days)
-            $accessToken = $user->createToken($deviceName . '_access', ['*'], now()->addDays(30))->plainTextToken;
-
-            // Create refresh token (expires in 90 days)
-            $refreshToken = $user->createToken($deviceName . '_refresh', ['refresh'], now()->addDays(90))->plainTextToken;
+            // Create simple access token
+            $accessToken = $user->createToken($deviceName . '_access')->plainTextToken;
 
             return response()->json([
                 'status' => 'success',
@@ -53,10 +47,8 @@ class AuthController extends Controller
                 'data' => [
                     'user' => new UserResource($user),
                     'access_token' => $accessToken,
-                    'refresh_token' => $refreshToken,
                     'token_type' => 'Bearer',
-                    'expires_in' => 86400, // 1 day in seconds
-                    'refresh_expires_in' => 2592000 // 30 days in seconds
+                    'expires_in' => 86400 // 1 day in seconds
                 ]
             ], 200);
 
