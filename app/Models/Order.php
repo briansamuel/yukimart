@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Traits\UserTimeStamp;
 use App\Traits\HasNotifications;
 use Carbon\Carbon;
-use App\Events\OrderCreated;
 use App\Events\OrderStatusChanged;
 
 class Order extends Model
@@ -55,12 +54,8 @@ class Order extends Model
     {
         parent::boot();
 
-        // Dispatch event when order is created
-        static::created(function ($order) {
-            if ($order->notificationsEnabled()) {
-                OrderCreated::dispatch($order, true, false);
-            }
-        });
+        // Note: OrderCreated event is dispatched manually in OrderService
+        // after order is fully created to ensure correct data in notifications
 
         // Dispatch event when order status is updated
         static::updating(function ($order) {

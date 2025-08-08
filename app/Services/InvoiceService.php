@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Exception;
+use App\Events\InvoiceCreated;
 
 class InvoiceService extends BaseQuickOrderService
 {
@@ -74,6 +75,9 @@ class InvoiceService extends BaseQuickOrderService
 
             // Calculate totals
             $invoice->calculateTotals();
+
+            // Dispatch FCM event for new invoice with correct total_amount
+            InvoiceCreated::dispatch($invoice, true, false);
 
             // Create payment record if amount_paid is provided
             if (isset($data['amount_paid']) && $data['amount_paid'] > 0) {

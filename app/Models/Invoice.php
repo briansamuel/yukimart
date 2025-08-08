@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Events\InvoiceCreated;
 use App\Events\InvoiceStatusChanged;
 
 class Invoice extends Model
@@ -591,10 +590,8 @@ class Invoice extends Model
             }
         });
 
-        // Dispatch event when invoice is created
-        static::created(function ($invoice) {
-            InvoiceCreated::dispatch($invoice, true, false);
-        });
+        // Note: InvoiceCreated event is dispatched manually in InvoiceService
+        // after totals are calculated to ensure correct total_amount in notifications
 
         // Dispatch event when invoice status is updated
         static::updated(function ($invoice) {
