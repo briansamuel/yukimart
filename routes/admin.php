@@ -40,7 +40,7 @@ use App\Http\Controllers\Admin\CMS\CustomerController;
 
 use App\Http\Controllers\Admin\CMS\InvoiceController;
 
-// use App\Http\Controllers\Admin\CMS\ReturnController;
+use App\Http\Controllers\Admin\CMS\ReturnController;
 use App\Http\Controllers\Admin\CMS\PaymentController;
 use App\Http\Controllers\Admin\CMS\AuditLogController;
 use App\Http\Controllers\Admin\CMS\InventoryImportExportController;
@@ -663,35 +663,35 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/invoices/statistics', [InvoiceController::class, 'getStatistics'])->name('invoice.statistics');
         Route::post('/invoices/from-order/{order_id}', [InvoiceController::class, 'createFromOrder'])->name('invoice.from-order');
 
-        // Returns routes - Commented out until ReturnController is implemented
-        // Route::get('/returns', [ReturnController::class, 'index'])->name('return.list');
-        // Route::get('/returns/ajax', [ReturnController::class, 'getReturnsAjax'])->name('return.ajax');
-        // Route::get('/returns/filter-users', [ReturnController::class, 'getFilterUsers'])->name('return.filter-users');
-        // Route::get('/returns/{id}/detail-panel', [ReturnController::class, 'getDetailPanel'])->name('return.detail-panel');
-        // Route::get('/returns/create', [ReturnController::class, 'create'])->name('return.create');
-        // Route::post('/returns/create', [ReturnController::class, 'store'])->name('return.store');
-        // Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('return.show');
+        // Returns routes - Active
+        Route::get('/returns', [ReturnController::class, 'index'])->name('return.list');
+        Route::get('/returns/ajax', [ReturnController::class, 'getReturnsAjax'])->name('return.ajax');
+        Route::get('/returns/filter-users', [ReturnController::class, 'getFilterUsers'])->name('return.filter-users');
+        Route::get('/returns/{id}/detail-panel', [ReturnController::class, 'getDetailPanel'])->name('return.detail-panel');
+        Route::get('/returns/create', [ReturnController::class, 'create'])->name('return.create');
+        Route::post('/returns/create', [ReturnController::class, 'store'])->name('return.store');
+        Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('return.show');
 
         // Return export routes
-        // Route::get('/returns/export/excel', [ReturnController::class, 'exportExcel'])->name('return.export.excel');
-        // Route::get('/returns/{id}/export/pdf', [ReturnController::class, 'exportPdf'])->name('return.export.pdf');
+        Route::get('/returns/export/excel', [ReturnController::class, 'exportExcel'])->name('return.export.excel');
+        Route::get('/returns/{id}/export/pdf', [ReturnController::class, 'exportPdf'])->name('return.export.pdf');
 
         // Return additional routes (consistent naming)
-        // Route::get('/returns/{id}/payment-history', [ReturnController::class, 'getPaymentHistory'])->name('return.payment-history');
-        // Route::get('/returns/{id}/edit', [ReturnController::class, 'edit'])->name('return.edit');
-        // Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('return.update');
-        // Route::delete('/returns/{id}', [ReturnController::class, 'destroy'])->name('return.delete');
-        // Route::post('/returns/{id}/payment', [ReturnController::class, 'recordPayment'])->name('return.payment');
-        // Route::post('/returns/{id}/send', [ReturnController::class, 'sendReturn'])->name('return.send');
-        // Route::post('/returns/{id}/cancel', [ReturnController::class, 'cancelReturn'])->name('return.cancel');
-        // Route::get('/returns/{id}/print', [ReturnController::class, 'print'])->name('return.print');
-        // Route::get('/returns/statistics', [ReturnController::class, 'getStatistics'])->name('return.statistics');
-        // Route::post('/returns/from-invoice/{invoice_id}', [ReturnController::class, 'createFromInvoice'])->name('return.from-invoice');
+        Route::get('/returns/{id}/payment-history', [ReturnController::class, 'getPaymentHistory'])->name('return.payment-history');
+        Route::get('/returns/{id}/edit', [ReturnController::class, 'edit'])->name('return.edit');
+        Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('return.update');
+        Route::delete('/returns/{id}', [ReturnController::class, 'destroy'])->name('return.delete');
+        Route::post('/returns/{id}/payment', [ReturnController::class, 'recordPayment'])->name('return.payment');
+        Route::post('/returns/{id}/send', [ReturnController::class, 'sendReturn'])->name('return.send');
+        Route::post('/returns/{id}/cancel', [ReturnController::class, 'cancelReturn'])->name('return.cancel');
+        Route::get('/returns/{id}/print', [ReturnController::class, 'print'])->name('return.print');
+        Route::get('/returns/statistics', [ReturnController::class, 'getStatistics'])->name('return.statistics');
+        Route::post('/returns/from-invoice/{invoice_id}', [ReturnController::class, 'createFromInvoice'])->name('return.from-invoice');
 
         // Return bulk actions
-        // Route::post('/returns/bulk/update-status', [ReturnController::class, 'bulkUpdateStatus'])->name('return.bulk.update-status');
-        // Route::post('/returns/bulk/cancel', [ReturnController::class, 'bulkCancel'])->name('return.bulk.cancel');
-        // Route::post('/returns/bulk/delete', [ReturnController::class, 'bulkDelete'])->name('return.bulk.delete');
+        Route::post('/returns/bulk/update-status', [ReturnController::class, 'bulkUpdateStatus'])->name('return.bulk.update-status');
+        Route::post('/returns/bulk/cancel', [ReturnController::class, 'bulkCancel'])->name('return.bulk.cancel');
+        Route::post('/returns/bulk/delete', [ReturnController::class, 'bulkDelete'])->name('return.bulk.delete');
 
         // Note: Export routes are defined above (lines 669-670)
 
