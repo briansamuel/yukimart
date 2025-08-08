@@ -467,10 +467,19 @@ class DashboardController extends Controller
             ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
             ->get();
 
+        // Get return orders for the period
+        $returnOrders = \App\Models\ReturnOrder::whereIn('status', ['approved', 'completed'])
+            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->get();
+
         // Calculate statistics
         $ordersRevenue = $orders->sum('final_amount');
         $invoicesRevenue = $invoices->sum('total_amount');
         $totalRevenue = $ordersRevenue + $invoicesRevenue;
+
+        // Calculate return statistics
+        $returnOrdersCount = $returnOrders->count();
+        $returnRevenue = $returnOrders->sum('total_amount');
 
         $ordersCount = $orders->count();
         $invoicesCount = $invoices->count();
@@ -478,6 +487,7 @@ class DashboardController extends Controller
 
         $uniqueCustomers = $orders->pluck('customer_id')
             ->merge($invoices->pluck('customer_id'))
+            ->merge($returnOrders->pluck('customer_id'))
             ->filter()
             ->unique()
             ->count();
@@ -488,6 +498,8 @@ class DashboardController extends Controller
             'period_revenue' => (float) $totalRevenue,
             'period_orders' => $ordersCount,
             'period_invoices' => $invoicesCount,
+            'period_returns' => $returnOrdersCount,
+            'return_revenue' => (float) $returnRevenue,
             'period_transactions' => $totalTransactions,
             'period_customers' => $uniqueCustomers,
             'avg_transaction_value' => (float) $avgTransactionValue,
@@ -495,6 +507,7 @@ class DashboardController extends Controller
             'invoices_revenue' => (float) $invoicesRevenue,
             'total_orders' => Order::count(), // Overall total
             'total_invoices' => Invoice::count(), // Overall total
+            'total_returns' => \App\Models\ReturnOrder::count(), // Overall total
         ];
     }
 }
