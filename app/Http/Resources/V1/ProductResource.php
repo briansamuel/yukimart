@@ -56,7 +56,7 @@ class ProductResource extends JsonResource
             'points' => (int) $this->points,
             
             // Images
-            'product_image' => $this->product_image ? asset('storage/' . $this->product_image) : null,
+            'product_image' => $this->product_thumbnail ? $this->product_thumbnail : null,
             'product_gallery' => $this->when($this->product_gallery, function () {
                 return collect($this->product_gallery)->map(function ($image) {
                     return asset('storage/' . $image);
