@@ -56,6 +56,8 @@ class Order extends Model
 
         // Note: OrderCreated event is dispatched manually in OrderService
         // after order is fully created to ensure correct data in notifications
+        // We disable automatic notification creation from HasNotifications trait
+        // to avoid duplicate notifications
 
         // Dispatch event when order status is updated
         static::updating(function ($order) {
@@ -73,6 +75,34 @@ class Order extends Model
                 OrderStatusChanged::dispatch($order, $order->_oldStatus, $order->status);
             }
         });
+    }
+
+    /**
+     * Override trait method to disable automatic notification creation.
+     * We handle notifications manually via events to ensure proper data.
+     */
+    public function createNotificationForEvent($event)
+    {
+        // Disable automatic notifications for 'created' event
+        // as we handle this manually via OrderCreated event
+        if ($event === 'created') {
+            return;
+        }
+
+        // For other events, call the trait method directly
+        $config = $this->getNotificationConfig($event);
+
+        if (!$config || !$config['enabled']) {
+            return;
+        }
+
+        $this->createNotification(
+            $config['type'],
+            $config['title'],
+            $config['message'],
+            $config['data'] ?? [],
+            $config['options'] ?? []
+        );
     }
 
     /**

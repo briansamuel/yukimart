@@ -58,18 +58,31 @@ Lấy key statistics cho mobile dashboard widgets.
   "status": "success",
   "message": "Statistics retrieved successfully",
   "data": {
-    "total_orders": 85,
-    "total_invoices": 92,
-    "total_products": 150,
-    "active_products": 140,
-    "total_revenue": 2500000.00,
-    "orders_today": 12,
-    "total_customers": 45,
-    "total_users": 5,
-    "active_users": 4,
-    "low_stock_products": 8,
-    "avg_order_value": 208333.33,
-    "customers_today": 8
+    "period_revenue": 74777317.00,
+    "period_orders": 22,
+    "period_invoices": 21,
+    "period_returns": 0,
+    "return_revenue": 0.00,
+    "period_transactions": 43,
+    "period_customers": 20,
+    "avg_transaction_value": 1739007.00,
+    "orders_revenue": 0.00,
+    "invoices_revenue": 74777317.00,
+    "total_orders": 25,
+    "total_invoices": 21,
+    "total_returns": 0,
+    "total_products": 3782,
+    "active_products": 3782,
+    "total_customers": 434,
+    "total_users": 1,
+    "active_users": 1,
+    "low_stock_products": 21,
+    "period": "month",
+    "period_name": "tháng này",
+    "date_range": {
+      "start": "2025-08-01",
+      "end": "2025-08-31"
+    }
   }
 }
 ```

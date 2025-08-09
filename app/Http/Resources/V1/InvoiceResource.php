@@ -59,6 +59,16 @@ class InvoiceResource extends JsonResource
             'items_count' => $this->when($this->relationLoaded('invoiceItems'), function () {
                 return $this->invoiceItems->count();
             }),
+
+            // Products summary (name and quantity only)
+            'products_summary' => $this->whenLoaded('invoiceItems', function () {
+                return $this->invoiceItems->map(function ($item) {
+                    return [
+                        'name' => $item->product_name,
+                        'quantity' => (int) $item->quantity,
+                    ];
+                });
+            }),
             
             // Payments
             'payments' => $this->whenLoaded('payments', function () {

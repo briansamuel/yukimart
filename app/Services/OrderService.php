@@ -260,13 +260,11 @@ class OrderService extends BaseQuickOrderService
                 }
             }
 
-            // Re-enable notifications and trigger ONLY the creation notification with correct amounts
+            // Re-enable notifications and load relationships needed for notification
             $order->enableNotifications();
-            // Load relationships needed for notification
             $order->load(['customer', 'orderItems', 'seller', 'branchShop']);
-            $order->createNotificationForEvent('created');
 
-            // Dispatch FCM events for new order
+            // Dispatch FCM events for new order (this will create the notification)
             OrderCreated::dispatch($order, true, false);
 
             DB::commit();

@@ -89,7 +89,7 @@ class SendOrderNotificationListener implements ShouldQueue
             foreach ($adminUsers as $user) {
                 $notification = Notification::createWithFCM(
                     $user,
-                    'order',
+                    'order_created',
                     $this->getOrderNotificationTitle($order),
                     $this->getOrderNotificationMessage($order),
                     [
@@ -99,6 +99,8 @@ class SendOrderNotificationListener implements ShouldQueue
                         'total_amount' => $order->total_amount ?? 0,
                         'status' => $order->status,
                         'created_at' => $order->created_at->toISOString(),
+                        'seller_name' => $order->seller->full_name ?? $order->seller->name ?? 'Không xác định',
+                        'branch_shop_name' => $order->branchShop->name ?? 'Không xác định',
                     ],
                     [
                         'priority' => 'high',

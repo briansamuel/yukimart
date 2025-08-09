@@ -76,6 +76,9 @@ class InvoiceService extends BaseQuickOrderService
             // Calculate totals
             $invoice->calculateTotals();
 
+            // Load relationships needed for notification
+            $invoice->load(['customer', 'seller', 'branchShop']);
+
             // Dispatch FCM event for new invoice with correct total_amount
             InvoiceCreated::dispatch($invoice, true, false);
 

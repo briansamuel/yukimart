@@ -872,4 +872,14 @@ class Product extends Model
         }
     }
 
+    /**
+     * Check if inventory notifications should be sent for this product
+     */
+    public function shouldSendInventoryNotification()
+    {
+        // For now, disable inventory notifications for products
+        // This can be customized based on business logic
+        return false;
+    }
+
 }

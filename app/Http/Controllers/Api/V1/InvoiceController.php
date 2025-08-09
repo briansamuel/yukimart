@@ -23,7 +23,7 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Invoice::with(['customer', 'branchShop', 'creator', 'seller']);
+            $query = Invoice::with(['customer', 'branchShop', 'creator', 'seller', 'invoiceItems']);
             
             // Apply filters
             if ($request->filled('status')) {

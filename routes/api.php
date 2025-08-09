@@ -31,6 +31,15 @@ Route::prefix('v1')->group(function () {
     // Health Check (no auth required)
     Route::get('/health', [HealthController::class, 'index'])->name('api.v1.health');
 
+    // Public Product Category routes for testing/frontend
+    Route::prefix('public/product-categories')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'index'])->name('api.v1.public.product-categories.index');
+        Route::get('/tree-options', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'getTreeOptions'])->name('api.v1.public.product-categories.tree-options');
+        Route::get('/menu-tree', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'getMenuTree'])->name('api.v1.public.product-categories.menu-tree');
+        Route::get('/stats', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'getStats'])->name('api.v1.public.product-categories.stats');
+        Route::get('/{id}', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'show'])->name('api.v1.public.product-categories.show');
+    });
+
     // Authentication Routes
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->name('api.v1.auth.login');
@@ -83,6 +92,18 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{id}', [ProductController::class, 'destroy'])->name('api.v1.products.destroy');
         });
 
+        // Product Category Management Routes
+        Route::prefix('product-categories')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'index'])->name('api.v1.product-categories.index');
+            Route::post('/', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'store'])->name('api.v1.product-categories.store');
+            Route::get('/tree-options', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'getTreeOptions'])->name('api.v1.product-categories.tree-options');
+            Route::get('/menu-tree', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'getMenuTree'])->name('api.v1.product-categories.menu-tree');
+            Route::get('/stats', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'getStats'])->name('api.v1.product-categories.stats');
+            Route::get('/{id}', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'show'])->name('api.v1.product-categories.show');
+            Route::put('/{id}', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'update'])->name('api.v1.product-categories.update');
+            Route::delete('/{id}', [\App\Http\Controllers\Api\V1\ProductCategoryController::class, 'destroy'])->name('api.v1.product-categories.destroy');
+        });
+
         // Order Management Routes
         Route::prefix('orders')->group(function () {
             Route::get('/', [OrderController::class, 'index'])->name('api.v1.orders.index');
@@ -126,6 +147,15 @@ Route::prefix('v1')->group(function () {
             Route::post('/', [NotificationController::class, 'store'])->name('api.v1.notifications.store'); // Admin only
         });
 
+        // Notification Settings
+        Route::prefix('notification-settings')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\NotificationSettingController::class, 'index'])->name('api.v1.notification_settings.index');
+            Route::put('/', [\App\Http\Controllers\Api\V1\NotificationSettingController::class, 'update'])->name('api.v1.notification_settings.update');
+            Route::post('/reset', [\App\Http\Controllers\Api\V1\NotificationSettingController::class, 'reset'])->name('api.v1.notification_settings.reset');
+            Route::post('/test', [\App\Http\Controllers\Api\V1\NotificationSettingController::class, 'test'])->name('api.v1.notification_settings.test');
+            Route::get('/statistics', [\App\Http\Controllers\Api\V1\NotificationSettingController::class, 'statistics'])->name('api.v1.notification_settings.statistics');
+        });
+
         // FCM (Firebase Cloud Messaging) Routes
         Route::prefix('fcm')->group(function () {
             Route::post('/register-token', [FCMController::class, 'registerToken'])->name('api.v1.fcm.register-token');
@@ -150,3 +180,5 @@ Route::prefix('products')->group(function () {
 Route::prefix('public')->group(function () {
     // Add public API routes here if needed
 });
+
+

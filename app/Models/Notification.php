@@ -377,23 +377,11 @@ class Notification extends Model
     }
 
     /**
-     * Create notification with FCM support.
+     * Create notification with FCM support and Summary functionality.
      */
     public static function createWithFCM($user, $type, $title, $message, $data = [], $options = [])
     {
-        // Add FCM to channels if not already present
-        $channels = $options['channels'] ?? ['web'];
-        if (!in_array('fcm', $channels) && !in_array('push', $channels)) {
-            $channels[] = 'fcm';
-        }
-        $options['channels'] = $channels;
-
-        $notification = self::createForUser($user, $type, $title, $message, $data, $options);
-
-        // Dispatch FCM job
-        \App\Jobs\SendFCMNotificationJob::dispatch($notification->id)->delay(now()->addSeconds(2));
-
-        return $notification;
+        return \App\Services\SummaryNotificationService::createOrUpdate($user, $type, $title, $message, $data, $options);
     }
 
     /**
@@ -419,6 +407,10 @@ class Notification extends Model
         $channels = $this->channels ?? [];
         return in_array('fcm', $channels) || in_array('push', $channels);
     }
+
+
+
+
 
     /**
      * Get FCM delivery status.

@@ -61,6 +61,29 @@ class QuickOrderController extends Controller
         // Get default branch shop
         $defaultBranchShop = $defaultBranchShopId ? BranchShop::find($defaultBranchShopId) : $branchShops->first();
 
+        // Get sellers based on user role and branch shops
+        $sellers = collect();
+        if (Auth::user()->is_root == 1) {
+            // Super Admin: Get all active users
+            $sellers = User::where('status', 'active')
+                          ->orderBy('full_name')
+                          ->select('id', 'full_name', 'email', 'phone')
+                          ->get();
+        } else {
+            // Regular User: Get users from their branch shops
+            $userBranchShopIds = Auth::user()->currentBranchShops()->pluck('branch_shops.id');
+            if ($userBranchShopIds->isNotEmpty()) {
+                $sellers = User::whereHas('currentBranchShops', function($query) use ($userBranchShopIds) {
+                    $query->whereIn('branch_shops.id', $userBranchShopIds);
+                })
+                ->where('status', 'active')
+                ->orderBy('full_name')
+                ->select('id', 'full_name', 'email', 'phone')
+                ->distinct()
+                ->get();
+            }
+        }
+
         // Check if this is a return order request
         $isReturnOrder = $request->get('type') === 'return';
 
@@ -70,6 +93,7 @@ class QuickOrderController extends Controller
             'defaultCustomer',
             'defaultBranchShop',
             'bankAccounts',
+            'sellers',
             'isReturnOrder'
         ));
     }
@@ -830,6 +854,68 @@ class QuickOrderController extends Controller
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tạo đơn trả hàng. Vui lòng thử lại sau.',
                 'data' => null
+            ], 500);
+        }
+    }
+
+    /**
+     * Get sellers by branch shop
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getSellersByBranch(Request $request)
+    {
+        try {
+            $branchShopId = $request->get('branch_shop_id');
+
+            if (!$branchShopId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch shop ID is required'
+                ], 400);
+            }
+
+            // Check if user has access to this branch shop
+            $currentUser = Auth::user();
+            if ($currentUser->is_root != 1) {
+                $userBranchShopIds = $currentUser->currentBranchShops()->pluck('branch_shops.id');
+                if (!$userBranchShopIds->contains($branchShopId)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized access to branch shop'
+                    ], 403);
+                }
+            }
+
+            // Get sellers for the specific branch shop
+            $sellers = User::whereHas('currentBranchShops', function($query) use ($branchShopId) {
+                $query->where('branch_shops.id', $branchShopId);
+            })
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->select('id', 'full_name', 'email', 'phone')
+            ->get()
+            ->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->full_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $sellers
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting sellers by branch: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi lấy danh sách người bán'
             ], 500);
         }
     }

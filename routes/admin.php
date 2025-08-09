@@ -46,6 +46,7 @@ use App\Http\Controllers\Admin\CMS\AuditLogController;
 use App\Http\Controllers\Admin\CMS\InventoryImportExportController;
 use App\Http\Controllers\Admin\CMS\ReportsController;
 use App\Http\Controllers\Admin\CMS\NotificationController;
+use App\Http\Controllers\Admin\NotificationSettingController;
 use App\Http\Controllers\Admin\FilterController;
 use App\Http\Controllers\Admin\CMS\BranchShopController;
 use App\Http\Controllers\Admin\CMS\WarehouseController;
@@ -505,6 +506,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::delete('/cleanup/old', [NotificationController::class, 'cleanupOld'])->name('cleanup-old');
         });
 
+        // Notification Settings
+        Route::prefix('notification-settings')->name('notification-settings.')->group(function () {
+            Route::get('/', [NotificationSettingController::class, 'index'])->name('index');
+            Route::post('/update', [NotificationSettingController::class, 'update'])->name('update');
+            Route::post('/reset', [NotificationSettingController::class, 'reset'])->name('reset');
+            Route::get('/api/settings', [NotificationSettingController::class, 'getSettings'])->name('api.settings');
+            Route::post('/test', [NotificationSettingController::class, 'test'])->name('test');
+        });
+
         // Inventory Import/Export
         Route::prefix('inventory/import-export')->name('inventory.import-export.')->group(function () {
             Route::get('/', [InventoryImportExportController::class, 'index'])->name('index');
@@ -945,6 +955,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::get('/invoices-for-return', [QuickOrderController::class, 'getInvoicesForReturn'])->name('invoices-for-return');
             Route::get('/invoice-items/{invoiceId}', [QuickOrderController::class, 'getInvoiceItems'])->name('invoice-items');
             Route::post('/return-orders', [QuickOrderController::class, 'storeReturnOrder'])->name('return-orders.store');
+            Route::get('/sellers-by-branch', [QuickOrderController::class, 'getSellersByBranch'])->name('sellers-by-branch');
         });
 
         // Test route để kiểm tra thumbnail

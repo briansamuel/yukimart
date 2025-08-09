@@ -92,7 +92,7 @@ class SendInvoiceNotificationListener implements ShouldQueue
             foreach ($adminUsers as $user) {
                 $notification = Notification::createWithFCM(
                     $user,
-                    'invoice',
+                    'invoice_created',
                     $this->getInvoiceNotificationTitle($invoice),
                     $this->getInvoiceNotificationMessage($invoice),
                     [
@@ -102,6 +102,8 @@ class SendInvoiceNotificationListener implements ShouldQueue
                         'total_amount' => $invoice->total_amount ?? 0,
                         'status' => $invoice->status,
                         'created_at' => $invoice->created_at->toISOString(),
+                        'seller_name' => $invoice->seller->full_name ?? $invoice->seller->name ?? 'Không xác định',
+                        'branch_shop_name' => $invoice->branchShop->name ?? 'Không xác định',
                     ],
                     [
                         'priority' => 'high',
@@ -132,7 +134,7 @@ class SendInvoiceNotificationListener implements ShouldQueue
      */
     private function getInvoiceNotificationTitle($invoice): string
     {
-        $invoiceCode = $invoice->invoice_code ?? 'HD-' . $invoice->id;
+        $invoiceCode = $invoice->invoice_number ?? 'HD-' . $invoice->id;
 
         return "💰 Hóa đơn mới - {$invoiceCode}";
     }
@@ -142,10 +144,10 @@ class SendInvoiceNotificationListener implements ShouldQueue
      */
     private function getInvoiceNotificationMessage($invoice): string
     {
-        $customerName = $invoice->customer_name ?? 'Khách lẻ';
+        //$customerName = $invoice->customer_name ?? 'Khách lẻ';
         $totalAmount = number_format($invoice->total_amount ?? 0, 0, ',', '.') . ' VNĐ';
-        $invoiceCode = $invoice->invoice_code ?? 'HD-' . $invoice->id;
+        $invoiceCode = $invoice->invoice_number ?? 'HD-' . $invoice->id;
 
-        return "Hóa đơn mới {$invoiceCode} của khách hàng {$customerName} với tổng tiền {$totalAmount}";
+        return "Hóa đơn mới {$invoiceCode} vừa bán được với tổng tiền {$totalAmount}";
     }
 }

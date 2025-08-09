@@ -1164,6 +1164,15 @@
                                     </a>
                                 </div>
                             @endif
+                            <div class="menu-item">
+                                <a class="menu-link {{ Request::is('notification-settings*') ? 'active' : '' }}"
+                                    href="{{ route('admin.notification-settings.index') }}">
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">Cài đặt thông báo cá nhân</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 @endif

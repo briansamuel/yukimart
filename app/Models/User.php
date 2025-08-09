@@ -236,7 +236,9 @@ class User extends Authenticatable
     {
         Carbon::setLocale('vi');
         return new Attribute(
-            get: fn ($value, $attributes) => Carbon::parse($attributes['created_at'])->diffForHumans()
+            get: fn ($value, $attributes) => isset($attributes['created_at'])
+                ? Carbon::parse($attributes['created_at'])->diffForHumans()
+                : '-'
         );
     }
 

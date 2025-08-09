@@ -1621,6 +1621,9 @@ function setupTabDefaults(tabId) {
         tabContent.find('#bankAccountId').val(defaultAccount.id);
         tabContent.find('#selectedBankText').text(`${defaultAccount.bank_name} - ${defaultAccount.account_number}`);
     }
+
+    // Populate sellers dropdown
+    populateSellersDropdown(tabId);
 }
 
 /**
@@ -1774,10 +1777,14 @@ function setupDropdownHandlers(tabId, tabContent) {
 
         if (dropdownId.includes('seller')) {
             const sellerId = $(this).data('seller-id');
-            const sellerName = $(this).find('span').text();
+            const sellerName = $(this).find('.info-dropdown-title').text();
 
             // Update UI
             tabContent.find(`#${tabId}_sellerName`).text(sellerName);
+
+            // Update selected state
+            dropdown.find('.info-dropdown-item').removeClass('selected');
+            $(this).addClass('selected');
 
             // Update tab data
             const tab = orderTabs.find(t => t.id === tabId);
@@ -1819,6 +1826,9 @@ function setupDropdownHandlers(tabId, tabContent) {
                 tab.branch_shop_id = branchShopId;
                 tab.branch_shop_name = branchShopName;
             }
+
+            // Reload sellers for the new branch shop
+            loadSellersByBranch(tabId, branchShopId);
         }
 
         // Close dropdown
@@ -3837,4 +3847,117 @@ function hasSelectedInvoice(tabId) {
  */
 function searchInvoices() {
     loadInvoicesForSelection();
+}
+
+/**
+ * Populate sellers dropdown with initial data
+ */
+function populateSellersDropdown(tabId) {
+    if (!sellers || sellers.length === 0) {
+        console.log('No sellers data available');
+        return;
+    }
+
+    console.log('Populating sellers dropdown for tab:', tabId, 'with', sellers.length, 'sellers');
+
+    const tabContent = $(`#${tabId}_content`);
+    const sellerList = tabContent.find(`#${tabId}_sellerList`);
+
+    // Clear existing content
+    sellerList.empty();
+
+    // Add sellers to dropdown
+    sellers.forEach(function(seller) {
+        const sellerItem = `
+            <div class="info-dropdown-item" data-seller-id="${seller.id}">
+                <div class="info-dropdown-content">
+                    <div class="info-dropdown-title">${seller.full_name}</div>
+                    <div class="info-dropdown-subtitle">${seller.email || ''}</div>
+                </div>
+            </div>
+        `;
+        sellerList.append(sellerItem);
+    });
+
+    // Set default seller (current user if available)
+    if (currentUserId) {
+        const currentUserSeller = sellers.find(s => s.id == currentUserId);
+        if (currentUserSeller) {
+            tabContent.find(`#${tabId}_sellerName`).text(currentUserSeller.full_name);
+            const tab = orderTabs.find(t => t.id === tabId);
+            if (tab) {
+                tab.seller_id = currentUserSeller.id;
+                tab.seller_name = currentUserSeller.full_name;
+            }
+        }
+    }
+}
+
+/**
+ * Load sellers by branch shop
+ */
+function loadSellersByBranch(tabId, branchShopId) {
+    if (!branchShopId) {
+        console.log('No branch shop ID provided');
+        return;
+    }
+
+    console.log('Loading sellers for branch:', branchShopId, 'tab:', tabId);
+
+    // Show loading state
+    const tabContent = $(`#${tabId}_content`);
+    const sellerList = tabContent.find(`#${tabId}_sellerList`);
+
+    // Clear current sellers and show loading
+    sellerList.html('<div class="info-dropdown-item"><span>Đang tải...</span></div>');
+
+    // Make AJAX request to get sellers by branch
+    $.ajax({
+        url: '/admin/quick-order/sellers-by-branch',
+        method: 'GET',
+        data: {
+            branch_shop_id: branchShopId
+        },
+        success: function(response) {
+            if (response.success && response.data) {
+                console.log('Sellers loaded successfully:', response.data);
+
+                // Clear dropdown
+                sellerList.empty();
+
+                if (response.data.length === 0) {
+                    sellerList.html('<div class="info-dropdown-item"><span class="text-muted">Không có nhân viên nào</span></div>');
+                } else {
+                    // Add sellers to dropdown
+                    response.data.forEach(function(seller) {
+                        const sellerItem = `
+                            <div class="info-dropdown-item" data-seller-id="${seller.id}">
+                                <div class="info-dropdown-content">
+                                    <div class="info-dropdown-title">${seller.full_name || seller.name}</div>
+                                    <div class="info-dropdown-subtitle">${seller.email || ''}</div>
+                                </div>
+                            </div>
+                        `;
+                        sellerList.append(sellerItem);
+                    });
+                }
+
+                // Reset seller selection for this tab
+                tabContent.find(`#${tabId}_sellerName`).text('Chọn người bán');
+                const tab = orderTabs.find(t => t.id === tabId);
+                if (tab) {
+                    tab.seller_id = null;
+                    tab.seller_name = null;
+                }
+
+            } else {
+                console.error('Failed to load sellers:', response.message);
+                sellerList.html('<div class="info-dropdown-item"><span class="text-danger">Lỗi tải dữ liệu</span></div>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading sellers:', error);
+            sellerList.html('<div class="info-dropdown-item"><span class="text-danger">Lỗi kết nối</span></div>');
+        }
+    });
 }
