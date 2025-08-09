@@ -82,7 +82,7 @@
                     <div class="card-title">
                         <div class="d-flex align-items-center position-relative my-1">
                             <i class="fas fa-search fs-3 position-absolute ms-5"></i>
-                            <input type="text" data-kt-notification-table-filter="search" class="form-control form-control-solid w-250px ps-13" placeholder="Tìm kiếm thông báo..." />
+                            <input type="text" id="search-input" class="form-control form-control-solid w-250px ps-13" placeholder="Tìm kiếm thông báo..." />
                         </div>
                     </div>
                     <div class="card-toolbar">
@@ -136,6 +136,18 @@
                         <tbody class="text-gray-600 fw-semibold">
                         </tbody>
                     </table>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted">
+                            Hiển thị <span id="showing-from">1</span> - <span id="showing-to">10</span> của <span id="total-records">0</span> thông báo
+                        </div>
+                        <div>
+                            <button id="prev-page" class="btn btn-sm btn-light me-2" disabled>Trước</button>
+                            <span id="current-page">1</span> / <span id="total-pages">1</span>
+                            <button id="next-page" class="btn btn-sm btn-light ms-2" disabled>Sau</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -215,7 +227,10 @@
 </div>
 @endsection
 
-@push('styles')
+@section('styles')
+<!-- DataTables CSS -->
+<link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
 <style>
 .notification-item {
     transition: all 0.3s ease;
@@ -230,8 +245,217 @@
     border-left: 3px solid #009ef7;
 }
 </style>
-@endpush
+@endsection
 
-@push('scripts')
-<script src="{{ asset('admin-assets/assets/js/custom/apps/notifications/list.js') }}"></script>
-@endpush
+@section('scripts')
+<script>
+$(document).ready(function() {
+    // Pagination variables
+    let currentPage = 1;
+    let totalPages = 1;
+    let recordsPerPage = 10;
+
+    // Load notifications data
+    loadNotifications();
+    loadStatistics();
+
+    // Handle mark all as read
+    $('#mark-all-read-btn').on('click', function() {
+        if (confirm('Bạn có chắc chắn muốn đánh dấu tất cả thông báo đã đọc?')) {
+            $.ajax({
+                url: '/admin/notifications/mark-all-read',
+                type: 'PUT',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert('Đã đánh dấu tất cả thông báo đã đọc.');
+                        loadNotifications();
+                        loadStatistics();
+                    }
+                }
+            });
+        }
+    });
+
+    // Handle search
+    let searchTimeout;
+    $('#search-input').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            loadNotifications();
+        }, 500);
+    });
+
+    // Handle filters
+    $('#type-filter, #status-filter').on('change', function() {
+        currentPage = 1;
+        loadNotifications();
+    });
+
+    // Handle pagination
+    $('#prev-page').on('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            loadNotifications();
+        }
+    });
+
+    $('#next-page').on('click', function() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadNotifications();
+        }
+    });
+
+    function loadNotifications() {
+        const searchValue = $('#search-input').val();
+        const typeFilter = $('#type-filter').val();
+        const statusFilter = $('#status-filter').val();
+        const start = (currentPage - 1) * recordsPerPage;
+
+        $.ajax({
+            url: '/admin/notifications/data',
+            type: 'GET',
+            data: {
+                start: start,
+                length: recordsPerPage,
+                draw: 1,
+                search: { value: searchValue },
+                type: typeFilter,
+                status: statusFilter
+            },
+            success: function(response) {
+                if (response.data) {
+                    renderNotifications(response.data);
+                    updatePagination(response.recordsTotal, start);
+                }
+            }
+        });
+    }
+
+    function renderNotifications(notifications) {
+        const tbody = $('#kt_notifications_table tbody');
+        tbody.empty();
+
+        if (notifications.length === 0) {
+            tbody.append('<tr><td colspan="8" class="text-center">Không có thông báo nào</td></tr>');
+            return;
+        }
+
+        notifications.forEach(function(notification) {
+            const row = `
+                <tr>
+                    <td><input type="checkbox" value="${notification.id}"></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="${notification.type_icon} text-${notification.type_color} me-2"></i>
+                            ${notification.type_display}
+                        </div>
+                    </td>
+                    <td>${notification.title}</td>
+                    <td>${notification.message.substring(0, 100)}${notification.message.length > 100 ? '...' : ''}</td>
+                    <td><span class="badge badge-light-${getPriorityColor(notification.priority)}">${notification.priority}</span></td>
+                    <td><span class="badge badge-light-${notification.is_read ? 'success' : 'primary'}">${notification.is_read ? 'Đã đọc' : 'Chưa đọc'}</span></td>
+                    <td>${notification.time_ago}</td>
+                    <td>
+                        <div class="btn-group">
+                            ${!notification.is_read ? `<button class="btn btn-sm btn-light-primary mark-read" data-id="${notification.id}">Đánh dấu đã đọc</button>` : ''}
+                            <button class="btn btn-sm btn-light-danger delete-notification" data-id="${notification.id}">Xóa</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+
+        // Bind events using event delegation
+        $(document).off('click', '.mark-read').on('click', '.mark-read', function() {
+            const id = $(this).data('id');
+            markAsRead(id);
+        });
+
+        $(document).off('click', '.delete-notification').on('click', '.delete-notification', function() {
+            const id = $(this).data('id');
+            if (confirm('Bạn có chắc chắn muốn xóa thông báo này?')) {
+                deleteNotification(id);
+            }
+        });
+    }
+
+    function getPriorityColor(priority) {
+        const colors = {
+            'low': 'info',
+            'normal': 'secondary',
+            'high': 'warning',
+            'urgent': 'danger'
+        };
+        return colors[priority] || 'secondary';
+    }
+
+    function markAsRead(id) {
+        $.ajax({
+            url: `/admin/notifications/${id}/read`,
+            type: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    loadNotifications();
+                    loadStatistics();
+                }
+            }
+        });
+    }
+
+    function deleteNotification(id) {
+        $.ajax({
+            url: `/admin/notifications/${id}`,
+            type: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Đã xóa thông báo thành công.');
+                    loadNotifications();
+                    loadStatistics();
+                }
+            }
+        });
+    }
+
+    function loadStatistics() {
+        $.ajax({
+            url: '/admin/notifications/count',
+            type: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    $('#total-notifications').text(response.data.total || 0);
+                    $('#unread-notifications').text(response.data.unread || 0);
+                    $('#today-notifications').text(response.data.today || 0);
+                    $('#urgent-notifications').text(response.data.urgent || 0);
+                }
+            }
+        });
+    }
+
+    function updatePagination(totalRecords, start) {
+        totalPages = Math.ceil(totalRecords / recordsPerPage);
+        const end = Math.min(start + recordsPerPage, totalRecords);
+
+        $('#showing-from').text(start + 1);
+        $('#showing-to').text(end);
+        $('#total-records').text(totalRecords);
+        $('#current-page').text(currentPage);
+        $('#total-pages').text(totalPages);
+
+        // Update button states
+        $('#prev-page').prop('disabled', currentPage <= 1);
+        $('#next-page').prop('disabled', currentPage >= totalPages);
+    }
+});
+</script>
+@endsection

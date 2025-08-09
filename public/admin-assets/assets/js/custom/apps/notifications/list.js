@@ -23,8 +23,8 @@ var KTNotificationsList = function () {
                 type: 'GET',
                 data: function (d) {
                     // Add custom filters
-                    d.type = $('#notification_type_filter').val();
-                    d.unread_only = $('#unread_only_filter').is(':checked');
+                    d.type = $('#type-filter').val();
+                    d.status = $('#status-filter').val();
                 }
             },
             columns: [
@@ -32,8 +32,9 @@ var KTNotificationsList = function () {
                 { data: 'type_display' },
                 { data: 'title' },
                 { data: 'message' },
-                { data: 'created_at' },
-                { data: 'read_at' },
+                { data: 'priority' },
+                { data: 'is_read' },
+                { data: 'time_ago' },
                 { data: 'actions', orderable: false, searchable: false }
             ],
             columnDefs: [
@@ -86,7 +87,15 @@ var KTNotificationsList = function () {
                 {
                     targets: 4,
                     render: function (data, type, row) {
-                        return `<span class="text-muted">${moment(data).format('DD/MM/YYYY HH:mm')}</span>`;
+                        const priorityColors = {
+                            'low': 'info',
+                            'normal': 'secondary',
+                            'high': 'warning',
+                            'urgent': 'danger'
+                        };
+                        const color = priorityColors[data] || 'secondary';
+                        const text = data.charAt(0).toUpperCase() + data.slice(1);
+                        return `<span class="badge badge-light-${color}">${text}</span>`;
                     }
                 },
                 {
@@ -97,6 +106,12 @@ var KTNotificationsList = function () {
                         } else {
                             return `<span class="badge badge-light-primary">Chưa đọc</span>`;
                         }
+                    }
+                },
+                {
+                    targets: 6,
+                    render: function (data, type, row) {
+                        return `<span class="text-muted">${data}</span>`;
                     }
                 },
                 {
@@ -115,7 +130,7 @@ var KTNotificationsList = function () {
                                 </span>
                             </a>
                             <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-125px py-4" data-kt-menu="true">
-                                ${!row.read_at ? `<div class="menu-item px-3">
+                                ${!row.is_read ? `<div class="menu-item px-3">
                                     <a href="#" class="menu-link px-3" data-kt-notifications-table-filter="mark_read" data-id="${row.id}">
                                         Đánh dấu đã đọc
                                     </a>
@@ -154,17 +169,21 @@ var KTNotificationsList = function () {
     // Filter Datatable
     var handleFilterDatatable = function () {
         // Select filter options
-        const filterType = document.querySelector('[data-kt-notifications-table-filter="type"]');
-        const filterUnread = document.querySelector('[data-kt-notifications-table-filter="unread_only"]');
+        const filterType = document.querySelector('#type-filter');
+        const filterStatus = document.querySelector('#status-filter');
 
         // Filter datatable on submit
-        filterType.addEventListener('change', function () {
-            dt.draw();
-        });
+        if (filterType) {
+            filterType.addEventListener('change', function () {
+                dt.draw();
+            });
+        }
 
-        filterUnread.addEventListener('change', function () {
-            dt.draw();
-        });
+        if (filterStatus) {
+            filterStatus.addEventListener('change', function () {
+                dt.draw();
+            });
+        }
     }
 
     // Delete selected rows
@@ -382,17 +401,64 @@ var KTNotificationsList = function () {
     // Load statistics
     var loadStatistics = function () {
         $.ajax({
-            url: '/admin/notifications/statistics',
+            url: '/admin/notifications/count',
             type: 'GET',
             success: function(response) {
                 if (response.success) {
                     $('#total-notifications').text(response.data.total || 0);
                     $('#unread-notifications').text(response.data.unread || 0);
-                    $('#read-notifications').text(response.data.read || 0);
-                    $('#expired-notifications').text(response.data.expired || 0);
+                    $('#today-notifications').text(response.data.today || 0);
+                    $('#urgent-notifications').text(response.data.urgent || 0);
                 }
             }
         });
+    }
+
+    // Handle mark all as read
+    var handleMarkAllAsRead = function () {
+        const markAllBtn = document.querySelector('#mark-all-read-btn');
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', function () {
+                Swal.fire({
+                    text: "Bạn có chắc chắn muốn đánh dấu tất cả thông báo đã đọc?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    buttonsStyling: false,
+                    confirmButtonText: "Có, đánh dấu!",
+                    cancelButtonText: "Không, hủy",
+                    customClass: {
+                        confirmButton: "btn fw-bold btn-primary",
+                        cancelButton: "btn fw-bold btn-active-light-primary"
+                    }
+                }).then(function (result) {
+                    if (result.value) {
+                        $.ajax({
+                            url: '/admin/notifications/mark-all-read',
+                            type: 'PUT',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        text: "Đã đánh dấu tất cả thông báo đã đọc.",
+                                        icon: "success",
+                                        buttonsStyling: false,
+                                        confirmButtonText: "Ok, đã hiểu!",
+                                        customClass: {
+                                            confirmButton: "btn fw-bold btn-primary",
+                                        }
+                                    }).then(function () {
+                                        dt.draw();
+                                        loadStatistics();
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        }
     }
 
     // Public methods
@@ -410,6 +476,7 @@ var KTNotificationsList = function () {
             handleFilterDatatable();
             handleDeleteRows();
             handleMarkAsRead();
+            handleMarkAllAsRead();
             loadStatistics();
         }
     }

@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Customer;
+use App\Helpers\PeriodHelper;
 
 class DashboardController extends Controller
 {
@@ -72,17 +73,16 @@ class DashboardController extends Controller
         try {
             $period = $request->get('period', 'today'); // today, yesterday, month, last_month, year
 
-            // Validate period
-            $validPeriods = ['today', 'yesterday', 'month', 'last_month', 'year'];
-            if (!in_array($period, $validPeriods)) {
+            // Validate period using PeriodHelper
+            if (!PeriodHelper::isValidPeriod($period)) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Invalid period. Valid periods: ' . implode(', ', $validPeriods)
+                    'message' => 'Invalid period. Valid periods: ' . implode(', ', PeriodHelper::getValidPeriods())
                 ], 400);
             }
 
-            // Get date range for period filter
-            $dateRange = $this->getDateRangeForPeriod($period);
+            // Get date range for period filter using PeriodHelper
+            $dateRange = PeriodHelper::getDateRangeForPeriod($period);
 
             // Calculate period-specific statistics
             $periodStats = $this->calculatePeriodStats($dateRange, $period);
@@ -103,28 +103,17 @@ class DashboardController extends Controller
         // Get inventory statistics
         $inventoryStats = $this->calculateInventoryStats();
 
+            // Get period info using PeriodHelper
+            $periodInfo = PeriodHelper::getPeriodInfo($period);
+
             // Combine period stats with overall stats and inventory stats
-            $stats = array_merge($overallStats, $periodStats, $inventoryStats, [
-                'period' => $period,
-                'period_name' => $this->getPeriodName($period),
-                'date_range' => [
-                    'start' => $dateRange['start']->toDateString(),
-                    'end' => $dateRange['end']->toDateString(),
-                ]
-            ]);
+            $stats = array_merge($overallStats, $periodStats, $inventoryStats, $periodInfo);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Statistics retrieved successfully',
                 'data' => $stats,
-                'meta' => [
-                    'period' => $period,
-                    'period_name' => $this->getPeriodName($period),
-                    'date_range' => [
-                        'start' => $dateRange['start']->format('Y-m-d H:i:s'),
-                        'end' => $dateRange['end']->format('Y-m-d H:i:s'),
-                    ]
-                ]
+                'meta' => $periodInfo
             ], 200);
 
         } catch (\Exception $e) {
@@ -191,8 +180,8 @@ class DashboardController extends Controller
             $type = $request->get('type', 'quantity'); // quantity or revenue
             $period = $request->get('period', 'month'); // today, yesterday, month, last_month, year
 
-            // Get date range for period filter
-            $dateRange = $this->getDateRangeForPeriod($period);
+            // Get date range for period filter using PeriodHelper
+            $dateRange = PeriodHelper::getDateRangeForPeriod($period);
 
             // Build query based on invoices and invoice_items
             $orderByField = $type === 'revenue' ? 'total_revenue' : 'sold_quantity';
@@ -243,7 +232,7 @@ class DashboardController extends Controller
                 'meta' => [
                     'type' => $type,
                     'period' => $period,
-                    'period_name' => $this->getPeriodName($period),
+                    'period_name' => PeriodHelper::getPeriodName($period),
                     'limit' => $limit,
                     'date_range' => [
                         'start' => $dateRange['start'] ? $dateRange['start']->format('Y-m-d H:i:s') : null,
@@ -262,63 +251,7 @@ class DashboardController extends Controller
         }
     }
 
-    /**
-     * Helper method to get date range for period
-     */
-    private function getDateRangeForPeriod($period) {
-        switch ($period) {
-            case 'today':
-                return [
-                    'start' => \Carbon\Carbon::today(),
-                    'end' => \Carbon\Carbon::today()->endOfDay()
-                ];
-            case 'yesterday':
-                return [
-                    'start' => \Carbon\Carbon::yesterday(),
-                    'end' => \Carbon\Carbon::yesterday()->endOfDay()
-                ];
-            case 'month':
-                return [
-                    'start' => \Carbon\Carbon::now()->startOfMonth(),
-                    'end' => \Carbon\Carbon::now()->endOfMonth()
-                ];
-            case 'last_month':
-                return [
-                    'start' => \Carbon\Carbon::now()->subMonth()->startOfMonth(),
-                    'end' => \Carbon\Carbon::now()->subMonth()->endOfMonth()
-                ];
-            case 'year':
-                return [
-                    'start' => \Carbon\Carbon::now()->startOfYear(),
-                    'end' => \Carbon\Carbon::now()->endOfYear()
-                ];
-            default:
-                return [
-                    'start' => \Carbon\Carbon::now()->startOfMonth(),
-                    'end' => \Carbon\Carbon::now()->endOfMonth()
-                ];
-        }
-    }
 
-    /**
-     * Helper method to get period name
-     */
-    private function getPeriodName($period) {
-        switch ($period) {
-            case 'today':
-                return 'hôm nay';
-            case 'yesterday':
-                return 'hôm qua';
-            case 'month':
-                return 'tháng này';
-            case 'last_month':
-                return 'tháng trước';
-            case 'year':
-                return 'năm nay';
-            default:
-                return 'tháng này';
-        }
-    }
 
     /**
      * Get revenue chart data
@@ -475,14 +408,35 @@ class DashboardController extends Controller
             ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
             ->get();
 
+        // Get payments for the period (receipts and disbursements)
+        $receipts = \App\Models\Payment::where('payment_type', 'receipt')
+            ->whereIn('status', ['completed'])
+            ->whereBetween('payment_date', [$dateRange['start'], $dateRange['end']])
+            ->get();
+
+        $payments = \App\Models\Payment::where('payment_type', 'payment')
+            ->whereIn('status', ['completed'])
+            ->whereBetween('payment_date', [$dateRange['start'], $dateRange['end']])
+            ->get();
+
         // Calculate statistics
         $ordersRevenue = $orders->sum('final_amount');
         $invoicesRevenue = $invoices->sum('total_amount');
         $totalRevenue = $ordersRevenue + $invoicesRevenue;
 
+        // Calculate invoice subtotal and discount statistics
+        $invoicesSubtotal = $invoices->sum(function($invoice) {
+            return $invoice->subtotal + $invoice->tax_amount;
+        });
+        $invoicesDiscount = $invoices->sum('discount_amount');
+
         // Calculate return statistics
         $returnOrdersCount = $returnOrders->count();
         $returnRevenue = $returnOrders->sum('total_amount');
+
+        // Calculate payment statistics
+        $receiptsCount = $receipts->count();
+        $paymentsCount = $payments->count();
 
         $ordersCount = $orders->count();
         $invoicesCount = $invoices->count();
@@ -503,6 +457,10 @@ class DashboardController extends Controller
             'period_invoices' => $invoicesCount,
             'period_returns' => $returnOrdersCount,
             'return_revenue' => (float) $returnRevenue,
+            'invoices_period_subtotal' => (float) $invoicesSubtotal,
+            'invoices_period_discount' => (float) $invoicesDiscount,
+            'receipts_period_count' => $receiptsCount,
+            'payments_period_count' => $paymentsCount,
             'period_transactions' => $totalTransactions,
             'period_customers' => $uniqueCustomers,
             'avg_transaction_value' => (float) $avgTransactionValue,

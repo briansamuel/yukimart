@@ -195,6 +195,10 @@ class DashboardService
                 return self::getTodayRevenueChart();
             case 'yesterday':
                 return self::getYesterdayRevenueChart();
+            case 'this_week':
+                return self::getThisWeekRevenueChart();
+            case 'last_week':
+                return self::getLastWeekRevenueChart();
             case 'last_month':
                 return self::getLastMonthRevenueChart();
             case 'year':
@@ -394,6 +398,52 @@ class DashboardService
             'categories' => $hours,
             'data' => $data,
             'series_name' => 'Doanh thu hôm qua (triệu VNĐ)'
+        ];
+    }
+
+    private static function getThisWeekRevenueChart() {
+        $startOfWeek = \Carbon\Carbon::now()->startOfWeek();
+        $endOfWeek = \Carbon\Carbon::now()->endOfWeek();
+        $days = [];
+        $data = [];
+
+        for ($date = $startOfWeek->copy(); $date->lte($endOfWeek); $date->addDay()) {
+            $days[] = $date->format('d/m');
+
+            // Lấy revenue từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $revenue = \App\Models\Invoice::whereDate('created_at', $date)
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_amount');
+            $data[] = $revenue / 1000000; // Convert to millions
+        }
+
+        return [
+            'categories' => $days,
+            'data' => $data,
+            'series_name' => 'Doanh thu tuần này (triệu VNĐ)'
+        ];
+    }
+
+    private static function getLastWeekRevenueChart() {
+        $startOfLastWeek = \Carbon\Carbon::now()->subWeek()->startOfWeek();
+        $endOfLastWeek = \Carbon\Carbon::now()->subWeek()->endOfWeek();
+        $days = [];
+        $data = [];
+
+        for ($date = $startOfLastWeek->copy(); $date->lte($endOfLastWeek); $date->addDay()) {
+            $days[] = $date->format('d/m');
+
+            // Lấy revenue từ hóa đơn đã hoàn thành, không phải từ đơn hàng
+            $revenue = \App\Models\Invoice::whereDate('created_at', $date)
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_amount');
+            $data[] = $revenue / 1000000; // Convert to millions
+        }
+
+        return [
+            'categories' => $days,
+            'data' => $data,
+            'series_name' => 'Doanh thu tuần trước (triệu VNĐ)'
         ];
     }
 
