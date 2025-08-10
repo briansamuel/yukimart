@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\BranchShop;
 use App\Http\Resources\V1\InvoiceResource;
+use App\Http\Resources\V1\InvoiceListResource;
 use App\Http\Resources\V1\CustomerResource;
 use App\Http\Resources\V1\ProductResource;
 use Illuminate\Http\Request;
@@ -23,7 +24,13 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Invoice::with(['customer', 'branchShop', 'creator', 'seller', 'invoiceItems.product:id,product_name,product_thumbnail,sku', 'payments']);
+            // Optimized eager loading for list API - load essential data with items details
+            $query = Invoice::with([
+                'branchShop:id,name',
+                'invoiceItems:id,invoice_id,product_id,product_name,product_sku,quantity,unit_price',
+                'invoiceItems.product:id,product_thumbnail',
+                'payments'
+            ]);
             
             // Apply filters
             if ($request->filled('status')) {
@@ -75,7 +82,7 @@ class InvoiceController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Invoices retrieved successfully',
-                'data' => InvoiceResource::collection($invoices),
+                'data' => InvoiceListResource::collection($invoices),
                 'meta' => [
                     'current_page' => $invoices->currentPage(),
                     'last_page' => $invoices->lastPage(),
