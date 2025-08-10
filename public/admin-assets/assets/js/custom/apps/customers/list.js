@@ -11,10 +11,11 @@ var KTCustomersList = function () {
 
     // Private functions
     var initCustomerTable = function () {
-        // Set date data order
-        const tableRows = table.querySelectorAll('tbody tr');
+        if (!table) {
+            return;
+        }
 
-        // Init datatable --- more info on datatables: https://datatables.net/manual/
+        // Init datatable
         datatable = $(table).DataTable({
             "info": false,
             'order': [],
@@ -29,85 +30,125 @@ var KTCustomersList = function () {
                 }
             },
             'columns': [
-                { data: 'id', name: 'id', orderable: false, searchable: false, render: function(data, type, row) {
-                    return `<div class="form-check form-check-sm form-check-custom form-check-solid">
-                                <input class="form-check-input widget-13-check" type="checkbox" value="${data}" />
-                            </div>`;
-                }},
-                { data: 'name', name: 'name', render: function(data, type, row) {
-                    return `<div class="d-flex align-items-center">
-                                <div class="symbol symbol-circle symbol-50px overflow-hidden me-3">
-                                    <a href="/admin/customers/${row.id}">
-                                        ${row.avatar_url ? 
-                                            `<div class="symbol-label"><img src="${row.avatar_url}" alt="${data}" class="w-100" /></div>` :
-                                            `<div class="symbol-label fs-3 bg-light-primary text-primary">${data.charAt(0).toUpperCase()}</div>`
-                                        }
-                                    </a>
-                                </div>
-                                <div class="d-flex flex-column">
-                                    <a href="/admin/customers/${row.id}" class="text-gray-800 text-hover-primary mb-1">${data}</a>
-                                    <span class="text-muted">${row.email || ''}</span>
-                                </div>
-                            </div>`;
-                }},
-                { data: 'phone', name: 'phone', render: function(data, type, row) {
-                    return `<div class="d-flex flex-column">
-                                <span class="text-gray-800 mb-1">${data || '-'}</span>
-                                <span class="text-muted">${row.email || '-'}</span>
-                            </div>`;
-                }},
-                { data: 'customer_type_display', name: 'customer_type', render: function(data, type, row) {
-                    const badgeClass = row.customer_type === 'business' ? 'badge-light-primary' : 'badge-light-info';
-                    return `<span class="badge ${badgeClass}">${data}</span>`;
-                }},
-                { data: 'orders_count', name: 'orders_count', render: function(data, type, row) {
-                    return `<span class="text-gray-800 fw-bold">${data}</span>`;
-                }},
-                { data: 'total_spent', name: 'total_spent', render: function(data, type, row) {
-                    return `<span class="text-gray-800 fw-bold">${data}₫</span>`;
-                }},
-                { data: 'last_order_date', name: 'last_order_date', render: function(data, type, row) {
-                    return data || '-';
-                }},
-                { data: 'status_badge', name: 'status', render: function(data, type, row) {
-                    return data;
-                }},
-                { data: 'id', name: 'actions', orderable: false, searchable: false, render: function(data, type, row) {
-                    return `<a href="#" class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
-                                Thao tác
-                                <i class="ki-duotone ki-down fs-5 ms-1"></i>
-                            </a>
-                            <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-125px py-4" data-kt-menu="true">
-                                <div class="menu-item px-3">
-                                    <a href="/admin/customers/${data}" class="menu-link px-3">Xem</a>
-                                </div>
-                                <div class="menu-item px-3">
-                                    <a href="/admin/customers/${data}/edit" class="menu-link px-3">Sửa</a>
-                                </div>
-                                <div class="menu-item px-3">
-                                    <a href="#" class="menu-link px-3" data-kt-customer-table-filter="delete_row" data-customer-id="${data}" data-customer-name="${row.name}">Xóa</a>
-                                </div>
-                            </div>`;
-                }}
+                {
+                    data: 'id',
+                    name: 'id',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row) {
+                        return '<div class="form-check form-check-sm form-check-custom form-check-solid">' +
+                               '<input class="form-check-input widget-13-check" type="checkbox" value="' + data + '" />' +
+                               '</div>';
+                    }
+                },
+                {
+                    data: 'name',
+                    name: 'name',
+                    render: function(data, type, row) {
+                        var avatarHtml = row.avatar_url ?
+                            '<div class="symbol-label"><img src="' + row.avatar_url + '" alt="' + data + '" class="w-100" /></div>' :
+                            '<div class="symbol-label fs-3 bg-light-primary text-primary">' + data.charAt(0).toUpperCase() + '</div>';
+
+                        return '<div class="d-flex align-items-center">' +
+                               '<div class="symbol symbol-circle symbol-50px overflow-hidden me-3">' +
+                               '<a href="/admin/customers/' + row.id + '">' + avatarHtml + '</a>' +
+                               '</div>' +
+                               '<div class="d-flex flex-column">' +
+                               '<a href="/admin/customers/' + row.id + '" class="text-gray-800 text-hover-primary mb-1">' + data + '</a>' +
+                               '<span class="text-muted">' + (row.email || '') + '</span>' +
+                               '</div>' +
+                               '</div>';
+                    }
+                },
+                {
+                    data: 'phone',
+                    name: 'phone',
+                    render: function(data, type, row) {
+                        return '<div class="d-flex flex-column">' +
+                               '<span class="text-gray-800 mb-1">' + (data || '-') + '</span>' +
+                               '<span class="text-muted">' + (row.email || '-') + '</span>' +
+                               '</div>';
+                    }
+                },
+                {
+                    data: 'customer_type_display',
+                    name: 'customer_type',
+                    render: function(data, type, row) {
+                        var badgeClass = row.customer_type === 'business' ? 'badge-light-primary' : 'badge-light-info';
+                        return '<span class="badge ' + badgeClass + '">' + data + '</span>';
+                    }
+                },
+                {
+                    data: 'orders_count',
+                    name: 'orders_count',
+                    render: function(data, type, row) {
+                        return '<span class="text-gray-800 fw-bold">' + data + '</span>';
+                    }
+                },
+                {
+                    data: 'total_spent',
+                    name: 'total_spent',
+                    render: function(data, type, row) {
+                        return '<span class="text-gray-800 fw-bold">' + data + '₫</span>';
+                    }
+                },
+                {
+                    data: 'last_order_date',
+                    name: 'last_order_date',
+                    render: function(data, type, row) {
+                        return data || '-';
+                    }
+                },
+                {
+                    data: 'status_badge',
+                    name: 'status',
+                    render: function(data, type, row) {
+                        return data;
+                    }
+                },
+                {
+                    data: 'id',
+                    name: 'actions',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row) {
+                        return '<a href="#" class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">' +
+                               'Thao tác <i class="ki-duotone ki-down fs-5 ms-1"></i>' +
+                               '</a>' +
+                               '<div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-125px py-4" data-kt-menu="true">' +
+                               '<div class="menu-item px-3"><a href="/admin/customers/' + data + '" class="menu-link px-3">Xem</a></div>' +
+                               '<div class="menu-item px-3"><a href="/admin/customers/' + data + '/edit" class="menu-link px-3">Sửa</a></div>' +
+                               '<div class="menu-item px-3"><a href="#" class="menu-link px-3" data-kt-customer-table-filter="delete_row" data-customer-id="' + data + '" data-customer-name="' + row.name + '">Xóa</a></div>' +
+                               '</div>';
+                    }
+                }
             ],
             "columnDefs": [
-                { orderable: false, targets: 0 }, // Disable ordering on column 0 (checkbox)
-                { orderable: false, targets: 8 }, // Disable ordering on column 8 (actions)
+                { orderable: false, targets: 0 },
+                { orderable: false, targets: 8 }
             ]
         });
 
-        // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+        // Re-init functions on every table re-draw
         datatable.on('draw', function () {
             initToggleToolbar();
             handleDeleteRows();
             toggleToolbars();
-            KTMenu.createInstances();
+            if (typeof KTMenu !== 'undefined') {
+                KTMenu.createInstances();
+            }
         });
-    }
+    };
 
     // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
     var handleSearchDatatable = function () {
         const filterSearch = document.querySelector('[data-kt-customer-table-filter="search"]');
+
+        // Only proceed if search input exists
+        if (!filterSearch) {
+            return;
+        }
+
         filterSearch.addEventListener('keyup', function (e) {
             datatable.search(e.target.value).draw();
         });
@@ -117,8 +158,19 @@ var KTCustomersList = function () {
     var handleFilterDatatable = function () {
         // Select filter options
         const filterForm = document.querySelector('[data-kt-customer-table-filter="form"]');
+
+        // Only proceed if filter form exists
+        if (!filterForm) {
+            return;
+        }
+
         const filterButton = filterForm.querySelector('[data-kt-customer-table-filter="filter"]');
         const selectOptions = filterForm.querySelectorAll('select');
+
+        // Only proceed if filter button exists
+        if (!filterButton) {
+            return;
+        }
 
         // Filter datatable on submit
         filterButton.addEventListener('click', function () {
@@ -240,16 +292,24 @@ var KTCustomersList = function () {
         // Select reset button
         const resetButton = document.querySelector('[data-kt-customer-table-filter="reset"]');
 
+        // Only proceed if reset button exists
+        if (!resetButton) {
+            return;
+        }
+
         // Reset datatable
         resetButton.addEventListener('click', function () {
             // Select filter options
             const filterForm = document.querySelector('[data-kt-customer-table-filter="form"]');
-            const selectOptions = filterForm.querySelectorAll('select');
 
-            // Reset select2 values -- more info: https://select2.org/programmatic-control/add-select-clear-items
-            selectOptions.forEach(select => {
-                $(select).val('').trigger('change');
-            });
+            if (filterForm) {
+                const selectOptions = filterForm.querySelectorAll('select');
+
+                // Reset select2 values -- more info: https://select2.org/programmatic-control/add-select-clear-items
+                selectOptions.forEach(select => {
+                    $(select).val('').trigger('change');
+                });
+            }
 
             // Reset datatable --- official docs reference: https://datatables.net/reference/api/search()
             datatable.search('').draw();
@@ -308,35 +368,25 @@ var KTCustomersList = function () {
 
     // Load statistics
     var loadStatistics = function() {
-        console.log('Loading customer statistics...');
         fetch('/admin/customers/statistics')
-            .then(response => {
-                console.log('Statistics response status:', response.status);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Statistics data:', data);
                 if (data.success) {
-                    const totalCustomersEl = document.getElementById('total_customers');
-                    const activeCustomersEl = document.getElementById('active_customers');
-                    const newCustomersEl = document.getElementById('new_customers');
-                    const totalRevenueEl = document.getElementById('total_revenue');
+                    var totalCustomersEl = document.getElementById('total_customers');
+                    var activeCustomersEl = document.getElementById('active_customers');
+                    var newCustomersEl = document.getElementById('new_customers');
+                    var totalRevenueEl = document.getElementById('total_revenue');
 
                     if (totalCustomersEl) totalCustomersEl.textContent = data.data.total_customers;
                     if (activeCustomersEl) activeCustomersEl.textContent = data.data.active_customers;
                     if (newCustomersEl) newCustomersEl.textContent = data.data.new_customers_this_month;
                     if (totalRevenueEl) totalRevenueEl.textContent = data.data.total_revenue + '₫';
-
-                    console.log('Statistics updated successfully');
-                } else {
-                    console.error('Statistics API returned error:', data);
-                }
                 }
             })
             .catch(error => {
                 console.error('Error loading statistics:', error);
             });
-    }
+    };
 
     // Public methods
     return {

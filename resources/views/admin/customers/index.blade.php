@@ -209,5 +209,5 @@
 @endsection
 
 @section('scripts')
-    <script src="{{ asset('admin-assets/assets/js/custom/apps/customers/list.js') }}"></script>
+    <script src="{{ asset('admin-assets/assets/js/custom/apps/customers/list-new.js') }}"></script>
 @endsection
