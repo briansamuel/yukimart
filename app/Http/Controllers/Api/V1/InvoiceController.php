@@ -23,7 +23,7 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Invoice::with(['customer', 'branchShop', 'creator', 'seller', 'invoiceItems']);
+            $query = Invoice::with(['customer', 'branchShop', 'creator', 'seller', 'invoiceItems.product:id,product_name,product_thumbnail,sku', 'payments']);
             
             // Apply filters
             if ($request->filled('status')) {
@@ -41,7 +41,11 @@ class InvoiceController extends Controller
             if ($request->filled('branch_shop_id')) {
                 $query->where('branch_shop_id', $request->branch_shop_id);
             }
-            
+
+            if ($request->filled('sales_channel')) {
+                $query->where('sales_channel', $request->sales_channel);
+            }
+
             if ($request->filled('date_from')) {
                 $query->whereDate('invoice_date', '>=', $request->date_from);
             }
@@ -99,10 +103,10 @@ class InvoiceController extends Controller
     {
         try {
             $invoice = Invoice::with([
-                'customer', 
-                'branchShop', 
-                'invoiceItems.product', 
-                'creator', 
+                'customer',
+                'branchShop',
+                'invoiceItems.product:id,product_name,product_thumbnail,sku',
+                'creator',
                 'seller',
                 'payments'
             ])->findOrFail($id);
@@ -133,6 +137,7 @@ class InvoiceController extends Controller
                 'customer_name' => 'required_if:customer_id,null|string|max:255',
                 'branch_shop_id' => 'required|exists:branch_shops,id',
                 'invoice_type' => 'required|in:sale,service,other',
+                'sales_channel' => 'nullable|in:offline,online,marketplace,social_media,phone_order',
                 'invoice_date' => 'required|date',
                 'due_date' => 'nullable|date|after_or_equal:invoice_date',
                 'payment_terms' => 'nullable|string',
@@ -163,8 +168,8 @@ class InvoiceController extends Controller
             DB::beginTransaction();
             
             $invoiceData = $request->only([
-                'customer_id', 'customer_name', 'branch_shop_id', 'invoice_type',
-                'invoice_date', 'due_date', 'payment_terms', 'notes', 
+                'customer_id', 'customer_name', 'branch_shop_id', 'invoice_type', 'sales_channel',
+                'invoice_date', 'due_date', 'payment_terms', 'notes',
                 'terms_conditions', 'reference_number'
             ]);
             
@@ -263,6 +268,7 @@ class InvoiceController extends Controller
                 'customer_id' => 'nullable|exists:customers,id',
                 'customer_name' => 'required_if:customer_id,null|string|max:255',
                 'invoice_type' => 'sometimes|in:sale,service,other',
+                'sales_channel' => 'sometimes|in:offline,online,marketplace,social_media,phone_order',
                 'invoice_date' => 'sometimes|date',
                 'due_date' => 'nullable|date|after_or_equal:invoice_date',
                 'payment_terms' => 'nullable|string',
@@ -282,7 +288,7 @@ class InvoiceController extends Controller
             }
             
             $updateData = $request->only([
-                'customer_id', 'customer_name', 'invoice_type', 'invoice_date',
+                'customer_id', 'customer_name', 'invoice_type', 'sales_channel', 'invoice_date',
                 'due_date', 'payment_terms', 'notes', 'terms_conditions',
                 'reference_number', 'status', 'payment_status'
             ]);

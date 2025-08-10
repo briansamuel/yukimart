@@ -18,6 +18,7 @@ class InvoiceResource extends JsonResource
             'id' => $this->id,
             'invoice_number' => $this->invoice_number,
             'invoice_type' => $this->invoice_type,
+            'sales_channel' => $this->sales_channel,
             'status' => $this->status,
             'payment_status' => $this->payment_status,
             'invoice_date' => $this->invoice_date?->format('Y-m-d'),
@@ -74,6 +75,27 @@ class InvoiceResource extends JsonResource
             'payments' => $this->whenLoaded('payments', function () {
                 return PaymentResource::collection($this->payments);
             }),
+
+            // Payment methods summary
+            'payment_methods' => $this->whenLoaded('payments', function () {
+                $completedPayments = $this->payments->where('status', 'completed');
+
+                if ($completedPayments->isEmpty()) {
+                    return [];
+                }
+
+                // Group payments by method and sum amounts
+                $methodSummary = $completedPayments->groupBy('payment_method')->map(function ($payments, $method) {
+                    return [
+                        'method' => $method,
+                        'method_label' => $this->getPaymentMethodLabel($method),
+                        'total_amount' => (float) $payments->sum('actual_amount'),
+                        'payment_count' => $payments->count(),
+                    ];
+                })->values();
+
+                return $methodSummary;
+            }),
             
             // User information
             'created_by' => $this->whenLoaded('creator', function () {
@@ -96,8 +118,25 @@ class InvoiceResource extends JsonResource
             'days_overdue' => $this->when($this->due_date && $this->due_date->isPast(), function () {
                 return $this->due_date->diffInDays(now());
             }),
-            'payment_percentage' => $this->total_amount > 0 ? 
+            'payment_percentage' => $this->total_amount > 0 ?
                 round(($this->amount_paid / $this->total_amount) * 100, 2) : 0,
         ];
+    }
+
+    /**
+     * Get payment method label in Vietnamese
+     */
+    private function getPaymentMethodLabel($method)
+    {
+        $labels = [
+            'cash' => 'Tiền mặt',
+            'card' => 'Thẻ',
+            'transfer' => 'Chuyển khoản',
+            'check' => 'Séc',
+            'points' => 'Điểm thưởng',
+            'other' => 'Khác',
+        ];
+
+        return $labels[$method] ?? ucfirst($method);
     }
 }

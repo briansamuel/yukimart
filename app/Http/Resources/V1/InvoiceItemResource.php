@@ -23,6 +23,11 @@ class InvoiceItemResource extends JsonResource
             'product_name' => $this->product_name,
             'product_sku' => $this->product_sku,
             'product_description' => $this->product_description,
+            'product_image' => $this->whenLoaded('product', function () {
+                return $this->product && $this->product->product_thumbnail
+                    ? $this->product->product_thumbnail
+                    : null;
+            }),
             
             // Product relationship (current product data)
             'product' => $this->whenLoaded('product', function () {
