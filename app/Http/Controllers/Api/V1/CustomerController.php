@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Http\Resources\V1\CustomerResource;
+use App\Http\Resources\V1\CustomerListResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,8 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Customer::with(['branchShop']);
+            // Optimized eager loading for list API - only load essential data
+            $query = Customer::with(['branchShop:id,name']);
             
             // Apply filters
             if ($request->filled('customer_type')) {
@@ -59,7 +61,7 @@ class CustomerController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Customers retrieved successfully',
-                'data' => CustomerResource::collection($customers),
+                'data' => CustomerListResource::collection($customers),
                 'meta' => [
                     'current_page' => $customers->currentPage(),
                     'last_page' => $customers->lastPage(),
