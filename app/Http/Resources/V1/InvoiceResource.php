@@ -36,7 +36,25 @@ class InvoiceResource extends JsonResource
                 return new BranchShopResource($this->branchShop);
             }),
             'branch_shop_id' => $this->branch_shop_id,
-            
+
+            // User information
+            'sold_by' => $this->whenLoaded('seller', function () {
+                return [
+                    'id' => $this->seller->id,
+                    'name' => $this->seller->full_name ?? $this->seller->username,
+                    'username' => $this->seller->username,
+                    'email' => $this->seller->email,
+                ];
+            }),
+            'created_by' => $this->whenLoaded('creator', function () {
+                return [
+                    'id' => $this->creator->id,
+                    'name' => $this->creator->full_name ?? $this->creator->username,
+                    'username' => $this->creator->username,
+                    'email' => $this->creator->email,
+                ];
+            }),
+
             // Financial information
             'subtotal' => (float) $this->subtotal,
             'tax_rate' => (float) $this->tax_rate,
@@ -97,14 +115,41 @@ class InvoiceResource extends JsonResource
                 return $methodSummary;
             }),
             
-            // User information
+            // Payment information
+            'payments' => $this->whenLoaded('payments', function () {
+                return $this->payments->map(function ($payment) {
+                    return [
+                        'id' => $payment->id,
+                        'payment_number' => $payment->payment_number,
+                        'payment_type' => $payment->payment_type,
+                        'payment_method' => $payment->payment_method,
+                        'payment_method_label' => $payment->payment_method_display,
+                        'amount' => (float) $payment->amount,
+                        'actual_amount' => (float) $payment->actual_amount,
+                        'status' => $payment->status,
+                        'payment_date' => $payment->payment_date,
+                        'description' => $payment->description,
+                        'notes' => $payment->notes,
+                        'created_by' => $payment->relationLoaded('creator') && $payment->creator ? [
+                            'id' => $payment->creator->id,
+                            'name' => $payment->creator->full_name ?? $payment->creator->username,
+                            'username' => $payment->creator->username,
+                            'email' => $payment->creator->email,
+                        ] : null,
+                        'created_at' => $payment->created_at,
+                        'updated_at' => $payment->updated_at,
+                    ];
+                });
+            }),
+
+            // User information (full user data)
             'created_by' => $this->whenLoaded('creator', function () {
                 return new UserResource($this->creator);
             }),
-            'sold_by' => $this->whenLoaded('seller', function () {
+            'seller' => $this->whenLoaded('seller', function () {
                 return new UserResource($this->seller);
             }),
-            
+
             // Timestamps
             'sent_at' => $this->sent_at,
             'cancelled_at' => $this->cancelled_at,

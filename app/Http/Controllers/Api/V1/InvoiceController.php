@@ -29,7 +29,10 @@ class InvoiceController extends Controller
                 'branchShop:id,name',
                 'invoiceItems:id,invoice_id,product_id,product_name,product_sku,quantity,unit_price',
                 'invoiceItems.product:id,product_thumbnail',
-                'payments'
+                'seller:id,username,full_name',
+                'creator:id,username,full_name',
+                'payments:id,reference_type,reference_id,payment_number,payment_method,amount,actual_amount,status,payment_date,created_by,created_at',
+                'payments.creator:id,username,full_name'
             ]);
             
             // Apply filters
@@ -113,9 +116,10 @@ class InvoiceController extends Controller
                 'customer',
                 'branchShop',
                 'invoiceItems.product:id,product_name,product_thumbnail,sku',
-                'creator',
-                'seller',
-                'payments'
+                'creator:id,username,full_name,email',
+                'seller:id,username,full_name,email',
+                'payments:id,reference_type,reference_id,payment_number,payment_type,payment_method,amount,actual_amount,status,payment_date,description,notes,created_by,created_at,updated_at',
+                'payments.creator:id,username,full_name,email'
             ])->findOrFail($id);
             
             return response()->json([

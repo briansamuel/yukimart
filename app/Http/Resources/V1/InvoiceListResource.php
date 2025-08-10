@@ -35,7 +35,21 @@ class InvoiceListResource extends JsonResource
             'branch_shop_name' => $this->whenLoaded('branchShop', function () {
                 return $this->branchShop?->name;
             }),
-            
+
+            // User information
+            'sold_by' => $this->whenLoaded('seller', function () {
+                return [
+                    'id' => $this->seller->id,
+                    'name' => $this->seller->full_name ?? $this->seller->username,
+                ];
+            }),
+            'created_by' => $this->whenLoaded('creator', function () {
+                return [
+                    'id' => $this->creator->id,
+                    'name' => $this->creator->full_name ?? $this->creator->username,
+                ];
+            }),
+
             // Financial information (essential only)
             'subtotal' => (float) $this->subtotal,
             'total_amount' => (float) $this->total_amount,
@@ -54,6 +68,7 @@ class InvoiceListResource extends JsonResource
                             : null,
                         'quantity' => (int) $item->quantity,
                         'unit_price' => (float) $item->unit_price,
+                        'total_price' => (float) ($item->unit_price * $item->quantity),
                     ];
                 });
             }),
@@ -78,7 +93,28 @@ class InvoiceListResource extends JsonResource
 
                 return $methodSummary;
             }),
-            
+
+            // Payment details
+            'payments' => $this->whenLoaded('payments', function () {
+                return $this->payments->map(function ($payment) {
+                    return [
+                        'id' => $payment->id,
+                        'payment_number' => $payment->payment_number,
+                        'payment_method' => $payment->payment_method,
+                        'payment_method_label' => $payment->payment_method_display,
+                        'amount' => (float) $payment->amount,
+                        'actual_amount' => (float) $payment->actual_amount,
+                        'status' => $payment->status,
+                        'payment_date' => $payment->payment_date,
+                        'created_by' => $payment->relationLoaded('creator') && $payment->creator ? [
+                            'id' => $payment->creator->id,
+                            'name' => $payment->creator->full_name ?? $payment->creator->username,
+                        ] : null,
+                        'created_at' => $payment->created_at,
+                    ];
+                });
+            }),
+
             // Computed properties (essential only)
             'payment_percentage' => $this->total_amount > 0 ?
                 round(($this->amount_paid / $this->total_amount) * 100, 2) : 0,
