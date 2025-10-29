@@ -915,13 +915,13 @@ class ProductController extends BaseTenantController
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không th�?tạo thuộc tính: ' . $e->getMessage()
+                'message' => 'Không thể tạo thuộc tính: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -954,7 +954,7 @@ class ProductController extends BaseTenantController
             if ($existingValue) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Giá tr�?n?y ?ã tồn tại cho thuộc tính'
+                    'message' => 'Giá trị này đã tồn tại cho thuộc tính'
                 ], 422);
             }
 
@@ -970,19 +970,19 @@ class ProductController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Tạo giá tr�?thuộc tính th?nh công',
+                'message' => 'Tạo giá trị thuộc tính thành công',
                 'data' => $attributeValue
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không th�?tạo giá tr�?thuộc tính: ' . $e->getMessage()
+                'message' => 'Không thể tạo giá trị thuộc tính: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1014,7 +1014,7 @@ class ProductController extends BaseTenantController
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không th�?lấy danh sách giá tr�? ' . $e->getMessage()
+                'message' => 'Không thể lấy danh sách giá trị ' . $e->getMessage()
             ], 500);
         }
     }
