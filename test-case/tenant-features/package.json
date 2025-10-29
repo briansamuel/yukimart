@@ -1,0 +1,28 @@
+{
+  "name": "yukimart-tenant-feature-tests",
+  "version": "1.0.0",
+  "description": "Automated testing for YukiMart tenant features",
+  "main": "tenant-feature-test.js",
+  "scripts": {
+    "test": "node tenant-feature-test.js",
+    "test:products": "node specific-tests/products-test.js",
+    "test:orders": "node specific-tests/orders-test.js",
+    "test:invoices": "node specific-tests/invoices-test.js",
+    "test:returns": "node specific-tests/returns-test.js",
+    "test:payments": "node specific-tests/payments-test.js",
+    "install-deps": "npm install playwright",
+    "setup": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "keywords": [
+    "yukimart",
+    "tenant",
+    "testing",
+    "playwright",
+    "e2e"
+  ],
+  "author": "YukiMart Development Team",
+  "license": "MIT"
+}

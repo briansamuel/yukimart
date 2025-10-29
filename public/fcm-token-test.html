@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCM Token Test - YukiMart</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; background: #f0f8f0; }
+        .error { color: red; background: #f8f0f0; }
+        .warning { color: orange; background: #f8f8f0; }
+        .info { color: blue; background: #f0f0f8; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 4px; background: #007cba; color: white; }
+        button:hover { background: #005a87; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .token-display { word-break: break-all; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; border-left: 4px solid #ddd; }
+        .test-result.success { border-left-color: green; background: #f0f8f0; }
+        .test-result.error { border-left-color: red; background: #f8f0f0; }
+        .logs { height: 300px; overflow-y: auto; background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .token-info { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 FCM Token Test Interface</h1>
+        <p>Test FCM functionality với token cụ thể</p>
+
+        <!-- Token Information -->
+        <div class="section token-info">
+            <h3>📱 Token Information</h3>
+            <div class="token-display" id="tokenDisplay">c7EZgqA-S76KNE3DSiqp3_:APA91bF1N6GHrxKxuvmZbPgmLRfD_T-KoEKnd5zM9hPM0V7_s7c5gT6pizPuQBg6SzmMKo1rV5uyBDdxLpFdrftCgWqOxGQEuo-EuqiQvKEhAgCAJN3R82g</div>
+            <p><strong>Token Length:</strong> <span id="tokenLength">-</span> characters</p>
+            <p><strong>Token Type:</strong> <span id="tokenType">-</span></p>
+        </div>
+
+        <!-- Authentication -->
+        <div class="section">
+            <h3>🔐 Authentication</h3>
+            <input type="password" id="authToken" placeholder="Enter your Bearer token here" />
+            <button onclick="setAuthToken()">Set Auth Token</button>
+            <div id="authStatus" class="status"></div>
+        </div>
+
+        <!-- Test Controls -->
+        <div class="section">
+            <h3>🧪 Test Controls</h3>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="testConfiguration()">Test Configuration</button>
+            <button onclick="registerToken()">Register Token</button>
+            <button onclick="sendTestNotification()">Send Test Notification</button>
+            <button onclick="sendCustomNotification()">Send Custom Notification</button>
+            <button onclick="getTokenInfo()">Get Token Info</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <!-- Custom Notification Settings -->
+        <div class="section">
+            <h3>🎯 Custom Notification Settings</h3>
+            <input type="text" id="customTitle" placeholder="Notification title" value="YukiMart Custom Test" />
+            <textarea id="customMessage" placeholder="Notification message" rows="3">This is a custom test notification with high priority and action button!</textarea>
+            <input type="text" id="customActionUrl" placeholder="Action URL (optional)" value="https://yukimart.local/dashboard" />
+            <input type="text" id="customActionText" placeholder="Action text (optional)" value="Open Dashboard" />
+            <select id="customPriority">
+                <option value="normal">Normal Priority</option>
+                <option value="high" selected>High Priority</option>
+                <option value="urgent">Urgent Priority</option>
+            </select>
+        </div>
+
+        <!-- Test Results -->
+        <div class="section">
+            <h3>📊 Test Results</h3>
+            <div id="testResults"></div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section">
+            <h3>📝 Detailed Logs</h3>
+            <div id="logs" class="logs"></div>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const fcmToken = 'c7EZgqA-S76KNE3DSiqp3_:APA91bF1N6GHrxKxuvmZbPgmLRfD_T-KoEKnd5zM9hPM0V7_s7c5gT6pizPuQBg6SzmMKo1rV5uyBDdxLpFdrftCgWqOxGQEuo-EuqiQvKEhAgCAJN3R82g';
+        const apiBase = '/api/v1';
+        let authToken = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTokenInfo();
+            loadSavedAuthToken();
+            log('FCM Token Test Interface loaded', 'info');
+        });
+
+        function initializeTokenInfo() {
+            document.getElementById('tokenLength').textContent = fcmToken.length;
+            
+            // Detect token type
+            let tokenType = 'Unknown';
+            if (fcmToken.includes(':APA91b')) {
+                tokenType = 'Android FCM Token';
+            } else if (fcmToken.includes(':')) {
+                tokenType = 'FCM Token (Platform Unknown)';
+            }
+            
+            document.getElementById('tokenType').textContent = tokenType;
+        }
+
+        function loadSavedAuthToken() {
+            const savedToken = localStorage.getItem('fcm_test_auth_token');
+            if (savedToken) {
+                document.getElementById('authToken').value = savedToken;
+                authToken = savedToken;
+                document.getElementById('authStatus').innerHTML = '<span class="success">✅ Auth token loaded from storage</span>';
+            }
+        }
+
+        function setAuthToken() {
+            const token = document.getElementById('authToken').value.trim();
+            if (token) {
+                authToken = token;
+                localStorage.setItem('fcm_test_auth_token', token);
+                document.getElementById('authStatus').innerHTML = '<span class="success">✅ Auth token set</span>';
+                log('Auth token set successfully', 'success');
+            } else {
+                document.getElementById('authStatus').innerHTML = '<span class="error">❌ Please enter a valid token</span>';
+                log('Invalid auth token', 'error');
+            }
+        }
+
+        async function runAllTests() {
+            if (!authToken) {
+                addTestResult('Authentication Required', 'Please set your Bearer token first', 'error');
+                return;
+            }
+
+            log('Starting comprehensive FCM tests...', 'info');
+            
+            const tests = [
+                { name: 'Configuration Test', func: testConfiguration },
+                { name: 'Token Registration', func: registerToken },
+                { name: 'Test Notification', func: sendTestNotification },
+                { name: 'Custom Notification', func: sendCustomNotification },
+                { name: 'Token Information', func: getTokenInfo }
+            ];
+
+            let passed = 0;
+            let total = tests.length;
+
+            for (const test of tests) {
+                log(`Running ${test.name}...`, 'info');
+                const result = await test.func();
+                if (result) passed++;
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait between tests
+            }
+
+            log(`Tests completed: ${passed}/${total} passed`, passed === total ? 'success' : 'warning');
+            addTestResult('Test Summary', `${passed}/${total} tests passed`, passed === total ? 'success' : 'error');
+        }
+
+        async function testConfiguration() {
+            try {
+                const response = await makeApiCall('/fcm/test-config', 'GET');
+                
+                if (response.status === 'success') {
+                    addTestResult('Configuration Test', 'FCM configuration is valid', 'success');
+                    log('Configuration test passed', 'success');
+                    return true;
+                } else {
+                    addTestResult('Configuration Test', response.message || 'Configuration test failed', 'error');
+                    log('Configuration test failed: ' + (response.message || 'Unknown error'), 'error');
+                    return false;
+                }
+            } catch (error) {
+                addTestResult('Configuration Test', 'Error: ' + error.message, 'error');
+                log('Configuration test error: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function registerToken() {
+            try {
+                const data = {
+                    token: fcmToken,
+                    device_type: 'android',
+                    device_id: 'web-test-' + Date.now(),
+                    device_name: 'Web Test Device',
+                    app_version: '1.0.0',
+                    platform_version: 'Web Browser',
+                    metadata: {
+                        test_mode: true,
+                        registered_via: 'web_interface',
+                        timestamp: new Date().toISOString()
+                    }
+                };
+
+                const response = await makeApiCall('/fcm/register-token', 'POST', data);
+                
+                if (response.status === 'success') {
+                    addTestResult('Token Registration', 'Token registered successfully', 'success');
+                    log('Token registered successfully', 'success');
+                    return true;
+                } else {
+                    addTestResult('Token Registration', response.message || 'Registration failed', 'error');
+                    log('Token registration failed: ' + (response.message || 'Unknown error'), 'error');
+                    return false;
+                }
+            } catch (error) {
+                addTestResult('Token Registration', 'Error: ' + error.message, 'error');
+                log('Token registration error: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function sendTestNotification() {
+            try {
+                const data = {
+                    title: 'FCM Test Notification',
+                    message: 'This is a test notification sent to your specific token!'
+                };
+
+                const response = await makeApiCall('/fcm/test-notification', 'POST', data);
+                
+                if (response.status === 'success') {
+                    addTestResult('Test Notification', 'Test notification sent successfully', 'success');
+                    log('Test notification sent successfully', 'success');
+                    return true;
+                } else {
+                    addTestResult('Test Notification', response.message || 'Send failed', 'error');
+                    log('Test notification failed: ' + (response.message || 'Unknown error'), 'error');
+                    return false;
+                }
+            } catch (error) {
+                addTestResult('Test Notification', 'Error: ' + error.message, 'error');
+                log('Test notification error: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function sendCustomNotification() {
+            try {
+                const data = {
+                    title: document.getElementById('customTitle').value || 'Custom Test',
+                    message: document.getElementById('customMessage').value || 'Custom test message',
+                    type: 'custom_test',
+                    priority: document.getElementById('customPriority').value,
+                    action_url: document.getElementById('customActionUrl').value,
+                    action_text: document.getElementById('customActionText').value,
+                    data: {
+                        test_id: 'custom-' + Date.now(),
+                        source: 'web_interface'
+                    }
+                };
+
+                const response = await makeApiCall('/fcm/send-notification', 'POST', data);
+                
+                if (response.status === 'success') {
+                    addTestResult('Custom Notification', 'Custom notification sent successfully', 'success');
+                    log('Custom notification sent successfully', 'success');
+                    return true;
+                } else {
+                    addTestResult('Custom Notification', response.message || 'Send failed', 'error');
+                    log('Custom notification failed: ' + (response.message || 'Unknown error'), 'error');
+                    return false;
+                }
+            } catch (error) {
+                addTestResult('Custom Notification', 'Error: ' + error.message, 'error');
+                log('Custom notification error: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function getTokenInfo() {
+            try {
+                const response = await makeApiCall('/fcm/tokens', 'GET');
+                
+                if (response.status === 'success') {
+                    const tokens = response.data || [];
+                    const ourToken = tokens.find(t => t.token === fcmToken);
+                    
+                    if (ourToken) {
+                        addTestResult('Token Information', `Token found: ${ourToken.device_name} (${ourToken.device_type})`, 'success');
+                        log('Token information retrieved successfully', 'success');
+                    } else {
+                        addTestResult('Token Information', 'Token not found in user\'s tokens', 'warning');
+                        log('Token not found in user tokens', 'warning');
+                    }
+                    return true;
+                } else {
+                    addTestResult('Token Information', response.message || 'Failed to get token info', 'error');
+                    log('Get token info failed: ' + (response.message || 'Unknown error'), 'error');
+                    return false;
+                }
+            } catch (error) {
+                addTestResult('Token Information', 'Error: ' + error.message, 'error');
+                log('Get token info error: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function makeApiCall(endpoint, method, data = null) {
+            const url = apiBase + endpoint;
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + authToken
+                }
+            };
+
+            if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
+                options.body = JSON.stringify(data);
+            }
+
+            const response = await fetch(url, options);
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${responseData.message || 'Unknown error'}`);
+            }
+
+            return responseData;
+        }
+
+        function addTestResult(title, message, type) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+            resultDiv.innerHTML = `<strong>${icon} ${title}</strong><br>${message}`;
+            
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+            log('Test results cleared', 'info');
+        }
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[FCM Test] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

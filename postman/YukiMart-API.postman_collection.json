@@ -1,0 +1,3027 @@
+{
+    "info": {
+        "name": "YukiMart API v1 - Complete v\u1edbi Examples",
+        "description": "Comprehensive API collection for YukiMart system with Notification Settings and all endpoints",
+        "version": "1.0.0",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_updated_at": "2025-08-10T11:24:05.359218Z",
+        "_synced_from_env": true
+    },
+    "item": [
+        {
+            "name": "Health API",
+            "item": [
+                {
+                    "name": "Api V1 Health",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "health"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\HealthController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.361820Z",
+                    "_route_name": "Api.v1.health"
+                }
+            ],
+            "description": "Auto-generated Health API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.361905Z"
+        },
+        {
+            "name": "Public API",
+            "item": [
+                {
+                    "name": "Api V1 Public Product Categories Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/public/product-categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "product-categories"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.361951Z",
+                    "_route_name": "Api.v1.public.product Categories.index"
+                },
+                {
+                    "name": "Api V1 Public Product Categories Tree Options",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/public/product-categories/tree-options",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "product-categories",
+                                "tree-options"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@getTreeOptions"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.361994Z",
+                    "_route_name": "Api.v1.public.product Categories.tree Options"
+                },
+                {
+                    "name": "Api V1 Public Product Categories Menu Tree",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/public/product-categories/menu-tree",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "product-categories",
+                                "menu-tree"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@getMenuTree"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362035Z",
+                    "_route_name": "Api.v1.public.product Categories.menu Tree"
+                },
+                {
+                    "name": "Api V1 Public Product Categories Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/public/product-categories/stats",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "product-categories",
+                                "stats"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@getStats"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362076Z",
+                    "_route_name": "Api.v1.public.product Categories.stats"
+                },
+                {
+                    "name": "Api V1 Public Product Categories Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/public/product-categories/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "public",
+                                "product-categories",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362119Z",
+                    "_route_name": "Api.v1.public.product Categories.show"
+                }
+            ],
+            "description": "Auto-generated Public API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.362158Z"
+        },
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Api V1 Auth Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login to YukiMart and get API access token",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{yukimart_email}}\",\n    \"password\": \"{{yukimart_password}}\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362202Z",
+                    "_route_name": "Api.v1.auth.login"
+                },
+                {
+                    "name": "Api V1 Auth Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\AuthController@register",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362281Z",
+                    "_route_name": "Api.v1.auth.register"
+                },
+                {
+                    "name": "Api V1 Auth Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "profile"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\AuthController@profile"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362337Z",
+                    "_route_name": "Api.v1.auth.profile"
+                },
+                {
+                    "name": "Api V1 Auth Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "description": "Logout and invalidate the current access token",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362386Z",
+                    "_route_name": "Api.v1.auth.logout"
+                },
+                {
+                    "name": "Api V1 Auth Refresh",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\AuthController@refresh",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362436Z",
+                    "_route_name": "Api.v1.auth.refresh"
+                }
+            ],
+            "description": "Auto-generated Authentication endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.362482Z"
+        },
+        {
+            "name": "User API",
+            "item": [
+                {
+                    "name": "Api V1 User",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/user",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "user"
+                            ]
+                        },
+                        "description": "Auto-generated from route: Closure"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362528Z",
+                    "_route_name": "Api.v1.user"
+                }
+            ],
+            "description": "Auto-generated User API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.362570Z"
+        },
+        {
+            "name": "Invoices API",
+            "item": [
+                {
+                    "name": "Api V1 Invoices Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\InvoiceController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362618Z",
+                    "_route_name": "Api.v1.invoices.index"
+                },
+                {
+                    "name": "Api V1 Invoices Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\InvoiceController@store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362663Z",
+                    "_route_name": "Api.v1.invoices.store"
+                },
+                {
+                    "name": "Api V1 Invoices Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/statistics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "statistics"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\InvoiceController@statistics"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362756Z",
+                    "_route_name": "Api.v1.invoices.statistics"
+                },
+                {
+                    "name": "Api V1 Invoices Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\InvoiceController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362812Z",
+                    "_route_name": "Api.v1.invoices.show"
+                },
+                {
+                    "name": "Api V1 Invoices Update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\InvoiceController@update",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362861Z",
+                    "_route_name": "Api.v1.invoices.update"
+                },
+                {
+                    "name": "Api V1 Invoices Destroy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/invoices/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoices",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\InvoiceController@destroy"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.362909Z",
+                    "_route_name": "Api.v1.invoices.destroy"
+                }
+            ],
+            "description": "Auto-generated Invoices API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.362951Z"
+        },
+        {
+            "name": "Customers API",
+            "item": [
+                {
+                    "name": "Api V1 Customers Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customers",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customers"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\CustomerController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363016Z",
+                    "_route_name": "Api.v1.customers.index"
+                },
+                {
+                    "name": "Api V1 Customers Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customers",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customers"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\CustomerController@store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363064Z",
+                    "_route_name": "Api.v1.customers.store"
+                },
+                {
+                    "name": "Api V1 Customers Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customers/statistics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customers",
+                                "statistics"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\CustomerController@statistics"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363118Z",
+                    "_route_name": "Api.v1.customers.statistics"
+                },
+                {
+                    "name": "Api V1 Customers Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customers/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customers",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\CustomerController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363170Z",
+                    "_route_name": "Api.v1.customers.show"
+                },
+                {
+                    "name": "Api V1 Customers Update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customers/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customers",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\CustomerController@update",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363238Z",
+                    "_route_name": "Api.v1.customers.update"
+                },
+                {
+                    "name": "Api V1 Customers Destroy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/customers/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "customers",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\CustomerController@destroy"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363308Z",
+                    "_route_name": "Api.v1.customers.destroy"
+                }
+            ],
+            "description": "Auto-generated Customers API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.363362Z"
+        },
+        {
+            "name": "Products API",
+            "item": [
+                {
+                    "name": "Api V1 Products Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/products",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "products"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363421Z",
+                    "_route_name": "Api.v1.products.index"
+                },
+                {
+                    "name": "Api V1 Products Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/products",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "products"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductController@store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363475Z",
+                    "_route_name": "Api.v1.products.store"
+                },
+                {
+                    "name": "Api V1 Products Search Barcode",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/products/search-barcode",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "products",
+                                "search-barcode"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductController@searchByBarcode"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363530Z",
+                    "_route_name": "Api.v1.products.search Barcode"
+                },
+                {
+                    "name": "Api V1 Products Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/products/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "products",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363586Z",
+                    "_route_name": "Api.v1.products.show"
+                },
+                {
+                    "name": "Api V1 Products Update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/products/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "products",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductController@update",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363633Z",
+                    "_route_name": "Api.v1.products.update"
+                },
+                {
+                    "name": "Api V1 Products Destroy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/products/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "products",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductController@destroy"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363686Z",
+                    "_route_name": "Api.v1.products.destroy"
+                },
+                {
+                    "name": "Api Products Barcode",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/products/barcode/{barcode}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "products",
+                                "barcode",
+                                "{barcode}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\ProductBarcodeController@findByBarcode"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363756Z",
+                    "_route_name": "Api.products.barcode"
+                },
+                {
+                    "name": "Api Products Search",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/products/search",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "products",
+                                "search"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\ProductBarcodeController@search"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363810Z",
+                    "_route_name": "Api.products.search"
+                },
+                {
+                    "name": "Api Products Barcode Validate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/products/barcode/validate",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "products",
+                                "barcode",
+                                "validate"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\ProductBarcodeController@validateBarcode",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363862Z",
+                    "_route_name": "Api.products.barcode.validate"
+                }
+            ],
+            "description": "Auto-generated Products API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.363908Z"
+        },
+        {
+            "name": "Product-categories API",
+            "item": [
+                {
+                    "name": "Api V1 Product Categories Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363952Z",
+                    "_route_name": "Api.v1.product Categories.index"
+                },
+                {
+                    "name": "Api V1 Product Categories Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.363996Z",
+                    "_route_name": "Api.v1.product Categories.store"
+                },
+                {
+                    "name": "Api V1 Product Categories Tree Options",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories/tree-options",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories",
+                                "tree-options"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@getTreeOptions"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364040Z",
+                    "_route_name": "Api.v1.product Categories.tree Options"
+                },
+                {
+                    "name": "Api V1 Product Categories Menu Tree",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories/menu-tree",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories",
+                                "menu-tree"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@getMenuTree"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364085Z",
+                    "_route_name": "Api.v1.product Categories.menu Tree"
+                },
+                {
+                    "name": "Api V1 Product Categories Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories/stats",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories",
+                                "stats"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@getStats"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364128Z",
+                    "_route_name": "Api.v1.product Categories.stats"
+                },
+                {
+                    "name": "Api V1 Product Categories Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364176Z",
+                    "_route_name": "Api.v1.product Categories.show"
+                },
+                {
+                    "name": "Api V1 Product Categories Update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@update",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364230Z",
+                    "_route_name": "Api.v1.product Categories.update"
+                },
+                {
+                    "name": "Api V1 Product Categories Destroy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/product-categories/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "product-categories",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\ProductCategoryController@destroy"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364288Z",
+                    "_route_name": "Api.v1.product Categories.destroy"
+                }
+            ],
+            "description": "Auto-generated Product-categories API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.364333Z"
+        },
+        {
+            "name": "Orders API",
+            "item": [
+                {
+                    "name": "Api V1 Orders Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "orders"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\OrderController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364388Z",
+                    "_route_name": "Api.v1.orders.index"
+                },
+                {
+                    "name": "Api V1 Orders Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "orders"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\OrderController@store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364441Z",
+                    "_route_name": "Api.v1.orders.store"
+                },
+                {
+                    "name": "Api V1 Orders Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/orders/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "orders",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\OrderController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364491Z",
+                    "_route_name": "Api.v1.orders.show"
+                },
+                {
+                    "name": "Api V1 Orders Update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/orders/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "orders",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\OrderController@update",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364535Z",
+                    "_route_name": "Api.v1.orders.update"
+                },
+                {
+                    "name": "Api V1 Orders Destroy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/orders/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "orders",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\OrderController@destroy"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364582Z",
+                    "_route_name": "Api.v1.orders.destroy"
+                }
+            ],
+            "description": "Auto-generated Orders API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.364625Z"
+        },
+        {
+            "name": "Payments API",
+            "item": [
+                {
+                    "name": "Api V1 Payments Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\PaymentController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364671Z",
+                    "_route_name": "Api.v1.payments.index"
+                },
+                {
+                    "name": "Api V1 Payments Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\PaymentController@store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364716Z",
+                    "_route_name": "Api.v1.payments.store"
+                },
+                {
+                    "name": "Api V1 Payments Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/statistics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "statistics"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\PaymentController@statistics"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364790Z",
+                    "_route_name": "Api.v1.payments.statistics"
+                },
+                {
+                    "name": "Api V1 Payments Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\PaymentController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364845Z",
+                    "_route_name": "Api.v1.payments.show"
+                },
+                {
+                    "name": "Api V1 Payments Update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\PaymentController@update",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364896Z",
+                    "_route_name": "Api.v1.payments.update"
+                },
+                {
+                    "name": "Api V1 Payments Destroy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\PaymentController@destroy"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.364945Z",
+                    "_route_name": "Api.v1.payments.destroy"
+                }
+            ],
+            "description": "Auto-generated Payments API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.364991Z"
+        },
+        {
+            "name": "Dashboard API",
+            "item": [
+                {
+                    "name": "Api V1 Dashboard Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365041Z",
+                    "_route_name": "Api.v1.dashboard.index"
+                },
+                {
+                    "name": "Api V1 Dashboard Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard/stats",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard",
+                                "stats"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@getStats"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365091Z",
+                    "_route_name": "Api.v1.dashboard.stats"
+                },
+                {
+                    "name": "Api V1 Dashboard Recent Orders",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard/recent-orders",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard",
+                                "recent-orders"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@getRecentOrders"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365138Z",
+                    "_route_name": "Api.v1.dashboard.recent Orders"
+                },
+                {
+                    "name": "Api V1 Dashboard Top Products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard/top-products",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard",
+                                "top-products"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@getTopProducts"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365184Z",
+                    "_route_name": "Api.v1.dashboard.top Products"
+                },
+                {
+                    "name": "Api V1 Dashboard Revenue Data",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard/revenue-data",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard",
+                                "revenue-data"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@getRevenueData"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365245Z",
+                    "_route_name": "Api.v1.dashboard.revenue Data"
+                },
+                {
+                    "name": "Api V1 Dashboard Top Products Data",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard/top-products-data",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard",
+                                "top-products-data"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@getTopProductsData"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365300Z",
+                    "_route_name": "Api.v1.dashboard.top Products Data"
+                },
+                {
+                    "name": "Api V1 Dashboard Recent Activities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard/recent-activities",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard",
+                                "recent-activities"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@getRecentActivities"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365347Z",
+                    "_route_name": "Api.v1.dashboard.recent Activities"
+                },
+                {
+                    "name": "Api V1 Dashboard Low Stock Products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/dashboard/low-stock-products",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "dashboard",
+                                "low-stock-products"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\DashboardController@getLowStockProducts"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365394Z",
+                    "_route_name": "Api.v1.dashboard.low Stock Products"
+                }
+            ],
+            "description": "Auto-generated Dashboard API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.365435Z"
+        },
+        {
+            "name": "Notifications API",
+            "item": [
+                {
+                    "name": "Api V1 Notifications Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365481Z",
+                    "_route_name": "Api.v1.notifications.index"
+                },
+                {
+                    "name": "Api V1 Notifications Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/statistics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "statistics"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@statistics"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365527Z",
+                    "_route_name": "Api.v1.notifications.statistics"
+                },
+                {
+                    "name": "Api V1 Notifications Mark All Read",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/mark-all-read",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "mark-all-read"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@markAllAsRead",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365577Z",
+                    "_route_name": "Api.v1.notifications.mark All Read"
+                },
+                {
+                    "name": "Api V1 Notifications Show",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@show"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365629Z",
+                    "_route_name": "Api.v1.notifications.show"
+                },
+                {
+                    "name": "Api V1 Notifications Mark Read",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/{id}/read",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "{id}",
+                                "read"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@markAsRead",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365774Z",
+                    "_route_name": "Api.v1.notifications.mark Read"
+                },
+                {
+                    "name": "Api V1 Notifications Mark Unread",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/{id}/unread",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "{id}",
+                                "unread"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@markAsUnread",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365837Z",
+                    "_route_name": "Api.v1.notifications.mark Unread"
+                },
+                {
+                    "name": "Api V1 Notifications Destroy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/{id}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "{id}"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@destroy"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365885Z",
+                    "_route_name": "Api.v1.notifications.destroy"
+                },
+                {
+                    "name": "Api V1 Notifications Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationController@store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.365928Z",
+                    "_route_name": "Api.v1.notifications.store"
+                }
+            ],
+            "description": "Auto-generated Notifications API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.365969Z"
+        },
+        {
+            "name": "Notification-settings API",
+            "item": [
+                {
+                    "name": "Api V1 Notification Settings Index",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notification-settings",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notification-settings"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationSettingController@index"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366012Z",
+                    "_route_name": "Api.v1.notification Settings.index"
+                },
+                {
+                    "name": "Api V1 Notification Settings Update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notification-settings",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notification-settings"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationSettingController@update",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366053Z",
+                    "_route_name": "Api.v1.notification Settings.update"
+                },
+                {
+                    "name": "Api V1 Notification Settings Reset",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notification-settings/reset",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notification-settings",
+                                "reset"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationSettingController@reset",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366097Z",
+                    "_route_name": "Api.v1.notification Settings.reset"
+                },
+                {
+                    "name": "Api V1 Notification Settings Test",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notification-settings/test",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notification-settings",
+                                "test"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationSettingController@test",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"example\": \"data\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366140Z",
+                    "_route_name": "Api.v1.notification Settings.test"
+                },
+                {
+                    "name": "Api V1 Notification Settings Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notification-settings/statistics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notification-settings",
+                                "statistics"
+                            ]
+                        },
+                        "description": "Auto-generated from route: App\\Http\\Controllers\\Api\\V1\\NotificationSettingController@statistics"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366187Z",
+                    "_route_name": "Api.v1.notification Settings.statistics"
+                }
+            ],
+            "description": "Auto-generated Notification-settings API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.366238Z"
+        },
+        {
+            "name": "FCM API",
+            "item": [
+                {
+                    "name": "Register Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/fcm/register-token",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "register-token"
+                            ]
+                        },
+                        "description": "Register a new FCM token for the authenticated user",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"token\": \"{{test_fcm_token}}\",\n    \"device_type\": \"android\",\n    \"device_name\": \"Test Device\",\n    \"app_version\": \"1.0.0\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366293Z",
+                    "_route_name": "Register Token"
+                },
+                {
+                    "name": "Unregister Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/fcm/unregister-token",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "unregister-token"
+                            ]
+                        },
+                        "description": "Register a new FCM token for the authenticated user",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"token\": \"{{test_fcm_token}}\",\n    \"device_type\": \"android\",\n    \"device_name\": \"Test Device\",\n    \"app_version\": \"1.0.0\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366351Z",
+                    "_route_name": "Unregister Token"
+                },
+                {
+                    "name": "Tokens",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/fcm/tokens",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "tokens"
+                            ]
+                        },
+                        "description": "Get all FCM tokens for the authenticated user"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366400Z",
+                    "_route_name": "Tokens"
+                },
+                {
+                    "name": "Test Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/fcm/test-notification",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "test-notification"
+                            ]
+                        },
+                        "description": "Send a test notification to the authenticated user",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"\\ud83e\\uddea Test Notification\",\n    \"message\": \"This is a test notification from Postman\",\n    \"type\": \"test\",\n    \"data\": {\n        \"test_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    }\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366444Z",
+                    "_route_name": "Test Notification"
+                },
+                {
+                    "name": "Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/fcm/statistics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "statistics"
+                            ]
+                        },
+                        "description": "Get FCM statistics for the authenticated user"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366496Z",
+                    "_route_name": "Statistics"
+                },
+                {
+                    "name": "Send Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/fcm/send-notification",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "send-notification"
+                            ]
+                        },
+                        "description": "Send a custom notification to specific users or roles",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"\\ud83d\\udce2 Custom Notification\",\n    \"message\": \"Custom notification message\",\n    \"type\": \"custom\",\n    \"target_type\": \"user\",\n    \"target_ids\": [\n        12\n    ],\n    \"data\": {\n        \"action\": \"open_screen\",\n        \"screen\": \"dashboard\"\n    }\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366538Z",
+                    "_route_name": "Send Notification"
+                },
+                {
+                    "name": "Test Config",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/fcm/test-config",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "test-config"
+                            ]
+                        },
+                        "description": "Test FCM configuration and service account connectivity"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-10T11:24:05.366585Z",
+                    "_route_name": "Test Config"
+                }
+            ],
+            "description": "Auto-generated FCM API endpoints from Laravel routes",
+            "_auto_generated": true,
+            "_generated_at": "2025-08-10T11:24:05.366622Z"
+        }
+    ]
+}

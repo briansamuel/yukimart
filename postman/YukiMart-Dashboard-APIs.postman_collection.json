@@ -1,0 +1,966 @@
+{
+	"info": {
+		"_postman_id": "dashboard-apis-yukimart",
+		"name": "YukiMart Dashboard APIs",
+		"description": "Complete dashboard and analytics API endpoints with real examples",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"yukimart@gmail.com\",\n    \"password\": \"123456\",\n    \"device_name\": \"Postman\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login to get access token for API authentication"
+					},
+					"response": [
+						{
+							"name": "Success Login",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"yukimart@gmail.com\",\n    \"password\": \"123456\",\n    \"device_name\": \"Postman\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/v1/auth/login",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": \"success\",\n    \"message\": \"Login successful\",\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"name\": \"Admin User\",\n            \"email\": \"yukimart@gmail.com\"\n        },\n        \"access_token\": \"1|abcdef123456...\",\n        \"token_type\": \"Bearer\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Dashboard APIs",
+			"description": "Dashboard and analytics endpoints with real examples",
+			"item": [
+				{
+					"name": "Dashboard Stats - Month",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/stats?period=month",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "month",
+									"description": "Time period: today, yesterday, month, last_month, year"
+								}
+							]
+						},
+						"description": "Get dashboard statistics with period filter for current month"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/dashboard/stats?period=month",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"dashboard",
+										"stats"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "month"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": \"success\",\n    \"message\": \"Statistics retrieved successfully\",\n    \"data\": {\n        \"total_orders\": 22,\n        \"total_invoices\": 1853,\n        \"total_products\": 3782,\n        \"total_customers\": 434,\n        \"total_users\": 1,\n        \"active_users\": 1,\n        \"low_stock_products\": 21,\n        \"period_revenue\": 57754017,\n        \"period_orders\": 22,\n        \"period_customers\": 7,\n        \"period_avg_order_value\": 2625182.590909091,\n        \"period_invoice_amount\": 16723300,\n        \"period_return_amount\": 0,\n        \"period_net_revenue\": 74477317,\n        \"formatted_period_revenue\": \"57.754.017₫\",\n        \"formatted_period_invoice_amount\": \"16.723.300₫\",\n        \"formatted_period_return_amount\": \"0₫\",\n        \"formatted_period_net_revenue\": \"74.477.317₫\",\n        \"formatted_avg_order_value\": \"2.625.183₫\"\n    },\n    \"meta\": {\n        \"period\": \"month\",\n        \"period_name\": \"tháng này\",\n        \"date_range\": {\n            \"start\": \"2025-08-01 00:00:00\",\n            \"end\": \"2025-08-31 23:59:59\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Revenue Chart - Month",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/revenue-chart?period=month",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"revenue-chart"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "month",
+									"description": "Time period: today, yesterday, month, last_month, year"
+								}
+							]
+						},
+						"description": "Get revenue chart data for current month with daily breakdown"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/dashboard/revenue-chart?period=month",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"dashboard",
+										"revenue-chart"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "month"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": \"success\",\n    \"message\": \"Revenue chart data retrieved successfully\",\n    \"data\": {\n        \"revenue_chart\": {\n            \"categories\": [\"01/08\", \"02/08\", \"03/08\", \"04/08\", \"05/08\", \"06/08\", \"07/08\", \"08/08\", \"09/08\", \"10/08\", \"11/08\", \"12/08\", \"13/08\", \"14/08\", \"15/08\", \"16/08\", \"17/08\", \"18/08\", \"19/08\", \"20/08\", \"21/08\", \"22/08\", \"23/08\", \"24/08\", \"25/08\", \"26/08\", \"27/08\", \"28/08\", \"29/08\", \"30/08\", \"31/08\"],\n            \"data\": [20.754836, 8.042129, 6.057981, 5.838266, 1.879843, 9.267306, 5.913656, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],\n            \"series_name\": \"Doanh thu tháng này (triệu VNĐ)\"\n        }\n    },\n    \"meta\": {\n        \"period\": \"month\",\n        \"period_name\": \"tháng này\",\n        \"date_range\": {\n            \"start\": \"2025-08-01 00:00:00\",\n            \"end\": \"2025-08-31 23:59:59\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Top Products - Revenue",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/top-products?type=revenue&period=month&limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"top-products"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "revenue",
+									"description": "Type: revenue or quantity"
+								},
+								{
+									"key": "period",
+									"value": "month",
+									"description": "Time period: today, yesterday, month, last_month, year"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of products to return"
+								}
+							]
+						},
+						"description": "Get top products by revenue for current month (based on invoices)"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/dashboard/top-products?type=revenue&period=month&limit=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"dashboard",
+										"top-products"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "revenue"
+										},
+										{
+											"key": "period",
+											"value": "month"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": \"success\",\n    \"message\": \"Top products retrieved successfully\",\n    \"data\": [\n        {\n            \"id\": 105,\n            \"name\": \"Miếng Dán Nóng Giảm Đau Kowa Vantelin Kowa Pat EX\",\n            \"sku\": \"4987067329908\",\n            \"total_revenue\": 2420000,\n            \"image\": \"https://cdn-images.kiotviet.vn/2025/05/04/yukimart/ea8a49f8fe36474db46ec3fddca82500.png\",\n            \"sold_quantity\": 4\n        },\n        {\n            \"id\": 103,\n            \"name\": \"Viên uống đại tràng Kowa\",\n            \"sku\": \"4987067244904\",\n            \"total_revenue\": 1485000,\n            \"image\": \"https://cdn-images.kiotviet.vn/2025/05/06/yukimart/2803b7db98464568bf475e713a3fb8dd.png\",\n            \"sold_quantity\": 3\n        },\n        {\n            \"id\": 62,\n            \"name\": \"Kem cấp ẩm và dưỡng trắng da White Cone body cream 500g\",\n            \"sku\": \"4990110007234\",\n            \"total_revenue\": 1303500,\n            \"image\": \"https://cdn2-retail-images.kiotviet.vn/2025/06/14/yukimart/6e58236197044904bbfc4202e935a31a.png\",\n            \"sold_quantity\": 3\n        }\n    ],\n    \"meta\": {\n        \"type\": \"revenue\",\n        \"period\": \"month\",\n        \"period_name\": \"tháng này\",\n        \"limit\": \"10\",\n        \"date_range\": {\n            \"start\": \"2025-08-01 00:00:00\",\n            \"end\": \"2025-08-31 23:59:59\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Top Products - Quantity",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/top-products?type=quantity&period=month&limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"top-products"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "quantity",
+									"description": "Type: revenue or quantity"
+								},
+								{
+									"key": "period",
+									"value": "month",
+									"description": "Time period: today, yesterday, month, last_month, year"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of products to return"
+								}
+							]
+						},
+						"description": "Get top products by quantity sold for current month (based on invoices)"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/dashboard/top-products?type=quantity&period=month&limit=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"dashboard",
+										"top-products"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "quantity"
+										},
+										{
+											"key": "period",
+											"value": "month"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": \"success\",\n    \"message\": \"Top products retrieved successfully\",\n    \"data\": [],\n    \"meta\": {\n        \"type\": \"quantity\",\n        \"period\": \"month\",\n        \"period_name\": \"tháng này\",\n        \"limit\": \"10\",\n        \"date_range\": {\n            \"start\": \"2025-08-01 00:00:00\",\n            \"end\": \"2025-08-31 23:59:59\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Dashboard Stats - Today",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/stats?period=today",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "today",
+									"description": "Time period: today, yesterday, month, last_month, year"
+								}
+							]
+						},
+						"description": "Get today's dashboard statistics"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/dashboard/stats?period=today",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admin",
+										"dashboard",
+										"stats"
+									],
+									"query": [
+										{
+											"key": "period",
+											"value": "today"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": \"success\",\n    \"message\": \"Statistics retrieved successfully\",\n    \"data\": {\n        \"total_orders\": 22,\n        \"total_invoices\": 0,\n        \"total_products\": 0,\n        \"total_customers\": 8,\n        \"total_users\": 1,\n        \"active_users\": 1,\n        \"low_stock_products\": 0,\n        \"period_revenue\": 5913656,\n        \"period_orders\": 2,\n        \"period_customers\": 2,\n        \"period_avg_order_value\": 2956828,\n        \"period_invoice_amount\": 0,\n        \"period_return_amount\": 0,\n        \"period_net_revenue\": 5913656,\n        \"formatted_period_revenue\": \"5.913.656₫\",\n        \"formatted_period_invoice_amount\": \"0₫\",\n        \"formatted_period_return_amount\": \"0₫\",\n        \"formatted_period_net_revenue\": \"5.913.656₫\",\n        \"formatted_avg_order_value\": \"2.956.828₫\"\n    },\n    \"meta\": {\n        \"period\": \"today\",\n        \"period_name\": \"hôm nay\",\n        \"date_range\": {\n            \"start\": \"2025-08-07 00:00:00\",\n            \"end\": \"2025-08-07 23:59:59\"\n        }\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Notification Settings",
+			"item": [
+				{
+					"name": "Get Notification Settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notification-settings?simplified=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notification-settings"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"description": "Return simplified flat structure (default: true). Set to false for complex grouped structure."
+								}
+							]
+						},
+						"description": "Retrieve user notification settings in simplified flat structure (default) or complex grouped structure (?simplified=false)"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v1/notification-settings",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"notification-settings"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"settings\": [\n            {\n                \"type\": \"customer_birthday\",\n                \"name\": \"Sinh nhật khách hàng\",\n                \"description\": \"Thông báo khi có khách hàng sinh nhật\",\n                \"category\": \"customers\",\n                \"category_name\": \"Khách hàng\",\n                \"is_enabled\": true,\n                \"channels\": [\"web\", \"fcm\"],\n                \"available_channels\": [\"web\", \"fcm\", \"email\", \"sms\", \"phone\"],\n                \"supports_summary\": true\n            },\n            {\n                \"type\": \"order_new\",\n                \"name\": \"Đơn hàng mới\",\n                \"description\": \"Thông báo khi có đơn hàng mới được tạo\",\n                \"category\": \"orders\",\n                \"category_name\": \"Đơn hàng\",\n                \"is_enabled\": true,\n                \"channels\": [\"web\", \"fcm\"],\n                \"available_channels\": [\"web\", \"fcm\", \"email\", \"sms\", \"phone\"],\n                \"supports_summary\": true\n            }\n        ],\n        \"summary\": {\n            \"total_types\": 30,\n            \"enabled_types\": 28,\n            \"disabled_types\": 2,\n            \"enabled_percentage\": 93\n        },\n        \"available_channels\": {\n            \"web\": \"Thông báo web\",\n            \"fcm\": \"Thông báo đẩy\",\n            \"email\": \"Email\",\n            \"sms\": \"SMS\",\n            \"phone\": \"Điện thoại\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Notification Settings",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"settings\": {\n        \"order_new\": {\n            \"is_enabled\": true,\n            \"channels\": [\"web\", \"fcm\"]\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notification-settings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notification-settings"
+							]
+						},
+						"description": "Update user notification settings with custom configuration for each notification type"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"settings\": {\n        \"order_new\": {\n            \"is_enabled\": true,\n            \"channels\": [\"web\", \"fcm\"]\n        }\n    }\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/v1/notification-settings",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"notification-settings"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Cài đặt thông báo đã được cập nhật thành công\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Test Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"order_new\",\n    \"channel\": \"web\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notification-settings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notification-settings",
+								"test"
+							]
+						},
+						"description": "Send a test notification to verify notification settings and delivery channels"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"type\": \"order_new\",\n    \"channel\": \"web\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/v1/notification-settings/test",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"notification-settings",
+										"test"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Thông báo thử nghiệm đã được gửi thành công\",\n    \"data\": {\n        \"notification_id\": 123,\n        \"type\": \"order_new\",\n        \"channel\": \"web\",\n        \"sent_at\": \"2025-08-10T10:30:00Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Reset Settings to Default",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notification-settings/reset",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notification-settings",
+								"reset"
+							]
+						},
+						"description": "Reset all notification settings to their default values"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v1/notification-settings/reset",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"notification-settings",
+										"reset"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Cài đặt thông báo đã được khôi phục về mặc định\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Notification Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notification-settings/statistics",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notification-settings",
+								"statistics"
+							]
+						},
+						"description": "Get comprehensive statistics about notification settings including enabled/disabled counts and category breakdowns"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v1/notification-settings/statistics",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"notification-settings",
+										"statistics"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"total_types\": 30,\n        \"enabled_types\": 28,\n        \"enabled_percentage\": 93,\n        \"category_stats\": {\n            \"customers\": {\n                \"name\": \"Khách hàng\",\n                \"total\": 1,\n                \"enabled\": 1,\n                \"percentage\": 100\n            },\n            \"orders\": {\n                \"name\": \"Đơn hàng\",\n                \"total\": 3,\n                \"enabled\": 3,\n                \"percentage\": 100\n            },\n            \"invoices\": {\n                \"name\": \"Hóa đơn\",\n                \"total\": 2,\n                \"enabled\": 2,\n                \"percentage\": 100\n            },\n            \"inventory\": {\n                \"name\": \"Hàng hóa\",\n                \"total\": 7,\n                \"enabled\": 7,\n                \"percentage\": 100\n            }\n        }\n    }\n}"
+						}
+					]
+				}
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://yukimart.local",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
