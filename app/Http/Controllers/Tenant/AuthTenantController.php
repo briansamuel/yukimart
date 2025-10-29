@@ -28,10 +28,10 @@ class AuthTenantController extends Controller
 
         $tenant = $request->attributes->get('tenant');
 
-        return view('auth.unified-login', [
+        return view('tenant.auth.login', [
             'tenant' => $tenant,
             'isPlatform' => false,
-            'pageTitle' => 'Tenant Login',
+            'pageTitle' => 'Admin Login',
             'siteName' => $tenant->name ?? 'YukiMart'
         ]);
     }
