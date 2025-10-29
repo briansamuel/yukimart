@@ -581,10 +581,10 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
                 ->name('roles.destroy');
 
             // Branch Manager - Manage branch shops
-            // Route::get('/branch-manager', [App\Http\Controllers\Tenant\Settings\BranchController::class, 'index'])
-            //     ->name('branch-manager');
-            // Route::get('/branch-manager/data', [App\Http\Controllers\Tenant\Settings\BranchController::class, 'getData'])
-            //     ->name('branch-manager.data');
+            Route::get('/branch-manager', [App\Http\Controllers\Tenant\Settings\Shop\BranchManagerController::class, 'index'])
+                ->name('branch-manager');
+            Route::get('/branch-manager/data', [App\Http\Controllers\Tenant\Settings\Shop\BranchManagerController::class, 'getData'])
+                ->name('branch-manager.data');
 
             // ----------------------------------------------------------------
             // FUTURE CATEGORIES (Placeholder for expansion)

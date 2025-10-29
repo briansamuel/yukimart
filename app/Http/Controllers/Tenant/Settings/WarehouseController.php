@@ -22,7 +22,7 @@ class BranchShopController extends Controller
      */
     public function index()
     {
-        return view('admin.branch-shops.index');
+        return view('admin.settings.branch-manager');
     }
 
     /**
@@ -36,7 +36,7 @@ class BranchShopController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi khi tải d�?liệu: ' . $e->getMessage()
+                'message' => 'Lỗi khi tải d�?liệu: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -80,21 +80,21 @@ class BranchShopController extends Controller
             'sort_order' => 'nullable|integer|min:0',
         ], [
             'name.required' => 'Tên chi nhánh l? bắt buộc',
-            'address.required' => '?ịa ch�?l? bắt buộc',
-            'province.required' => 'Tỉnh/Th?nh ph�?l? bắt buộc',
+            'address.required' => '?ịa ch�?l? bắt buộc',
+            'province.required' => 'Tỉnh/Th?nh ph�?l? bắt buộc',
             'district.required' => 'Quận/Huyện l? bắt buộc',
             'ward.required' => 'Phường/Xã l? bắt buộc',
             'status.required' => 'Trạng thái l? bắt buộc',
             'shop_type.required' => 'Loại cửa h?ng l? bắt buộc',
             'email.email' => 'Email không ?úng ?ịnh dạng',
-            'phone.max' => 'S�??iện thoại không ?ược quá 20 ký t�?,
+            'phone.max' => 'S�??iện thoại không ?ược quá 20 ký t�?,
             'code.unique' => 'Mã chi nhánh ?ã tồn tại',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'D�?liệu không hợp l�?,
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -129,10 +129,10 @@ class BranchShopController extends Controller
             $branchShop = $this->branchShopService->findById($id);
             return view('admin.branch-shops.show', compact('branchShop'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập');
         } catch (\Exception $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Lỗi khi tải chi nhánh: ' . $e->getMessage());
         }
     }
@@ -148,10 +148,10 @@ class BranchShopController extends Controller
             $warehouses = \App\Models\Warehouse::where('status', 'active')->orderBy('name')->get();
             return view('admin.branch-shops.edit', compact('branchShop', 'managers', 'warehouses'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập');
         } catch (\Exception $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Lỗi khi tải chi nhánh: ' . $e->getMessage());
         }
     }
@@ -190,7 +190,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'D�?liệu không hợp l�?,
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -398,7 +398,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'D�?liệu không hợp l�?,
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -422,7 +422,7 @@ class BranchShopController extends Controller
                     break;
                 case 'maintenance':
                     $this->branchShopService->bulkUpdateStatus($ids, 'maintenance');
-                    $message = 'Chuyển các chi nhánh sang ch�??�?bảo trì th?nh công';
+                    $message = 'Chuyển các chi nhánh sang ch�??�?bảo trì th?nh công';
                     break;
             }
 
@@ -486,7 +486,7 @@ class BranchShopController extends Controller
                 'recordsTotal' => 0,
                 'recordsFiltered' => 0,
                 'data' => [],
-                'error' => 'Lỗi khi tải d�?liệu: ' . $e->getMessage()
+                'error' => 'Lỗi khi tải d�?liệu: ' . $e->getMessage()
             ]);
         }
     }
@@ -507,7 +507,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'D�?liệu không hợp l�?,
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -567,7 +567,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'D�?liệu không hợp l�?,
                 'errors' => $validator->errors()
             ], 422);
         }

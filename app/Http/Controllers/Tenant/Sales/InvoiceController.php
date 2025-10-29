@@ -76,7 +76,7 @@ class InvoiceController extends BaseTenantController
         // Status options
         $statuses = [
             ['value' => 'draft', 'label' => 'Nháp', 'checked' => false],
-            ['value' => 'processing', 'label' => '?ang x�?lý', 'checked' => true],
+            ['value' => 'processing', 'label' => '?ang x�?lý', 'checked' => true],
             ['value' => 'completed', 'label' => 'Ho?n th?nh', 'checked' => true],
             ['value' => 'cancelled', 'label' => '?ã hủy', 'checked' => false],
             ['value' => 'failed', 'label' => 'Không giao ?ược', 'checked' => false],
@@ -84,7 +84,7 @@ class InvoiceController extends BaseTenantController
 
         // Delivery status options
         $deliveryStatuses = [
-            ['value' => 'pending', 'label' => 'Ch�?x�?lý', 'has_plus' => false],
+            ['value' => 'pending', 'label' => 'Ch�?x�?lý', 'has_plus' => false],
             ['value' => 'pickup', 'label' => 'Lấy h?ng', 'has_plus' => true],
             ['value' => 'shipping', 'label' => 'Giao h?ng', 'has_plus' => true],
             ['value' => 'delivered', 'label' => 'Giao th?nh công', 'has_plus' => true],
@@ -108,13 +108,13 @@ class InvoiceController extends BaseTenantController
             ['value' => 'ghtk', 'label' => 'Giao H?ng Tiết Kiệm'],
             ['value' => 'viettel_post', 'label' => 'Viettel Post'],
             ['value' => 'vnpost', 'label' => 'VN Post'],
-            ['value' => 'self', 'label' => 'T�?giao'],
+            ['value' => 'self', 'label' => 'T�?giao'],
         ];
 
         // Delivery areas (sample data - should be from database)
         $deliveryAreas = [
             ['value' => 'hanoi', 'label' => 'H? Nội'],
-            ['value' => 'hcm', 'label' => 'TP. H�?Chí Minh'],
+            ['value' => 'hcm', 'label' => 'TP. H�?Chí Minh'],
             ['value' => 'danang', 'label' => '?? Nẵng'],
             ['value' => 'haiphong', 'label' => 'Hải Phòng'],
         ];
@@ -123,22 +123,22 @@ class InvoiceController extends BaseTenantController
         $paymentMethods = [
             ['value' => 'cash', 'label' => 'Tiền mặt'],
             ['value' => 'transfer', 'label' => 'Chuyển khoản'],
-            ['value' => 'card', 'label' => 'Th�?],
-            ['value' => 'e_wallet', 'label' => 'Ví ?iện t�?],
+            ['value' => 'card', 'label' => 'Thẻ'],
+            ['value' => 'e_wallet', 'label' => 'Ví điện tử'],
             ['value' => 'cod', 'label' => 'COD'],
         ];
 
         // Price lists (sample data)
         $priceLists = [
-            ['value' => 'retail', 'label' => 'Giá bán l�?],
-            ['value' => 'wholesale', 'label' => 'Giá bán s�?],
+            ['value' => 'retail', 'label' => 'Giá bán lẻ'],
+            ['value' => 'wholesale', 'label' => 'Giá bán sỉ'],
             ['value' => 'vip', 'label' => 'Giá VIP'],
         ];
 
         // Other income types
         $otherIncomeTypes = [
             ['value' => 'shipping_fee', 'label' => 'Phí vận chuyển'],
-            ['value' => 'service_fee', 'label' => 'Phí dịch v�?],
+            ['value' => 'service_fee', 'label' => 'Phí dịch vụ'],
             ['value' => 'insurance', 'label' => 'Phí bảo hiểm'],
         ];
 
@@ -235,7 +235,7 @@ class InvoiceController extends BaseTenantController
                 return [
                     'id' => $invoice->id,
                     'invoice_number' => $invoice->invoice_number,
-                    'customer_display' => $invoice->customer_display ?? 'Khách l�?,
+                    'customer_display' => $invoice->customer_display ?? 'Khách lẻ',
                     'total_amount' => $invoice->total_amount ?? 0,
                     'amount_paid' => $invoice->paid_amount ?? 0,
                     'status' => $invoice->status ?? 'processing',
@@ -373,7 +373,7 @@ class InvoiceController extends BaseTenantController
         } catch (\Exception) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không th�?tải lịch s�?thanh toán'
+                'message' => 'Không th�?tải lịch s�?thanh toán'
             ], 500);
         }
     }
@@ -388,7 +388,7 @@ class InvoiceController extends BaseTenantController
                              ->findOrFail($id);
             
             if ($invoice->status === 'paid' || $invoice->status === 'cancelled') {
-                return redirect()->route('admin.invoice.show', $id)->with('error', 'Không th�?chỉnh sửa hóa ?ơn ?ã thanh toán hoặc ?ã hủy');
+                return redirect()->route('admin.invoice.show', $id)->with('error', 'Không th�?chỉnh sửa hóa ?ơn ?ã thanh toán hoặc ?ã hủy');
             }
             
             $customers = Customer::orderBy('name')->get();
@@ -413,7 +413,7 @@ class InvoiceController extends BaseTenantController
             if ($invoice->status === 'paid' || $invoice->status === 'cancelled') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Không th�?chỉnh sửa hóa ?ơn ?ã thanh toán hoặc ?ã hủy'
+                    'message' => 'Không th�?chỉnh sửa hóa ?ơn ?ã thanh toán hoặc ?ã hủy'
                 ], 400);
             }
 
@@ -461,7 +461,7 @@ class InvoiceController extends BaseTenantController
             if ($invoice->status === 'paid') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Không th�?xóa hóa ?ơn ?ã thanh toán'
+                    'message' => 'Không th�?xóa hóa ?ơn ?ã thanh toán'
                 ], 400);
             }
 
@@ -579,7 +579,7 @@ class InvoiceController extends BaseTenantController
             if ($invoice->status === 'paid') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Không th�?hủy hóa ?ơn ?ã thanh toán'
+                    'message' => 'Không th�?hủy hóa ?ơn ?ã thanh toán'
                 ], 400);
             }
 
@@ -644,7 +644,7 @@ class InvoiceController extends BaseTenantController
             Log::error('Invoice creation from order failed', ['order_id' => $orderId, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi tạo hóa ?ơn t�??ơn h?ng'
+                'message' => 'Có lỗi xảy ra khi tạo hóa ?ơn t�??ơn h?ng'
             ], 500);
         }
     }
@@ -656,9 +656,9 @@ class InvoiceController extends BaseTenantController
     {
         $badges = [
            
-            'processing' => '<span class="badge badge-warning">?ang x�?lý</span>',
+            'processing' => '<span class="badge badge-warning">?ang x�?lý</span>',
             'completed' => '<span class="badge badge-success">Ho?n th?nh</span>',
-            'cancelled' => '<span class="badge badge-danger">?ã hu�?/span>',
+            'cancelled' => '<span class="badge badge-danger">?ã hu�?/span>',
             'undeliverable' => '<span class="badge badge-info">Không giao ?ược</span>',
         ];
 
@@ -688,8 +688,8 @@ class InvoiceController extends BaseTenantController
         $methods = [
             'cash' => 'Tiền mặt',
             'transfer' => 'Chuyển khoản',
-            'card' => 'Th�?,
-            'e-wallet' => 'Ví ?iện t�?,
+            'card' => 'Thẻ',
+            'e-wallet' => 'Ví tiện ích',
         ];
 
         return $methods[$method] ?? ucfirst($method);
@@ -702,7 +702,7 @@ class InvoiceController extends BaseTenantController
     {
         $types = [
             'sale' => 'Bán h?ng',
-            'return' => 'Tr�?h?ng',
+            'return' => 'Tr�?h?ng',
             'adjustment' => '?iều chỉnh',
             'other' => 'Khác'
         ];
@@ -1048,7 +1048,7 @@ class InvoiceController extends BaseTenantController
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-                'html' => '<div class="alert alert-danger">Không th�?tải thông tin chi tiết: ' . $e->getMessage() . '</div>'
+                'html' => '<div class="alert alert-danger">Không th�?tải thông tin chi tiết: ' . $e->getMessage() . '</div>'
             ]);
         }
     }
@@ -1081,12 +1081,12 @@ class InvoiceController extends BaseTenantController
 
                     // Check if invoice can be cancelled
                     if ($invoice->status === 'cancelled') {
-                        $errors[] = "Hóa ?ơn {$invoice->invoice_number} ?ã ?ược hu�?trước ?ó.";
+                        $errors[] = "Hóa ?ơn {$invoice->invoice_number} ?ã ?ược hu�?trước ?ó.";
                         continue;
                     }
 
                     if ($invoice->status === 'completed' && $invoice->amount_paid > 0) {
-                        $errors[] = "Hóa ?ơn {$invoice->invoice_number} ?ã thanh toán, không th�?hu�?";
+                        $errors[] = "Hóa ?ơn {$invoice->invoice_number} ?ã thanh toán, không th�?hu�?";
                         continue;
                     }
 
@@ -1098,7 +1098,7 @@ class InvoiceController extends BaseTenantController
                         'deleted_at' => now(),
                         'updated_by' => auth()->id(),
                         'notes' => ($invoice->notes ? $invoice->notes . "\n" : '') .
-                                  'Hóa ?ơn ?ược hu�?h?ng loạt v?o ' . now()->format('d/m/Y H:i:s') .
+                                  'Hóa ?ơn ?ược hu�?h?ng loạt v?o ' . now()->format('d/m/Y H:i:s') .
                                   ' bởi ' . auth()->user()->full_name
                     ]);
 
@@ -1116,7 +1116,7 @@ class InvoiceController extends BaseTenantController
                         'error' => $e->getMessage(),
                         'user_id' => auth()->id()
                     ]);
-                    $errors[] = "Lỗi khi hu�?hóa ?ơn ID {$invoiceId}: " . $e->getMessage();
+                    $errors[] = "Lỗi khi hu�?hóa ?ơn ID {$invoiceId}: " . $e->getMessage();
                 }
             }
 
@@ -1129,12 +1129,12 @@ class InvoiceController extends BaseTenantController
             ];
 
             if ($cancelledCount > 0) {
-                $response['message'] = "?ã hu�?th?nh công {$cancelledCount} hóa ?ơn.";
+                $response['message'] = "?ã hu�?th?nh công {$cancelledCount} hóa ?ơn.";
                 if (!empty($errors)) {
                     $response['message'] .= " Có " . count($errors) . " lỗi xảy ra.";
                 }
             } else {
-                $response['message'] = "Không th�?hu�?hóa ?ơn n?o. " . implode(' ', $errors);
+                $response['message'] = "Không th�?hu�?hóa ?ơn n?o. " . implode(' ', $errors);
             }
 
             Log::info('Bulk cancel invoices completed', $response);
@@ -1149,7 +1149,7 @@ class InvoiceController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?',
+                'message' => 'D�?liệu không hợp l�?',
                 'errors' => $e->errors()
             ], 422);
 
@@ -1162,7 +1162,7 @@ class InvoiceController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi hu�?hóa ?ơn: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi hu�?hóa ?ơn: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1176,7 +1176,7 @@ class InvoiceController extends BaseTenantController
             return view('admin.invoice.partials.detail_panel', compact('invoice'))->render();
         } catch (\Exception $e) {
             Log::error('Error rendering invoice detail panel: ' . $e->getMessage());
-            return '<div class="alert alert-danger">Không th�?tải thông tin chi tiết</div>';
+            return '<div class="alert alert-danger">Không th�?tải thông tin chi tiết</div>';
         }
     }
 
@@ -1263,9 +1263,10 @@ class InvoiceController extends BaseTenantController
             $csv .= sprintf(
                 '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"' . "\n",
                 $invoice->invoice_code,
-                $invoice->customer ? $invoice->customer->full_name : 'Khách l�?,
-                number_format($invoice->final_amount, 0, ',', '.') . ' ??,
-                number_format($invoice->paid_amount, 0, ',', '.') . ' ??,
+                $invoice->customer ? $invoice->customer->full_name : 'Khách lẻ'
+                ,
+                number_format($invoice->final_amount, 0, ',', '.') .  '?? ',
+                number_format($invoice->paid_amount, 0, ',', '.') . ' ?? ',
                 $this->getStatusText($invoice->status),
                 $invoice->payment_method ?? 'N/A',
                 $invoice->channel ?? 'N/A',
@@ -1331,7 +1332,7 @@ class InvoiceController extends BaseTenantController
 
             $html .= '<tr>
                 <td>' . $invoice->invoice_code . '</td>
-                <td>' . ($invoice->customer ? $invoice->customer->full_name : 'Khách l�?) . '</td>
+                <td>' . ($invoice->customer ? $invoice->customer->full_name : 'Khách lẻ') . '</td>
                 <td>' . number_format($invoice->final_amount, 0, ',', '.') . ' ??/td>
                 <td>' . number_format($invoice->paid_amount, 0, ',', '.') . ' ??/td>
                 <td>' . $this->getStatusText($invoice->status) . '</td>
@@ -1348,7 +1349,7 @@ class InvoiceController extends BaseTenantController
     </table>
 
     <div class="total">
-        <p>Tổng s�?hóa ?ơn: ' . count($invoices) . '</p>
+        <p>Tổng s�?hóa ?ơn: ' . count($invoices) . '</p>
         <p>Tổng tiền: ' . number_format($totalAmount, 0, ',', '.') . ' ??/p>
         <p>Tổng ?ã thanh toán: ' . number_format($totalPaid, 0, ',', '.') . ' ??/p>
     </div>
@@ -1364,7 +1365,7 @@ class InvoiceController extends BaseTenantController
     private function getStatusText($status)
     {
         $statusMap = [
-            'processing' => '?ang x�?lý',
+            'processing' => '?ang x�?lý',
             'completed' => 'Ho?n th?nh',
             'cancelled' => '?ã hủy',
             'undeliverable' => 'Không giao ?ược'
@@ -1485,7 +1486,7 @@ class InvoiceController extends BaseTenantController
                 'data' => [
                     'id' => $invoice->id,
                     'invoice_number' => $invoice->invoice_number,
-                    'customer_name' => $invoice->customer ? $invoice->customer->name : 'Khách l�?,
+                    'customer_name' => $invoice->customer ? $invoice->customer->name : 'Khách lẻ',
                     'customer_phone' => $invoice->customer ? $invoice->customer->phone : '',
                     'seller_name' => $invoice->creator ? $invoice->creator->name : 'N/A',
                     'creator_name' => $invoice->creator ? $invoice->creator->name : 'N/A',

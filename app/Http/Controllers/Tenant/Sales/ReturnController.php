@@ -54,7 +54,7 @@ class ReturnController extends BaseTenantController
                 Log::info('Return code search in returns', [
                     'return_code' => $returnCode,
                     'return_id' => $searchedReturn->id,
-                    'customer_name' => $searchedReturn->customer_name ?? 'Khách l�?
+                    'customer_name' => $searchedReturn->customer_name ?? 'Khách lẻ'
                 ]);
             } else {
                 Log::warning('Return code not found in returns search', ['return_code' => $returnCode]);
@@ -71,9 +71,9 @@ class ReturnController extends BaseTenantController
     {
         // Status options
         $statuses = [
-            ['value' => 'pending', 'label' => 'Ch�?duyệt', 'checked' => true],
+            ['value' => 'pending', 'label' => 'Ch�?duyệt', 'checked' => true],
             ['value' => 'approved', 'label' => '?ã duyệt', 'checked' => true],
-            ['value' => 'rejected', 'label' => 'T�?chối', 'checked' => false],
+            ['value' => 'rejected', 'label' => 'T�?chối', 'checked' => false],
             ['value' => 'completed', 'label' => 'Ho?n th?nh', 'checked' => true],
         ];
 
@@ -82,7 +82,7 @@ class ReturnController extends BaseTenantController
             ['value' => 'defective', 'label' => 'H?ng lỗi'],
             ['value' => 'wrong_item', 'label' => 'Giao sai h?ng'],
             ['value' => 'customer_request', 'label' => 'Khách yêu cầu'],
-            ['value' => 'damaged', 'label' => 'H?ng b�?hỏng'],
+            ['value' => 'damaged', 'label' => 'H?ng b�?hỏng'],
             ['value' => 'expired', 'label' => 'H?ng hết hạn'],
             ['value' => 'other', 'label' => 'Khác'],
         ];
@@ -90,7 +90,7 @@ class ReturnController extends BaseTenantController
         // Refund methods
         $refundMethods = [
             ['value' => 'cash', 'label' => 'Tiền mặt'],
-            ['value' => 'card', 'label' => 'Th�?],
+            ['value' => 'card', 'label' => 'Thẻ'],
             ['value' => 'transfer', 'label' => 'Chuyển khoản'],
             ['value' => 'store_credit', 'label' => 'Tín dụng cửa h?ng'],
             ['value' => 'exchange', 'label' => '?ổi h?ng'],
@@ -188,7 +188,7 @@ class ReturnController extends BaseTenantController
                     'id' => $return->id,
                     'return_number' => $return->return_number,
                     'invoice_number' => $return->invoice->invoice_number ?? '',
-                    'customer_display' => $return->customer ? $return->customer->name : 'Khách l�?,
+                    'customer_display' => $return->customer ? $return->customer->name : 'Khách lẻ',
                     'total_amount' => $return->total_amount ?? 0,
                     'status' => $return->status ?? 'pending',
                     'reason' => $return->reason ?? '',
@@ -228,7 +228,7 @@ class ReturnController extends BaseTenantController
                 'recordsTotal' => 0,
                 'recordsFiltered' => 0,
                 'data' => [],
-                'error' => 'Có lỗi xảy ra khi tải d�?liệu'
+                'error' => 'Có lỗi xảy ra khi tải d�?liệu'
             ], 500);
         }
     }
@@ -351,7 +351,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => '?ơn tr�?h?ng ?ã ?ược tạo th?nh công',
+                'message' => '?ơn tr�?h?ng ?ã ?ược tạo th?nh công',
                 'return_id' => $returnOrder->id,
                 'return_number' => $returnOrder->return_number
             ]);
@@ -365,7 +365,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi tạo ?ơn tr�?h?ng: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi tạo ?ơn tr�?h?ng: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -425,7 +425,7 @@ class ReturnController extends BaseTenantController
         // Only allow editing if status is pending
         if ($returnOrder->status !== 'pending') {
             return redirect()->route('admin.return.show', $id)
-                ->with('error', 'Ch�?có th�?chỉnh sửa ?ơn tr�?h?ng �?trạng thái ch�?duyệt');
+                ->with('error', 'Ch�?có th�?chỉnh sửa ?ơn tr�?h?ng �?trạng thái ch�?duyệt');
         }
 
         $branchShops = BranchShop::active()->get();
@@ -446,7 +446,7 @@ class ReturnController extends BaseTenantController
             if ($returnOrder->status !== 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ch�?có th�?chỉnh sửa ?ơn tr�?h?ng �?trạng thái ch�?duyệt'
+                    'message' => 'Ch�?có th�?chỉnh sửa ?ơn tr�?h?ng �?trạng thái ch�?duyệt'
                 ], 400);
             }
 
@@ -514,7 +514,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => '?ơn tr�?h?ng ?ã ?ược cập nhật th?nh công'
+                'message' => '?ơn tr�?h?ng ?ã ?ược cập nhật th?nh công'
             ]);
 
         } catch (\Exception $e) {
@@ -527,7 +527,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi cập nhật ?ơn tr�?h?ng: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi cập nhật ?ơn tr�?h?ng: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -544,7 +544,7 @@ class ReturnController extends BaseTenantController
             if ($returnOrder->status !== 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ch�?có th�?xóa ?ơn tr�?h?ng �?trạng thái ch�?duyệt'
+                    'message' => 'Ch�?có th�?xóa ?ơn tr�?h?ng �?trạng thái ch�?duyệt'
                 ], 400);
             }
 
@@ -560,7 +560,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => '?ơn tr�?h?ng ?ã ?ược xóa th?nh công'
+                'message' => '?ơn tr�?h?ng ?ã ?ược xóa th?nh công'
             ]);
 
         } catch (\Exception $e) {
@@ -572,7 +572,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi xóa ?ơn tr�?h?ng: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi xóa ?ơn tr�?h?ng: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -653,7 +653,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi tải lịch s�?thanh toán'
+                'message' => 'Có lỗi xảy ra khi tải lịch s�?thanh toán'
             ], 500);
         }
     }
@@ -670,7 +670,7 @@ class ReturnController extends BaseTenantController
             if ($returnOrder->status !== 'approved') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ch�?có th�?ghi nhận thanh toán cho ?ơn tr�?h?ng ?ã ?ược duyệt'
+                    'message' => 'Ch�?có th�?ghi nhận thanh toán cho ?ơn tr�?h?ng ?ã ?ược duyệt'
                 ], 400);
             }
 
@@ -743,7 +743,7 @@ class ReturnController extends BaseTenantController
             if ($returnOrder->status !== 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ch�?có th�?duyệt ?ơn tr�?h?ng �?trạng thái ch�?duyệt'
+                    'message' => 'Ch�?có th�?duyệt ?ơn tr�?h?ng �?trạng thái ch�?duyệt'
                 ], 400);
             }
 
@@ -756,7 +756,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => '?ơn tr�?h?ng ?ã ?ược duyệt th?nh công'
+                'message' => '?ơn tr�?h?ng ?ã ?ược duyệt th?nh công'
             ]);
 
         } catch (\Exception $e) {
@@ -766,7 +766,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi duyệt ?ơn tr�?h?ng: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi duyệt ?ơn tr�?h?ng: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -783,7 +783,7 @@ class ReturnController extends BaseTenantController
             if (!in_array($returnOrder->status, ['pending', 'approved'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Không th�?hủy ?ơn tr�?h?ng �?trạng thái n?y'
+                    'message' => 'Không th�?hủy ?ơn tr�?h?ng �?trạng thái n?y'
                 ], 400);
             }
 
@@ -794,7 +794,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => '?ơn tr�?h?ng ?ã ?ược hủy th?nh công'
+                'message' => '?ơn tr�?h?ng ?ã ?ược hủy th?nh công'
             ]);
 
         } catch (\Exception $e) {
@@ -804,7 +804,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi hủy ?ơn tr�?h?ng: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi hủy ?ơn tr�?h?ng: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -831,7 +831,7 @@ class ReturnController extends BaseTenantController
                 'return_id' => $id
             ]);
 
-            return redirect()->back()->with('error', 'Có lỗi xảy ra khi in ?ơn tr�?h?ng');
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi in ?ơn tr�?h?ng');
         }
     }
 
@@ -989,14 +989,14 @@ class ReturnController extends BaseTenantController
                         $returnOrder->update($updateData);
                         $updatedCount++;
                     } else {
-                        $errors[] = "?ơn tr�?h?ng {$returnOrder->return_number} không th�?chuyển sang trạng thái n?y";
+                        $errors[] = "?ơn tr�?h?ng {$returnOrder->return_number} không th�?chuyển sang trạng thái n?y";
                     }
                 } catch (\Exception $e) {
-                    $errors[] = "Lỗi cập nhật ?ơn tr�?h?ng ID {$returnId}: " . $e->getMessage();
+                    $errors[] = "Lỗi cập nhật ?ơn tr�?h?ng ID {$returnId}: " . $e->getMessage();
                 }
             }
 
-            $message = "?ã cập nhật {$updatedCount} ?ơn tr�?h?ng th?nh công";
+            $message = "?ã cập nhật {$updatedCount} ?ơn tr�?h?ng th?nh công";
             if (!empty($errors)) {
                 $message .= ". Có " . count($errors) . " lỗi xảy ra.";
             }
@@ -1046,14 +1046,14 @@ class ReturnController extends BaseTenantController
                         ]);
                         $canceledCount++;
                     } else {
-                        $errors[] = "?ơn tr�?h?ng {$returnOrder->return_number} không th�?hủy �?trạng thái hiện tại";
+                        $errors[] = "?ơn tr�?h?ng {$returnOrder->return_number} không th�?hủy �?trạng thái hiện tại";
                     }
                 } catch (\Exception $e) {
-                    $errors[] = "Lỗi hủy ?ơn tr�?h?ng ID {$returnId}: " . $e->getMessage();
+                    $errors[] = "Lỗi hủy ?ơn tr�?h?ng ID {$returnId}: " . $e->getMessage();
                 }
             }
 
-            $message = "?ã hủy {$canceledCount} ?ơn tr�?h?ng th?nh công";
+            $message = "?ã hủy {$canceledCount} ?ơn tr�?h?ng th?nh công";
             if (!empty($errors)) {
                 $message .= ". Có " . count($errors) . " lỗi xảy ra.";
             }
@@ -1106,16 +1106,16 @@ class ReturnController extends BaseTenantController
                         $returnOrder->delete();
                         $deletedCount++;
                     } else {
-                        $errors[] = "?ơn tr�?h?ng {$returnOrder->return_number} ch�?có th�?xóa �?trạng thái ch�?duyệt";
+                        $errors[] = "?ơn tr�?h?ng {$returnOrder->return_number} ch�?có th�?xóa �?trạng thái ch�?duyệt";
                     }
                 } catch (\Exception $e) {
-                    $errors[] = "Lỗi xóa ?ơn tr�?h?ng ID {$returnId}: " . $e->getMessage();
+                    $errors[] = "Lỗi xóa ?ơn tr�?h?ng ID {$returnId}: " . $e->getMessage();
                 }
             }
 
             DB::commit();
 
-            $message = "?ã xóa {$deletedCount} ?ơn tr�?h?ng th?nh công";
+            $message = "?ã xóa {$deletedCount} ?ơn tr�?h?ng th?nh công";
             if (!empty($errors)) {
                 $message .= ". Có " . count($errors) . " lỗi xảy ra.";
             }
@@ -1223,7 +1223,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => '?ơn tr�?h?ng t�?hóa ?ơn ?ã ?ược tạo th?nh công',
+                'message' => '?ơn tr�?h?ng t�?hóa ?ơn ?ã ?ược tạo th?nh công',
                 'return_id' => $returnOrder->id,
                 'return_number' => $returnOrder->return_number
             ]);
@@ -1237,7 +1237,7 @@ class ReturnController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi tạo ?ơn tr�?h?ng t�?hóa ?ơn: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi tạo ?ơn tr�?h?ng t�?hóa ?ơn: ' . $e->getMessage()
             ], 500);
         }
     }

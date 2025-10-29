@@ -230,7 +230,7 @@
                                     </a>
                                 </div>
                                 <div class="menu-item">
-                                    <a class="menu-link py-3" href="{{ route('admin.branch-shops.index') }}">
+                                    <a class="menu-link py-3" href="{{ route('admin.settings.branch-manager') }}">
                                         <span class="menu-icon">
                                             <i class="fas fa-store text-info fs-6"></i>
                                         </span>

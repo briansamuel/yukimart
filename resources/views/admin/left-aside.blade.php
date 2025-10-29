@@ -662,7 +662,7 @@
                             @if ($AuthPermission->isHeader('BranchShopController') || $AuthPermission->isHeader('BranchShopController/index'))
                                 <div class="menu-item">
                                     <a class="menu-link {{ Request::is('*/branch-shops') ? 'active' : '' }}"
-                                        href="{{ route('admin.branch-shops.index') }}">
+                                        href="{{ route('admin.settings.branch-manager') }}">
                                         <span class="menu-bullet">
                                             <span class="bullet bullet-dot"></span>
                                         </span>

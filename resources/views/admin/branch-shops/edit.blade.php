@@ -25,7 +25,7 @@
                             <span class="bullet bg-gray-400 w-5px h-2px"></span>
                         </li>
                         <li class="breadcrumb-item text-muted">
-                            <a href="{{ route('admin.branch-shops.index') }}" class="text-muted text-hover-primary">{{ __('branch_shops.branch_shops') }}</a>
+                            <a href="{{ route('admin.settings.branch-manager') }}" class="text-muted text-hover-primary">{{ __('branch_shops.branch_shops') }}</a>
                         </li>
                         <li class="breadcrumb-item">
                             <span class="bullet bg-gray-400 w-5px h-2px"></span>
@@ -37,7 +37,7 @@
                 <!--end::Page title-->
                 <!--begin::Actions-->
                 <div class="d-flex align-items-center gap-2 gap-lg-3">
-                    <a href="{{ route('admin.branch-shops.index') }}" class="btn btn-sm fw-bold btn-secondary">
+                    <a href="{{ route('admin.settings.branch-manager') }}" class="btn btn-sm fw-bold btn-secondary">
                         <i class="ki-duotone ki-arrow-left fs-3">
                             <span class="path1"></span>
                             <span class="path2"></span>
@@ -283,7 +283,7 @@
 
                         <div class="d-flex justify-content-end">
                             <!--begin::Button-->
-                            <a href="{{ route('admin.branch-shops.index') }}" id="kt_branch_shop_edit_cancel" class="btn btn-light me-5">{{ __('common.cancel') }}</a>
+                            <a href="{{ route('admin.settings.branch-manager') }}" id="kt_branch_shop_edit_cancel" class="btn btn-light me-5">{{ __('common.cancel') }}</a>
                             <!--end::Button-->
                             <!--begin::Button-->
                             <button type="submit" id="kt_branch_shop_edit_submit" class="btn btn-primary">

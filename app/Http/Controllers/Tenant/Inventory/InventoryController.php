@@ -127,7 +127,7 @@ class InventoryController extends Controller
                     'supplier_name' => $transaction->supplier->name ?? null,
                     'quantity' => $transaction->quantity ?? 0,
                     'total_value' => $transaction->total_value ?? 0,
-                    'created_by' => $transaction->creator->full_name ?? 'H�?thống',
+                    'created_by' => $transaction->creator->full_name ?? 'H�?thống',
                     'can_edit' => $transaction->created_at->diffInHours(now()) < 24, // Can edit within 24 hours
                     'actions' => '' // Will be rendered by JavaScript
                 ];
@@ -330,7 +330,7 @@ class InventoryController extends Controller
             return response($html);
 
         } catch (\Exception $e) {
-            return response('<div class="alert alert-danger">Không th�?tải chi tiết giao dịch: ' . $e->getMessage() . '</div>');
+            return response('<div class="alert alert-danger">Không th�?tải chi tiết giao dịch: ' . $e->getMessage() . '</div>');
         }
     }
 
@@ -389,7 +389,7 @@ class InventoryController extends Controller
             // Return default warehouses if none exist in database
             return collect([
                 (object) ['id' => 1, 'name' => 'Kho Chính', 'code' => 'KC001'],
-                (object) ['id' => 2, 'name' => 'Kho Ph�?, 'code' => 'KP001'],
+                (object) ['id' => 2, 'name' => 'Kho Phụ', 'code' => 'KP001'],
             ]);
         }
 

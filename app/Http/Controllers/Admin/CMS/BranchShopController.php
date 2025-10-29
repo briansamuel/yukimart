@@ -22,7 +22,7 @@ class BranchShopController extends Controller
      */
     public function index()
     {
-        return view('admin.branch-shops.index');
+        return view('admin.settings.branch-manager');
     }
 
     /**
@@ -129,10 +129,10 @@ class BranchShopController extends Controller
             $branchShop = $this->branchShopService->findById($id);
             return view('admin.branch-shops.show', compact('branchShop'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập');
         } catch (\Exception $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Lỗi khi tải chi nhánh: ' . $e->getMessage());
         }
     }
@@ -148,10 +148,10 @@ class BranchShopController extends Controller
             $warehouses = \App\Models\Warehouse::where('status', 'active')->orderBy('name')->get();
             return view('admin.branch-shops.edit', compact('branchShop', 'managers', 'warehouses'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập');
         } catch (\Exception $e) {
-            return redirect()->route('admin.branch-shops.index')
+            return redirect()->route('admin.settings.branch-manager')
                 ->with('error', 'Lỗi khi tải chi nhánh: ' . $e->getMessage());
         }
     }

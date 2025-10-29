@@ -120,7 +120,7 @@
         
         <li><hr class="dropdown-divider"></li>
         <li>
-            <a class="dropdown-item text-primary" href="{{ route('admin.branch-shops.index') }}">
+            <a class="dropdown-item text-primary" href="{{ route('admin.settings.branch-manager') }}">
                 <i class="fas fa-cog me-2"></i>
                 Quản lý chi nhánh
             </a>

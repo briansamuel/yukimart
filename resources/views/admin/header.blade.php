@@ -266,7 +266,7 @@
                                         </a>
                                     </div>
                                     <div class="menu-item">
-                                        <a class="menu-link py-3" href="{{ route('admin.branch-shops.index') }}">
+                                        <a class="menu-link py-3" href="{{ route('admin.settings.branch-manager') }}">
                                             <span class="menu-icon">
                                                 <i class="ki-duotone ki-shop fs-2">
                                                     <span class="path1"></span>
