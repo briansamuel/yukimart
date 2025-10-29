@@ -1,0 +1,660 @@
+{
+    "info": {
+        "_postman_id": "fcm-yukimart-api-2025",
+        "name": "YukiMart FCM API Collection",
+        "description": "Firebase Cloud Messaging API collection for YukiMart system. Includes Firebase v1 API endpoints and YukiMart internal FCM endpoints for testing notifications.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "yukimart-fcm",
+        "_updated_at": "2025-08-08T15:56:02.144794Z",
+        "_synced_from_env": true
+    },
+    "item": [
+        {
+            "name": "Firebase FCM v1 API",
+            "item": [
+                {
+                    "name": "Send Notification to Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{firebase_access_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"message\": {\n    \"token\": \"{{test_fcm_token}}\",\n    \"notification\": {\n      \"title\": \"\ud83d\uded2 Test Notification\",\n      \"body\": \"This is a test notification from Postman\"\n    },\n    \"data\": {\n      \"type\": \"test\",\n      \"source\": \"postman\",\n      \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"android\": {\n      \"priority\": \"high\",\n      \"notification\": {\n        \"color\": \"#009ef7\",\n        \"icon\": \"ic_notification\"\n      }\n    }\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "https://fcm.googleapis.com/v1/projects/{{firebase_project_id}}/messages:send",
+                            "protocol": "https",
+                            "host": [
+                                "fcm",
+                                "googleapis",
+                                "com"
+                            ],
+                            "path": [
+                                "v1",
+                                "projects",
+                                "{{firebase_project_id}}",
+                                "messages:send"
+                            ]
+                        },
+                        "description": "Send a notification to a specific FCM token using Firebase v1 API"
+                    }
+                },
+                {
+                    "name": "Send Notification to Topic",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{firebase_access_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"message\": {\n    \"topic\": \"admin_notifications\",\n    \"notification\": {\n      \"title\": \"\ud83d\udce2 Admin Notification\",\n      \"body\": \"Broadcast message to all admin users\"\n    },\n    \"data\": {\n      \"type\": \"admin_broadcast\",\n      \"priority\": \"high\",\n      \"timestamp\": \"{{$timestamp}}\"\n    }\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "https://fcm.googleapis.com/v1/projects/{{firebase_project_id}}/messages:send",
+                            "protocol": "https",
+                            "host": [
+                                "fcm",
+                                "googleapis",
+                                "com"
+                            ],
+                            "path": [
+                                "v1",
+                                "projects",
+                                "{{firebase_project_id}}",
+                                "messages:send"
+                            ]
+                        },
+                        "description": "Send a notification to a topic (all subscribers)"
+                    }
+                }
+            ],
+            "description": "Direct Firebase FCM v1 API endpoints"
+        },
+        {
+            "name": "YukiMart FCM API",
+            "item": [
+                {
+                    "name": "Register FCM Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"{{test_fcm_token}}\",\n  \"device_type\": \"android\",\n  \"device_name\": \"Test Device\",\n  \"app_version\": \"1.0.0\"\n}"
+                        },
+                        "url": {
+                            "raw": "http://yukimart.local/api/fcm/register",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "fcm",
+                                "register"
+                            ]
+                        },
+                        "description": "Register a new FCM token for the authenticated user"
+                    }
+                },
+                {
+                    "name": "Send Test Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"\ud83e\uddea Test Notification\",\n  \"message\": \"This is a test notification from YukiMart API\",\n  \"type\": \"test\",\n  \"data\": {\n    \"test_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "http://yukimart.local/api/fcm/test",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "fcm",
+                                "test"
+                            ]
+                        },
+                        "description": "Send a test notification to the authenticated user"
+                    }
+                },
+                {
+                    "name": "Get User Notifications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://yukimart.local/api/notifications?page=1&limit=20",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "notifications"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "Get notifications for the authenticated user"
+                    }
+                },
+                {
+                    "name": "Get FCM Tokens",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://yukimart.local/api/fcm/tokens",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "fcm",
+                                "tokens"
+                            ]
+                        },
+                        "description": "Get all FCM tokens for the authenticated user"
+                    }
+                },
+                {
+                    "name": "Send Order Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"order_id\": 25,\n  \"order_code\": \"DH202508080003\",\n  \"customer_name\": \"Kh\u00e1ch l\u1ebb\",\n  \"total_amount\": 50000,\n  \"status\": \"processing\"\n}"
+                        },
+                        "url": {
+                            "raw": "http://yukimart.local/api/fcm/order-notification",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "fcm",
+                                "order-notification"
+                            ]
+                        },
+                        "description": "Send order notification to admin users"
+                    }
+                },
+                {
+                    "name": "Send Invoice Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"invoice_id\": 1859,\n  \"invoice_number\": \"HD-1859\",\n  \"customer_name\": \"Kh\u00e1ch l\u1ebb\",\n  \"total_amount\": 50000,\n  \"status\": \"paid\"\n}"
+                        },
+                        "url": {
+                            "raw": "http://yukimart.local/api/fcm/invoice-notification",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "fcm",
+                                "invoice-notification"
+                            ]
+                        },
+                        "description": "Send invoice notification to admin users"
+                    }
+                },
+                {
+                    "name": "Register FCM Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{yukimart_base_url}}/api/v1/fcm/register-token",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "register-token"
+                            ]
+                        },
+                        "description": "Register a new FCM token for the authenticated user",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"token\": \"{{test_fcm_token}}\",\n    \"device_type\": \"android\",\n    \"device_name\": \"Test Device\",\n    \"app_version\": \"1.0.0\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-08T15:56:02.145115Z",
+                    "_route_name": "Register Token"
+                },
+                {
+                    "name": "Register FCM Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{yukimart_base_url}}/api/v1/fcm/unregister-token",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "unregister-token"
+                            ]
+                        },
+                        "description": "Register a new FCM token for the authenticated user",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"token\": \"{{test_fcm_token}}\",\n    \"device_type\": \"android\",\n    \"device_name\": \"Test Device\",\n    \"app_version\": \"1.0.0\"\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-08T15:56:02.145175Z",
+                    "_route_name": "Unregister Token"
+                },
+                {
+                    "name": "Get FCM Tokens",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{yukimart_base_url}}/api/v1/fcm/tokens",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "tokens"
+                            ]
+                        },
+                        "description": "Get all FCM tokens for the authenticated user"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-08T15:56:02.145210Z",
+                    "_route_name": "Tokens"
+                },
+                {
+                    "name": "Send Test Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{yukimart_base_url}}/api/v1/fcm/test-notification",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "test-notification"
+                            ]
+                        },
+                        "description": "Send a test notification to the authenticated user",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"\\ud83e\\uddea Test Notification\",\n    \"message\": \"This is a test notification from Postman\",\n    \"type\": \"test\",\n    \"data\": {\n        \"test_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    }\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-08T15:56:02.145239Z",
+                    "_route_name": "Test Notification"
+                },
+                {
+                    "name": "Get FCM Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{yukimart_base_url}}/api/v1/fcm/statistics",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "statistics"
+                            ]
+                        },
+                        "description": "Get FCM statistics for the authenticated user"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-08T15:56:02.145273Z",
+                    "_route_name": "Statistics"
+                },
+                {
+                    "name": "Send Custom Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{yukimart_base_url}}/api/v1/fcm/send-notification",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "send-notification"
+                            ]
+                        },
+                        "description": "Send a custom notification to specific users or roles",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"\\ud83d\\udce2 Custom Notification\",\n    \"message\": \"Custom notification message\",\n    \"type\": \"custom\",\n    \"target_type\": \"user\",\n    \"target_ids\": [\n        12\n    ],\n    \"data\": {\n        \"action\": \"open_screen\",\n        \"screen\": \"dashboard\"\n    }\n}"
+                        }
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-08T15:56:02.145308Z",
+                    "_route_name": "Send Notification"
+                },
+                {
+                    "name": "Test FCM Configuration",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{yukimart_api_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{yukimart_base_url}}/api/v1/fcm/test-config",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fcm",
+                                "test-config"
+                            ]
+                        },
+                        "description": "Test FCM configuration and service account connectivity"
+                    },
+                    "_auto_generated": true,
+                    "_generated_at": "2025-08-08T15:56:02.145339Z",
+                    "_route_name": "Test Config"
+                }
+            ],
+            "description": "YukiMart internal FCM API endpoints (auto-updated from Laravel routes)",
+            "_last_sync": "2025-08-08T15:56:02.145374Z"
+        },
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Login to YukiMart",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{yukimart_email}}\",\n  \"password\": \"{{yukimart_password}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "http://yukimart.local/api/auth/login",
+                            "host": [
+                                "{{yukimart_base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login to YukiMart and get API token"
+                    }
+                }
+            ],
+            "description": "Authentication endpoints"
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Auto-generate timestamp for requests",
+                    "pm.environment.set('timestamp', new Date().toISOString());"
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "collection_version",
+            "value": "1.0.0",
+            "type": "string"
+        }
+    ]
+}

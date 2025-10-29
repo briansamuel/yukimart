@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YukiMart FCM Test Interface</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; background: #f0f8f0; }
+        .error { color: red; background: #f8f0f0; }
+        .warning { color: orange; background: #f8f8f0; }
+        .info { color: blue; background: #f0f0f8; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 4px; background: #007cba; color: white; }
+        button:hover { background: #005a87; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .token-display { word-break: break-all; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .firebase-config { background: #f0f8f0; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 YukiMart FCM Test Interface</h1>
+        <p>Test Firebase Cloud Messaging integration with saas-techcura project</p>
+
+        <!-- Firebase Configuration Display -->
+        <div class="section firebase-config">
+            <h3>📋 Firebase Configuration</h3>
+            <p><strong>Project ID:</strong> saas-techcura</p>
+            <p><strong>Sender ID:</strong> 185186239234</p>
+            <p><strong>App ID:</strong> 1:185186239234:web:9717b33e89ce7c71fd381b</p>
+            <p><strong>Auth Domain:</strong> saas-techcura.firebaseapp.com</p>
+        </div>
+
+        <!-- Status Display -->
+        <div class="section">
+            <h3>📊 FCM Status</h3>
+            <div id="status" class="status info">Initializing...</div>
+            <div id="supportInfo" class="status"></div>
+        </div>
+
+        <!-- Authentication -->
+        <div class="section">
+            <h3>🔐 Authentication</h3>
+            <input type="text" id="authToken" placeholder="Enter your Bearer token here" />
+            <button onclick="setAuthToken()">Set Auth Token</button>
+            <div id="authStatus" class="status"></div>
+        </div>
+
+        <!-- FCM Token Display -->
+        <div class="section">
+            <h3>🎫 FCM Token</h3>
+            <div id="tokenDisplay" class="token-display">No token yet</div>
+            <button onclick="checkSupport()">Check Support</button>
+            <button onclick="initializeFCM()">Initialize FCM</button>
+            <button onclick="getToken()">Get Token</button>
+            <button onclick="registerToken()">Register Token</button>
+            <button onclick="useFallback()">Use Fallback</button>
+        </div>
+
+        <!-- Test Notifications -->
+        <div class="section">
+            <h3>📱 Test Notifications</h3>
+            <input type="text" id="testTitle" placeholder="Notification title" value="Test from YukiMart" />
+            <textarea id="testMessage" placeholder="Notification message" rows="3">This is a test notification from YukiMart FCM system!</textarea>
+            <br>
+            <button onclick="sendTestNotification()">Send Test Notification</button>
+            <button onclick="requestPermission()">Request Permission</button>
+        </div>
+
+        <!-- FCM Statistics -->
+        <div class="section">
+            <h3>📈 FCM Statistics (Admin)</h3>
+            <button onclick="getStatistics()">Get Statistics</button>
+            <button onclick="testConfig()">Test Configuration</button>
+            <div id="statisticsDisplay"></div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section">
+            <h3>📝 Logs</h3>
+            <div id="logs" style="height: 200px; overflow-y: auto; background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;"></div>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+
+    <!-- FCM Fallback -->
+    <script src="/js/fcm-fallback.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAIt7ztwOlPP39U0WIZsTXiFU5hkDLNdNc",
+            authDomain: "saas-techcura.firebaseapp.com",
+            projectId: "saas-techcura",
+            storageBucket: "saas-techcura.firebasestorage.app",
+            messagingSenderId: "185186239234",
+            appId: "1:185186239234:web:9717b33e89ce7c71fd381b",
+            measurementId: "G-PWKCFCL5ZQ"
+        };
+
+        // Global variables
+        let messaging = null;
+        let currentToken = null;
+        let authToken = null;
+        const apiBase = '/api/v1';
+        const vapidKey = 'YOUR_VAPID_KEY_HERE'; // Replace with actual VAPID key
+
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[FCM Test] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            log(message, type);
+        }
+
+        // Set auth token
+        function setAuthToken() {
+            const token = document.getElementById('authToken').value.trim();
+            if (token) {
+                authToken = token;
+                localStorage.setItem('fcm_test_auth_token', token);
+                document.getElementById('authStatus').innerHTML = '<span class="success">✅ Auth token set</span>';
+                log('Auth token set successfully', 'success');
+            } else {
+                document.getElementById('authStatus').innerHTML = '<span class="error">❌ Please enter a valid token</span>';
+                log('Invalid auth token', 'error');
+            }
+        }
+
+        // Check browser support
+        function checkBrowserSupport() {
+            const issues = [];
+
+            // Check HTTPS
+            if (!window.isSecureContext) {
+                issues.push('HTTPS required (or localhost)');
+            }
+
+            // Check Service Workers
+            if (!('serviceWorker' in navigator)) {
+                issues.push('Service Workers not supported');
+            }
+
+            // Check Notifications
+            if (!('Notification' in window)) {
+                issues.push('Notifications not supported');
+            }
+
+            // Check if Firebase SDK is loaded
+            if (typeof firebase === 'undefined') {
+                issues.push('Firebase SDK not loaded');
+            }
+
+            return issues;
+        }
+
+        // Initialize FCM
+        async function initializeFCM() {
+            try {
+                updateStatus('Checking browser support...', 'info');
+
+                // Check browser support first
+                const supportIssues = checkBrowserSupport();
+                if (supportIssues.length > 0) {
+                    throw new Error('Browser support issues: ' + supportIssues.join(', '));
+                }
+
+                updateStatus('Initializing Firebase...', 'info');
+
+                // Initialize Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+
+                // Check if messaging is supported (with better error handling)
+                let messagingSupported = true;
+                try {
+                    messagingSupported = firebase.messaging.isSupported();
+                } catch (e) {
+                    log(`Warning: Cannot check messaging support: ${e.message}`, 'warning');
+                    messagingSupported = true; // Assume supported and try anyway
+                }
+
+                if (!messagingSupported) {
+                    throw new Error('FCM messaging is not supported in this browser');
+                }
+
+                messaging = firebase.messaging();
+
+                // Register service worker
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    log('Service Worker registered successfully', 'success');
+                }
+
+                // Listen for foreground messages
+                messaging.onMessage((payload) => {
+                    log(`Foreground message received: ${JSON.stringify(payload)}`, 'info');
+                    showNotification(payload);
+                });
+
+                updateStatus('FCM initialized successfully', 'success');
+
+            } catch (error) {
+                updateStatus(`FCM initialization failed: ${error.message}`, 'error');
+                log(`FCM initialization error: ${error.message}`, 'error');
+            }
+        }
+
+        // Request notification permission
+        async function requestPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    log('Notification permission granted', 'success');
+                    updateStatus('Permission granted', 'success');
+                } else {
+                    log('Notification permission denied', 'warning');
+                    updateStatus('Permission denied', 'warning');
+                }
+            } catch (error) {
+                log(`Permission request error: ${error.message}`, 'error');
+            }
+        }
+
+        // Get FCM token
+        async function getToken() {
+            try {
+                if (!messaging) {
+                    throw new Error('FCM not initialized. Click Initialize FCM first.');
+                }
+
+                updateStatus('Getting FCM token...', 'info');
+
+                const token = await messaging.getToken({
+                    vapidKey: vapidKey
+                });
+
+                if (token) {
+                    currentToken = token;
+                    document.getElementById('tokenDisplay').textContent = token;
+                    log('FCM token retrieved successfully', 'success');
+                    updateStatus('Token retrieved', 'success');
+                } else {
+                    throw new Error('No registration token available');
+                }
+
+            } catch (error) {
+                updateStatus(`Failed to get token: ${error.message}`, 'error');
+                log(`Get token error: ${error.message}`, 'error');
+            }
+        }
+
+        // Register token with backend
+        async function registerToken() {
+            try {
+                if (!currentToken) {
+                    throw new Error('No FCM token available. Get token first.');
+                }
+
+                if (!authToken) {
+                    throw new Error('No auth token set. Set auth token first.');
+                }
+
+                updateStatus('Registering token with backend...', 'info');
+
+                const response = await fetch(`${apiBase}/fcm/register-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: currentToken,
+                        device_type: 'web',
+                        device_name: navigator.userAgent,
+                        app_version: '1.0.0',
+                        platform_version: navigator.platform
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    log('Token registered successfully with backend', 'success');
+                    updateStatus('Token registered with backend', 'success');
+                } else {
+                    throw new Error(result.message || 'Registration failed');
+                }
+
+            } catch (error) {
+                updateStatus(`Token registration failed: ${error.message}`, 'error');
+                log(`Token registration error: ${error.message}`, 'error');
+            }
+        }
+
+        // Send test notification
+        async function sendTestNotification() {
+            try {
+                if (!authToken) {
+                    throw new Error('No auth token set. Set auth token first.');
+                }
+
+                const title = document.getElementById('testTitle').value || 'Test Notification';
+                const message = document.getElementById('testMessage').value || 'Test message';
+
+                updateStatus('Sending test notification...', 'info');
+
+                const response = await fetch(`${apiBase}/fcm/test-notification`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        message: message
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    log(`Test notification sent successfully. Sent: ${result.data?.sent_count || 0}`, 'success');
+                    updateStatus('Test notification sent', 'success');
+                } else {
+                    throw new Error(result.message || 'Send failed');
+                }
+
+            } catch (error) {
+                updateStatus(`Send test notification failed: ${error.message}`, 'error');
+                log(`Send test notification error: ${error.message}`, 'error');
+            }
+        }
+
+        // Get FCM statistics
+        async function getStatistics() {
+            try {
+                if (!authToken) {
+                    throw new Error('No auth token set. Set auth token first.');
+                }
+
+                const response = await fetch(`${apiBase}/fcm/statistics`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const stats = result.data;
+                    const display = `
+                        <h4>📊 Statistics:</h4>
+                        <p><strong>Total Tokens:</strong> ${stats.total_tokens}</p>
+                        <p><strong>Active Tokens:</strong> ${stats.active_tokens}</p>
+                        <p><strong>Inactive Tokens:</strong> ${stats.inactive_tokens}</p>
+                        <p><strong>By Device Type:</strong></p>
+                        <ul>
+                            <li>Android: ${stats.by_device_type?.android || 0}</li>
+                            <li>iOS: ${stats.by_device_type?.ios || 0}</li>
+                            <li>Web: ${stats.by_device_type?.web || 0}</li>
+                        </ul>
+                        <p><strong>Recent Registrations:</strong> ${stats.recent_registrations}</p>
+                    `;
+                    document.getElementById('statisticsDisplay').innerHTML = display;
+                    log('Statistics retrieved successfully', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to get statistics');
+                }
+
+            } catch (error) {
+                log(`Get statistics error: ${error.message}`, 'error');
+                document.getElementById('statisticsDisplay').innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Test FCM configuration
+        async function testConfig() {
+            try {
+                if (!authToken) {
+                    throw new Error('No auth token set. Set auth token first.');
+                }
+
+                const response = await fetch(`${apiBase}/fcm/test-config`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    log(`Configuration test: ${result.message}`, 'success');
+                    updateStatus('Configuration test passed', 'success');
+                } else {
+                    throw new Error(result.message || 'Configuration test failed');
+                }
+
+            } catch (error) {
+                log(`Configuration test error: ${error.message}`, 'error');
+                updateStatus(`Configuration test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Show notification
+        function showNotification(payload) {
+            const title = payload.notification?.title || 'YukiMart Notification';
+            const options = {
+                body: payload.notification?.body || 'You have a new notification',
+                icon: payload.notification?.icon || '/favicon.ico'
+            };
+
+            if (Notification.permission === 'granted') {
+                new Notification(title, options);
+            }
+        }
+
+        // Check browser support
+        function checkSupport() {
+            const issues = checkBrowserSupport();
+            let supportHtml = '<h4>🔍 Browser Support Check:</h4>';
+
+            if (issues.length === 0) {
+                supportHtml += '<p class="success">✅ All requirements met</p>';
+                supportHtml += '<ul>';
+                supportHtml += '<li>✅ HTTPS/Secure Context</li>';
+                supportHtml += '<li>✅ Service Workers supported</li>';
+                supportHtml += '<li>✅ Notifications supported</li>';
+                supportHtml += '<li>✅ Firebase SDK loaded</li>';
+                supportHtml += '</ul>';
+            } else {
+                supportHtml += '<p class="error">❌ Issues found:</p>';
+                supportHtml += '<ul>';
+                issues.forEach(issue => {
+                    supportHtml += `<li class="error">❌ ${issue}</li>`;
+                });
+                supportHtml += '</ul>';
+
+                supportHtml += '<h4>💡 Solutions:</h4>';
+                supportHtml += '<ul>';
+                if (issues.includes('HTTPS required (or localhost)')) {
+                    supportHtml += '<li>Use HTTPS or access via localhost</li>';
+                }
+                if (issues.includes('Service Workers not supported')) {
+                    supportHtml += '<li>Update to a modern browser (Chrome 45+, Firefox 44+, Safari 11.1+)</li>';
+                }
+                if (issues.includes('Notifications not supported')) {
+                    supportHtml += '<li>Enable notifications in browser settings</li>';
+                }
+                if (issues.includes('Firebase SDK not loaded')) {
+                    supportHtml += '<li>Check internet connection and reload page</li>';
+                }
+                supportHtml += '<li><strong>Alternative:</strong> Use Fallback mode for basic notifications</li>';
+                supportHtml += '</ul>';
+            }
+
+            document.getElementById('supportInfo').innerHTML = supportHtml;
+            log(`Support check completed. Issues: ${issues.length}`, issues.length > 0 ? 'warning' : 'success');
+        }
+
+        // Use fallback mode
+        function useFallback() {
+            log('Switching to fallback mode...', 'info');
+            updateStatus('Using fallback mode (basic notifications)', 'warning');
+
+            // Initialize fallback
+            if (typeof FCMFallback !== 'undefined') {
+                window.fcmFallback = new FCMFallback();
+                window.fcmFallback.initialize().then(success => {
+                    if (success) {
+                        log('Fallback mode initialized successfully', 'success');
+                        updateStatus('Fallback mode active', 'success');
+                    } else {
+                        log('Fallback mode failed to initialize', 'error');
+                        updateStatus('Fallback mode failed', 'error');
+                    }
+                });
+            } else {
+                log('Fallback script not loaded', 'error');
+                updateStatus('Fallback script not available', 'error');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved auth token
+            const savedToken = localStorage.getItem('fcm_test_auth_token');
+            if (savedToken) {
+                document.getElementById('authToken').value = savedToken;
+                authToken = savedToken;
+                document.getElementById('authStatus').innerHTML = '<span class="success">✅ Auth token loaded from storage</span>';
+            }
+
+            log('FCM Test Interface loaded', 'info');
+            updateStatus('Ready to test FCM', 'info');
+
+            // Auto-check support
+            setTimeout(checkSupport, 1000);
+        });
+    </script>
+</body>
+</html>
