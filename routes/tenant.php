@@ -195,9 +195,13 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
         // --------------------------------------------------------------------
         Route::prefix('customers')->name('admin.customers.')->group(function () {
             Route::get('/', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'index'])->name('index');
+            Route::get('/ajax', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'ajaxGetCustomers'])->name('ajax');
             Route::get('/data', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'getData'])->name('data');
             Route::get('/statistics', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'getStatistics'])->name('statistics');
             Route::get('/active/list', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'getActiveCustomers'])->name('active-list');
+            Route::get('/filter/statuses', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'getFilterStatuses'])->name('filter.statuses');
+            Route::post('/bulk-delete', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'bulkDelete'])->name('bulk.delete');
+            Route::get('/export', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'exportCustomers'])->name('export');
             Route::get('/create', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'store'])->name('store');
             Route::get('/{customer}/info', [App\Http\Controllers\Tenant\CRM\CustomerController::class, 'getCustomerInfo'])->name('info');
@@ -650,12 +654,22 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
         // --------------------------------------------------------------------
         // PROMOTION & VOUCHER
         // --------------------------------------------------------------------
-        Route::prefix('promotion')->name('admin.promotion.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Tenant\PlaceholderController::class, 'promotion'])->name('index');
+        Route::prefix('promotions')->name('admin.promotion.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Tenant\CRM\PromotionController::class, 'index'])->name('index');
+            Route::get('/ajax', [App\Http\Controllers\Tenant\CRM\PromotionController::class, 'ajaxGetPromotions'])->name('ajax');
+            Route::get('/filter/statuses', [App\Http\Controllers\Tenant\CRM\PromotionController::class, 'getFilterStatuses'])->name('filter.statuses');
+            Route::get('/filter/types', [App\Http\Controllers\Tenant\CRM\PromotionController::class, 'getFilterTypes'])->name('filter.types');
+            Route::post('/bulk-delete', [App\Http\Controllers\Tenant\CRM\PromotionController::class, 'bulkDelete'])->name('bulk.delete');
+            Route::get('/export', [App\Http\Controllers\Tenant\CRM\PromotionController::class, 'export'])->name('export');
         });
 
-        Route::prefix('voucher')->name('admin.voucher.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Tenant\PlaceholderController::class, 'voucher'])->name('index');
+        Route::prefix('vouchers')->name('admin.voucher.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Tenant\CRM\VoucherController::class, 'index'])->name('index');
+            Route::get('/ajax', [App\Http\Controllers\Tenant\CRM\VoucherController::class, 'ajaxGetVouchers'])->name('ajax');
+            Route::get('/filter/statuses', [App\Http\Controllers\Tenant\CRM\VoucherController::class, 'getFilterStatuses'])->name('filter.statuses');
+            Route::get('/filter/types', [App\Http\Controllers\Tenant\CRM\VoucherController::class, 'getFilterTypes'])->name('filter.types');
+            Route::post('/bulk-delete', [App\Http\Controllers\Tenant\CRM\VoucherController::class, 'bulkDelete'])->name('bulk.delete');
+            Route::get('/export', [App\Http\Controllers\Tenant\CRM\VoucherController::class, 'export'])->name('export');
         });
 
         // --------------------------------------------------------------------

@@ -3,26 +3,26 @@
 namespace App\Http\Controllers\Tenant\CRM;
 
 use App\Http\Controllers\Tenant\BaseTenantController;
-use App\Models\Promotion;
+use App\Models\Voucher;
 use App\Models\BranchShop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-class PromotionController extends BaseTenantController
+class VoucherController extends BaseTenantController
 {
     /**
-     * Display a listing of promotions.
+     * Display a listing of vouchers.
      */
     public function index()
     {
-        return view('admin.promotions.index');
+        return view('admin.vouchers.index');
     }
 
     /**
-     * AJAX endpoint for promotions listing
+     * AJAX endpoint for vouchers listing
      */
-    public function ajaxGetPromotions(Request $request)
+    public function ajaxGetVouchers(Request $request)
     {
         try {
             $params = $request->all();
@@ -31,7 +31,7 @@ class PromotionController extends BaseTenantController
             $filters = [
                 'status' => $params['status'] ?? null,
                 'type' => $params['type'] ?? null,
-                'apply_to' => $params['apply_to'] ?? null,
+                'is_public' => $params['is_public'] ?? null,
                 'branch_shop_id' => $params['branch_shop_id'] ?? null,
                 'date_from' => $params['date_from'] ?? null,
                 'date_to' => $params['date_to'] ?? null,
@@ -42,7 +42,7 @@ class PromotionController extends BaseTenantController
             $page = $params['page'] ?? 1;
 
             // Build query
-            $query = Promotion::with(['branchShop', 'creator', 'updater']);
+            $query = Voucher::with(['branchShop', 'creator', 'updater']);
 
             // Apply filters
             if (!empty($filters['status'])) {
@@ -54,8 +54,8 @@ class PromotionController extends BaseTenantController
                 $query->where('type', $filters['type']);
             }
 
-            if (!empty($filters['apply_to'])) {
-                $query->where('apply_to', $filters['apply_to']);
+            if (isset($filters['is_public']) && $filters['is_public'] !== '') {
+                $query->where('is_public', $filters['is_public']);
             }
 
             if (!empty($filters['branch_shop_id'])) {
@@ -74,50 +74,51 @@ class PromotionController extends BaseTenantController
                 $search = $filters['search'];
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('promotion_code', 'like', "%{$search}%")
+                      ->orWhere('voucher_code', 'like', "%{$search}%")
                       ->orWhere('description', 'like', "%{$search}%");
                 });
             }
 
             // Get paginated results
-            $promotions = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+            $vouchers = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
 
             // Format data
-            $data = $promotions->map(function ($promotion) {
+            $data = $vouchers->map(function ($voucher) {
                 return [
-                    'id' => $promotion->id,
-                    'promotion_code' => $promotion->promotion_code ?? 'N/A',
-                    'name' => $promotion->name ?? 'N/A',
-                    'type' => $promotion->type ?? 'N/A',
-                    'type_label' => $promotion->getTypeLabel(),
-                    'discount_value' => $promotion->discount_value ?? 0,
-                    'discount_value_formatted' => $this->formatDiscountValue($promotion),
-                    'min_order_value' => $promotion->min_order_value ?? 0,
-                    'min_order_value_formatted' => number_format($promotion->min_order_value ?? 0, 0, ',', '.') . ' ₫',
-                    'start_date' => $promotion->start_date ? $promotion->start_date->format('d/m/Y') : 'N/A',
-                    'end_date' => $promotion->end_date ? $promotion->end_date->format('d/m/Y') : 'N/A',
-                    'usage_count' => $promotion->usage_count ?? 0,
-                    'usage_limit' => $promotion->usage_limit ?? 'Không giới hạn',
-                    'apply_to' => $promotion->apply_to ?? 'N/A',
-                    'branch_shop_name' => $promotion->branchShop->name ?? 'N/A',
-                    'status' => $promotion->status ?? 'active',
-                    'status_label' => $promotion->getStatusLabel(),
-                    'created_at' => $promotion->created_at ? $promotion->created_at->format('d/m/Y H:i') : 'N/A',
-                    'created_by_name' => $promotion->creator->full_name ?? 'N/A',
+                    'id' => $voucher->id,
+                    'voucher_code' => $voucher->voucher_code ?? 'N/A',
+                    'name' => $voucher->name ?? 'N/A',
+                    'type' => $voucher->type ?? 'N/A',
+                    'type_label' => $voucher->getTypeLabel(),
+                    'discount_value' => $voucher->discount_value ?? 0,
+                    'discount_value_formatted' => $this->formatDiscountValue($voucher),
+                    'min_order_value' => $voucher->min_order_value ?? 0,
+                    'min_order_value_formatted' => number_format($voucher->min_order_value ?? 0, 0, ',', '.') . ' ₫',
+                    'start_date' => $voucher->start_date ? $voucher->start_date->format('d/m/Y') : 'N/A',
+                    'end_date' => $voucher->end_date ? $voucher->end_date->format('d/m/Y') : 'N/A',
+                    'used_quantity' => $voucher->used_quantity ?? 0,
+                    'total_quantity' => $voucher->total_quantity ?? 'Không giới hạn',
+                    'remaining_quantity' => $voucher->getRemainingQuantity() ?? 'Không giới hạn',
+                    'is_public' => $voucher->is_public ? 'Công khai' : 'Riêng tư',
+                    'branch_shop_name' => $voucher->branchShop->name ?? 'N/A',
+                    'status' => $voucher->status ?? 'active',
+                    'status_label' => $voucher->getStatusLabel(),
+                    'created_at' => $voucher->created_at ? $voucher->created_at->format('d/m/Y H:i') : 'N/A',
+                    'created_by_name' => $voucher->creator->full_name ?? 'N/A',
                 ];
             });
 
             return response()->json([
                 'draw' => $params['draw'] ?? 1,
-                'recordsTotal' => $promotions->total(),
-                'recordsFiltered' => $promotions->total(),
+                'recordsTotal' => $vouchers->total(),
+                'recordsFiltered' => $vouchers->total(),
                 'data' => $data,
                 'success' => true,
-                'message' => 'Promotions data loaded successfully'
+                'message' => 'Vouchers data loaded successfully'
             ]);
 
         } catch (Exception $e) {
-            Log::error('Error in ajaxGetPromotions: ' . $e->getMessage(), [
+            Log::error('Error in ajaxGetVouchers: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -135,14 +136,14 @@ class PromotionController extends BaseTenantController
     /**
      * Format discount value based on type
      */
-    private function formatDiscountValue($promotion)
+    private function formatDiscountValue($voucher)
     {
-        if ($promotion->type === 'percentage') {
-            return $promotion->discount_value . '%';
-        } elseif ($promotion->type === 'fixed_amount') {
-            return number_format($promotion->discount_value, 0, ',', '.') . ' ₫';
-        } elseif ($promotion->type === 'buy_x_get_y') {
-            return "Mua {$promotion->buy_quantity} tặng {$promotion->get_quantity}";
+        if ($voucher->type === 'percentage') {
+            return $voucher->discount_value . '%';
+        } elseif ($voucher->type === 'fixed_amount') {
+            return number_format($voucher->discount_value, 0, ',', '.') . ' ₫';
+        } elseif ($voucher->type === 'freeship') {
+            return 'Miễn phí vận chuyển';
         }
         return 'N/A';
     }
@@ -156,6 +157,7 @@ class PromotionController extends BaseTenantController
             ['value' => 'active', 'label' => 'Đang hoạt động'],
             ['value' => 'inactive', 'label' => 'Không hoạt động'],
             ['value' => 'expired', 'label' => 'Hết hạn'],
+            ['value' => 'used_up', 'label' => 'Đã hết'],
         ]);
     }
 
@@ -167,44 +169,44 @@ class PromotionController extends BaseTenantController
         return response()->json([
             ['value' => 'percentage', 'label' => 'Giảm giá %'],
             ['value' => 'fixed_amount', 'label' => 'Giảm giá cố định'],
-            ['value' => 'buy_x_get_y', 'label' => 'Mua X tặng Y'],
+            ['value' => 'freeship', 'label' => 'Miễn phí vận chuyển'],
         ]);
     }
 
     /**
-     * Bulk delete promotions
+     * Bulk delete vouchers
      */
     public function bulkDelete(Request $request)
     {
         try {
             $ids = $request->input('ids', []);
-
+            
             if (empty($ids)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Không có khuyến mãi nào được chọn'
+                    'message' => 'Không có voucher nào được chọn'
                 ], 400);
             }
 
-            Promotion::whereIn('id', $ids)->delete();
+            Voucher::whereIn('id', $ids)->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Đã xóa ' . count($ids) . ' khuyến mãi'
+                'message' => 'Đã xóa ' . count($ids) . ' voucher'
             ]);
 
         } catch (Exception $e) {
             Log::error('Error in bulkDelete: ' . $e->getMessage());
-
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi xóa khuyến mãi'
+                'message' => 'Có lỗi xảy ra khi xóa voucher'
             ], 500);
         }
     }
 
     /**
-     * Export promotions to Excel
+     * Export vouchers to Excel
      */
     public function export(Request $request)
     {
@@ -215,3 +217,4 @@ class PromotionController extends BaseTenantController
         ]);
     }
 }
+

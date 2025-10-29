@@ -106,7 +106,7 @@ class CustomerController extends BaseTenantController
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Lỗi khi tải d�?liệu: ' . $e->getMessage()
+                'error' => 'Lỗi khi tải d�?liệu: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -492,7 +492,7 @@ class CustomerController extends BaseTenantController
                 ],
                 [
                     'date' => '25/06/2025 14:20',
-                    'type' => 'S�?dụng ?iểm',
+                    'type' => 'S�?dụng ?iểm',
                     'points' => -20,
                     'note' => '?ổi qu? tặng',
                     'balance' => ($customer->points ?? 0) - 50
@@ -530,7 +530,7 @@ class CustomerController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Không th�?tải thông tin khách h?ng: ' . $e->getMessage(),
+                'message' => 'Không th�?tải thông tin khách h?ng: ' . $e->getMessage(),
                 'error_details' => config('app.debug') ? [
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
@@ -699,7 +699,7 @@ class CustomerController extends BaseTenantController
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không th�?lấy lịch s�??ơn h?ng: ' . $e->getMessage(),
+                'message' => 'Không th�?lấy lịch s�??ơn h?ng: ' . $e->getMessage(),
                 'error' => $e->getTraceAsString()
             ], 500);
         }
@@ -735,7 +735,7 @@ class CustomerController extends BaseTenantController
                         'date' => $transaction->transaction_date,
                         'type' => $transaction->type,
                         'type_text' => $transactionType, // Loại (Bán h?ng, Thanh toán bằng ?iểm)
-                        'value' => $transactionValue, // Giá tr�?(353,000)
+                        'value' => $transactionValue, // Giá tr�?(353,000)
                         'points' => $transaction->points, // ?iểm GD (4180, -5000)
                         'balance_after' => $transaction->balance_after, // ?iểm sau GD (57,270)
                         'notes' => $transaction->notes,
@@ -775,7 +775,7 @@ class CustomerController extends BaseTenantController
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không th�?lấy lịch s�??iểm: ' . $e->getMessage()
+                'message' => 'Không th�?lấy lịch s�??iểm: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -787,8 +787,8 @@ class CustomerController extends BaseTenantController
     {
         $statusMap = [
             'draft' => 'Nháp',
-            'pending' => 'Ch�?x�?lý',
-            'processing' => '?ang x�?lý',
+            'pending' => 'Ch�?x�?lý',
+            'processing' => '?ang x�?lý',
             'paid' => '?ã thanh toán',
             'completed' => 'Ho?n th?nh',
             'cancelled' => '?ã hủy',
@@ -804,8 +804,8 @@ class CustomerController extends BaseTenantController
     private function getReturnOrderStatusText($status)
     {
         $statusMap = [
-            'pending' => 'Ch�?x�?lý',
-            'processing' => '?ang x�?lý',
+            'pending' => 'Ch�?x�?lý',
+            'processing' => '?ang x�?lý',
             'completed' => 'Ho?n th?nh',
             'cancelled' => '?ã hủy'
         ];
@@ -820,7 +820,7 @@ class CustomerController extends BaseTenantController
     {
         $typeMap = [
             'purchase' => 'Bán h?ng',
-            'return' => 'Ho?n ?iểm tr�?h?ng',
+            'return' => 'Ho?n ?iểm tr�?h?ng',
             'adjustment' => '?iều chỉnh ?iểm',
             'redeem' => 'Thanh toán bằng ?iểm',
             'bonus' => '?iểm thưởng'
@@ -871,5 +871,187 @@ class CustomerController extends BaseTenantController
 
         // For other transactions, return the amount if available
         return $transaction->amount ?? abs($transaction->points) * 1000;
+    }
+
+    /**
+     * AJAX endpoint for customers listing - compatible with BaseTableManager
+     */
+    public function ajaxGetCustomers(Request $request)
+    {
+        try {
+            $params = $request->all();
+
+            // Filters
+            $filters = [
+                'status' => $params['status'] ?? null,
+                'customer_type' => $params['customer_type'] ?? null,
+                'customer_group' => $params['customer_group'] ?? null,
+                'branch_shop_id' => $params['branch_shop_id'] ?? null,
+                'area' => $params['area'] ?? null,
+                'date_from' => $params['date_from'] ?? null,
+                'date_to' => $params['date_to'] ?? null,
+                'search' => $params['search'] ?? null,
+            ];
+
+            $perPage = $params['per_page'] ?? 10;
+            $page = $params['page'] ?? 1;
+
+            // Build query
+            $query = Customer::with(['branchShop', 'creator', 'updater']);
+
+            // Apply filters
+            if (!empty($filters['status'])) {
+                $statuses = is_array($filters['status']) ? $filters['status'] : [$filters['status']];
+                $query->whereIn('status', $statuses);
+            }
+
+            if (!empty($filters['customer_type'])) {
+                $query->where('customer_type', $filters['customer_type']);
+            }
+
+            if (!empty($filters['customer_group'])) {
+                $query->where('customer_group', $filters['customer_group']);
+            }
+
+            if (!empty($filters['branch_shop_id'])) {
+                $query->where('branch_shop_id', $filters['branch_shop_id']);
+            }
+
+            if (!empty($filters['area'])) {
+                $query->where('area', $filters['area']);
+            }
+
+            if (!empty($filters['date_from'])) {
+                $query->whereDate('created_at', '>=', $filters['date_from']);
+            }
+
+            if (!empty($filters['date_to'])) {
+                $query->whereDate('created_at', '<=', $filters['date_to']);
+            }
+
+            if (!empty($filters['search'])) {
+                $search = $filters['search'];
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('customer_code', 'like', "%{$search}%");
+                });
+            }
+
+            // Get paginated results
+            $customers = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+
+            // Format data
+            $data = $customers->map(function ($customer) {
+                return [
+                    'id' => $customer->id,
+                    'customer_code' => $customer->customer_code ?? 'N/A',
+                    'name' => $customer->name ?? 'N/A',
+                    'phone' => $customer->phone ?? 'N/A',
+                    'email' => $customer->email ?? 'N/A',
+                    'address' => $customer->address ?? 'N/A',
+                    'area' => $customer->area ?? 'N/A',
+                    'customer_type' => $customer->customer_type ?? 'N/A',
+                    'customer_group' => $customer->customer_group ?? 'N/A',
+                    'points' => $customer->points ?? 0,
+                    'branch_shop_name' => $customer->branchShop->name ?? 'N/A',
+                    'status' => $customer->status ?? 'active',
+                    'status_label' => $this->getCustomerStatusLabel($customer->status ?? 'active'),
+                    'created_at' => $customer->created_at ? $customer->created_at->format('d/m/Y H:i') : 'N/A',
+                    'created_by_name' => $customer->creator->full_name ?? 'N/A',
+                ];
+            });
+
+            return response()->json([
+                'draw' => $params['draw'] ?? 1,
+                'recordsTotal' => $customers->total(),
+                'recordsFiltered' => $customers->total(),
+                'data' => $data,
+                'success' => true,
+                'message' => 'Customers data loaded successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in ajaxGetCustomers: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'draw' => intval($params['draw'] ?? 1),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'success' => false,
+                'error' => 'Có lỗi xảy ra khi tải dữ liệu: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get customer status label
+     */
+    private function getCustomerStatusLabel($status)
+    {
+        return match($status) {
+            'active' => 'Hoạt động',
+            'inactive' => 'Không hoạt động',
+            default => 'Không xác định',
+        };
+    }
+
+    /**
+     * Get filter options for status
+     */
+    public function getFilterStatuses()
+    {
+        return response()->json([
+            ['value' => 'active', 'label' => 'Hoạt động'],
+            ['value' => 'inactive', 'label' => 'Không hoạt động'],
+        ]);
+    }
+
+    /**
+     * Bulk delete customers
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $ids = $request->input('ids', []);
+
+            if (empty($ids)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không có khách hàng nào được chọn'
+                ], 400);
+            }
+
+            Customer::whereIn('id', $ids)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa ' . count($ids) . ' khách hàng'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in bulkDelete: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa khách hàng'
+            ], 500);
+        }
+    }
+
+    /**
+     * Export customers to Excel
+     */
+    public function exportCustomers(Request $request)
+    {
+        // TODO: Implement export functionality
+        return response()->json([
+            'success' => false,
+            'message' => 'Chức năng xuất Excel đang được phát triển'
+        ]);
     }
 }
