@@ -265,7 +265,7 @@
                             @if ($AuthPermission->isHeader('ProductController') || $AuthPermission->isHeader('ProductController/index'))
                                 <div class="menu-item">
                                     <a class="menu-link {{ Request::is('*/products') ? 'active' : '' }}"
-                                        href="{{ route('admin.products.list') }}">
+                                        href="{{ route('admin.products.index') }}">
                                         <span class="menu-bullet">
                                             <span class="bullet bullet-dot"></span>
                                         </span>
@@ -276,7 +276,7 @@
                             @if ($AuthPermission->isHeader('ProductController') || $AuthPermission->isHeader('ProductController/add'))
                                 <div class="menu-item">
                                     <a class="menu-link {{ Request::is('*/products/add') ? 'active' : '' }}"
-                                        href="{{ route('admin.products.add') }}">
+                                        href="{{ route('admin.products.create') }}">
                                         <span class="menu-bullet">
                                             <span class="bullet bullet-dot"></span>
                                         </span>

@@ -1,5 +1,6 @@
 <!--begin::Sidebar-->
-<div class="flex-column flex-lg-row-auto w-100 w-lg-300px order-1 order-lg-1 mb-10 mb-lg-0">
+<div id="payments_filter_sidebar"
+    class="filter-sidebar flex-column flex-lg-row-auto w-100 w-lg-300px order-1 order-lg-1 mb-10 mb-lg-0">
     <!--begin::Form-->
     <form id="kt_payment_filter_form" class="filter-form">
         <!--begin::Time Filter Block-->
@@ -20,8 +21,11 @@
                     <!-- Time Filter Container -->
                     <div class="time-filter-container">
                         <div class="form-check form-check-custom form-check-solid mb-3">
-                            <input class="form-check-input" type="radio" value="this_month" id="time_this_month" name="time_filter_display" checked/>
-                            <label class="form-check-label fw-semibold d-flex align-items-center justify-content-between w-100" for="time_this_month" id="time_filter_trigger" style="cursor: pointer;">
+                            <input class="form-check-input" type="radio" value="this_month" id="time_this_month"
+                                name="time_filter_display" checked />
+                            <label
+                                class="form-check-label fw-semibold d-flex align-items-center justify-content-between w-100"
+                                for="time_this_month" id="time_filter_trigger" style="cursor: pointer;">
                                 <span>Tháng này</span>
                                 <i class="fas fa-chevron-down fs-3 text-muted" id="time_dropdown_icon"></i>
                             </label>
@@ -43,22 +47,27 @@
                                         <div class="d-flex flex-column gap-2">
                                             <a href="#" class="time-option" data-value="this_week">Tuần này</a>
                                             <a href="#" class="time-option" data-value="last_week">Tuần trước</a>
-                                            <a href="#" class="time-option" data-value="last_7_days">7 ngày qua</a>
+                                            <a href="#" class="time-option" data-value="last_7_days">7 ngày
+                                                qua</a>
                                         </div>
                                     </div>
                                     <div class="col">
                                         <h6>Theo tháng</h6>
                                         <div class="d-flex flex-column gap-2">
-                                            <a href="#" class="time-option active" data-value="this_month">Tháng này</a>
-                                            <a href="#" class="time-option" data-value="last_month">Tháng trước</a>
-                                            <a href="#" class="time-option" data-value="last_30_days">30 ngày qua</a>
+                                            <a href="#" class="time-option active" data-value="this_month">Tháng
+                                                này</a>
+                                            <a href="#" class="time-option" data-value="last_month">Tháng
+                                                trước</a>
+                                            <a href="#" class="time-option" data-value="last_30_days">30 ngày
+                                                qua</a>
                                         </div>
                                     </div>
                                     <div class="col">
                                         <h6>Theo quý</h6>
                                         <div class="d-flex flex-column gap-2">
                                             <a href="#" class="time-option" data-value="this_quarter">Quý này</a>
-                                            <a href="#" class="time-option" data-value="last_quarter">Quý trước</a>
+                                            <a href="#" class="time-option" data-value="last_quarter">Quý
+                                                trước</a>
                                         </div>
                                     </div>
                                     <div class="col">
@@ -71,23 +80,29 @@
                                     <div class="col">
                                         <h6>Tùy chọn</h6>
                                         <div class="d-flex flex-column gap-2">
-                                            <a href="#" class="time-option" data-value="custom" id="custom_range_trigger">
+                                            <a href="#" class="time-option" data-value="custom"
+                                                id="custom_range_trigger">
                                                 <i class="fas fa-calendar-alt me-2"></i>Lựa chọn khác
                                             </a>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-light mt-3" id="time_panel_close">Đóng</button>
+                                <button type="button" class="btn btn-sm btn-light mt-3"
+                                    id="time_panel_close">Đóng</button>
                             </div>
                         </div>
 
-                        <div class="form-check form-check-custom form-check-solid">
-                            <input class="form-check-input" type="radio" value="custom" id="time_custom" name="time_filter_display"/>
-                            <label class="form-check-label fw-semibold d-flex align-items-center justify-content-between w-100" for="time_custom" style="cursor: pointer;">
+                        <div class="form-check form-check-custom form-check-solid mb-3">
+                            <input class="form-check-input" type="radio" value="custom" id="time_custom"
+                                name="time_filter_display" />
+                            <label
+                                class="form-check-label fw-semibold d-flex align-items-center justify-content-between w-100"
+                                for="time_custom">
                                 <span>Tùy chỉnh</span>
-                                <i class="fas fa-chevron-down fs-3 text-muted"></i>
+                                <i class="fas fa-calendar-alt fs-3 text-muted"></i>
                             </label>
                         </div>
+
 
                         <!-- Hidden inputs for time filter -->
                         <input type="hidden" name="time_filter" id="time_filter" value="this_month">
@@ -116,19 +131,20 @@
             <div class="card-body pt-0">
                 <div class="d-flex flex-column">
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" value="paid" id="status_paid" checked/>
+                        <input class="form-check-input" type="checkbox" value="paid" id="status_paid" checked />
                         <label class="form-check-label fw-semibold" for="status_paid">
                             Đã thanh toán
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" value="pending" id="status_pending" checked/>
+                        <input class="form-check-input" type="checkbox" value="pending" id="status_pending"
+                            checked />
                         <label class="form-check-label fw-semibold" for="status_pending">
                             Chờ xử lý
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" value="cancelled" id="status_cancelled"/>
+                        <input class="form-check-input" type="checkbox" value="cancelled" id="status_cancelled" />
                         <label class="form-check-label fw-semibold" for="status_cancelled">
                             Đã hủy
                         </label>
@@ -156,43 +172,50 @@
                 <div class="d-flex flex-column">
                     <h6 class="fw-bold text-dark mb-3">Lọc theo phương thức</h6>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="radio" value="" id="payment_method_all" name="payment_method" checked/>
+                        <input class="form-check-input" type="radio" value="" id="payment_method_all"
+                            name="payment_method" checked />
                         <label class="form-check-label fw-semibold" for="payment_method_all">
                             <i class="fas fa-list me-2"></i>Tất cả
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="radio" value="cash" id="payment_method_cash" name="payment_method"/>
+                        <input class="form-check-input" type="radio" value="cash" id="payment_method_cash"
+                            name="payment_method" />
                         <label class="form-check-label fw-semibold" for="payment_method_cash">
                             <i class="fas fa-money-bill me-2"></i>Tiền mặt
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="radio" value="card" id="payment_method_card" name="payment_method"/>
+                        <input class="form-check-input" type="radio" value="card" id="payment_method_card"
+                            name="payment_method" />
                         <label class="form-check-label fw-semibold" for="payment_method_card">
                             <i class="fas fa-credit-card me-2"></i>Thẻ
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="radio" value="transfer" id="payment_method_transfer" name="payment_method"/>
+                        <input class="form-check-input" type="radio" value="transfer" id="payment_method_transfer"
+                            name="payment_method" />
                         <label class="form-check-label fw-semibold" for="payment_method_transfer">
                             <i class="fas fa-university me-2"></i>Chuyển khoản
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="radio" value="check" id="payment_method_check" name="payment_method"/>
+                        <input class="form-check-input" type="radio" value="check" id="payment_method_check"
+                            name="payment_method" />
                         <label class="form-check-label fw-semibold" for="payment_method_check">
                             <i class="fas fa-file-invoice me-2"></i>Séc
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="radio" value="points" id="payment_method_points" name="payment_method"/>
+                        <input class="form-check-input" type="radio" value="points" id="payment_method_points"
+                            name="payment_method" />
                         <label class="form-check-label fw-semibold" for="payment_method_points">
                             <i class="fas fa-star me-2"></i>Điểm thưởng
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="radio" value="other" id="payment_method_other" name="payment_method"/>
+                        <input class="form-check-input" type="radio" value="other" id="payment_method_other"
+                            name="payment_method" />
                         <label class="form-check-label fw-semibold" for="payment_method_other">
                             <i class="fas fa-ellipsis-h me-2"></i>Khác
                         </label>
@@ -219,13 +242,14 @@
             <div class="card-body pt-0">
                 <div class="d-flex flex-column">
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" value="receipt" id="doc_receipt" checked/>
+                        <input class="form-check-input" type="checkbox" value="receipt" id="doc_receipt" checked />
                         <label class="form-check-label fw-semibold" for="doc_receipt">
                             Phiếu thu
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" value="disbursement" id="doc_disbursement" checked/>
+                        <input class="form-check-input" type="checkbox" value="disbursement" id="doc_disbursement"
+                            checked />
                         <label class="form-check-label fw-semibold" for="doc_disbursement">
                             Phiếu chi
                         </label>
@@ -250,7 +274,9 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn loại thu chi" data-allow-clear="true" name="income_type" id="income_type_filter">
+                <select class="form-select form-select-solid" data-kt-select2="true"
+                    data-placeholder="Chọn loại thu chi" data-allow-clear="true" name="income_type"
+                    id="income_type_filter">
                     <option></option>
                 </select>
             </div>
@@ -274,13 +300,14 @@
             <div class="card-body pt-0">
                 <div class="d-flex flex-column">
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" value="completed" id="status_completed" checked/>
+                        <input class="form-check-input" type="checkbox" value="completed" id="status_completed"
+                            checked />
                         <label class="form-check-label fw-semibold" for="status_completed">
                             Đã thanh toán
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" value="cancelled" id="status_cancelled"/>
+                        <input class="form-check-input" type="checkbox" value="cancelled" id="status_cancelled" />
                         <label class="form-check-label fw-semibold" for="status_cancelled">
                             Đã hủy
                         </label>
@@ -329,9 +356,10 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn người tạo" data-allow-clear="true" name="creator_id" id="creator_filter">
+                <select class="form-select form-select-solid" data-kt-select2="true"
+                    data-placeholder="Chọn người tạo" data-allow-clear="true" name="creator_id" id="creator_filter">
                     <option></option>
-                    @foreach($creators as $creator)
+                    @foreach ($creators as $creator)
                         <option value="{{ $creator->id }}">{{ $creator->name }}</option>
                     @endforeach
                 </select>
@@ -354,9 +382,10 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Chọn nhân viên" data-allow-clear="true" name="staff_id" id="staff_filter">
+                <select class="form-select form-select-solid" data-kt-select2="true"
+                    data-placeholder="Chọn nhân viên" data-allow-clear="true" name="staff_id" id="staff_filter">
                     <option></option>
-                    @foreach($staff as $employee)
+                    @foreach ($staff as $employee)
                         <option value="{{ $employee->id }}">{{ $employee->name }}</option>
                     @endforeach
                 </select>
@@ -379,7 +408,8 @@
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body pt-0">
-                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Tất cả" data-allow-clear="true" name="recipient_id" id="recipient_filter">
+                <select class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Tất cả"
+                    data-allow-clear="true" name="recipient_id" id="recipient_filter">
                     <option></option>
                 </select>
             </div>

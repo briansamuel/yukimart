@@ -38,7 +38,7 @@ Updated `resources/views/admin/left-aside.blade.php` with all route references:
 
 #### **Product Routes:**
 - `route('products.list')` → `route('admin.products.list')`
-- `route('products.add')` → `route('admin.products.add')`
+- `route('products.add')` → `route('admin.products.create')`
 
 #### **Comment Routes:**
 - `route('comment.list')` → `route('admin.comment.list')`

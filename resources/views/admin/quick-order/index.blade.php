@@ -119,6 +119,7 @@
         window.customers = @json($customers ?? []);
         window.sellers = @json($sellers ?? []);
         window.currentUserId = {{ Auth::id() }};
+        window.canChangeBranch = {{ $canChangeBranch ? 'true' : 'false' }};
 
         // Initialize Quick Order when document is ready
         $(document).ready(function() {

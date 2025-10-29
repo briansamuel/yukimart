@@ -23,7 +23,21 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+                // Redirect based on guard type
+                switch ($guard) {
+                    case 'platform':
+                        return redirect()->route('platform.admin.dashboard');
+                    case 'admin':
+                        // Get tenant from request attributes (set by tenant middleware)
+                        $tenant = $request->attributes->get('tenant');
+                        if ($tenant) {
+                            return redirect()->route('tenant.admin.dashboard', ['subdomain' => $tenant->subdomain]);
+                        }
+                        return redirect(RouteServiceProvider::HOME);
+                    case 'web':
+                    default:
+                        return redirect(RouteServiceProvider::HOME);
+                }
             }
         }
 

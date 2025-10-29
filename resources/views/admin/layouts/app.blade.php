@@ -138,6 +138,9 @@
     <!--begin::Notifications Script -->
     <script src="{{ asset('admin-assets/assets/js/custom/notifications.js') }}"></script>
     <!--end::Notifications Script -->
+    <!--begin::Virtual Scrollbar Script -->
+    <script src="{{ asset('admin-assets/js/globals/virtual-scrollbar.js') }}"></script>
+    <!--end::Virtual Scrollbar Script -->
     <!--begin::Page Scripts(used by this page) -->
     @yield('scripts')
     <!--end::Javascript-->

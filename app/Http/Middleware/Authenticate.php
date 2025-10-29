@@ -2,56 +2,21 @@
 
 namespace App\Http\Middleware;
 
+use Illuminate\Auth\Middleware\Authenticate as Middleware;
 
-use App\Services\Auth\AuthService;
-use App\Services\Auth\AuthPermissionService;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Contracts\Auth\Guard;
-
-use Closure;
-use Illuminate\Support\Facades\Auth;
-
-class Authenticate
+class Authenticate extends Middleware
 {
     /**
-     * The Guard implementation.
-     *
-     * @var Guard
+     * Get the path the user should be redirected to when they are not authenticated.
      */
-    protected $auth;
-
-    /**
-     * Create a new filter instance.
-     *
-     * @param  Guard  $auth
-     * @return void
-     */
-    public function __construct(Guard $auth)
+    protected function redirectTo($request): ?string
     {
-        $this->auth = $auth;
-    }
-
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
-     */
-    public function handle($request, Closure $next, $guard = null)
-    {
-        
-        Log::info('Log request', ['uri' => $request->path(), 'params' => $request->all()]);
-        if (!AuthService::checkLogin()) {
-            return redirect('login');
+        if ($request->expectsJson()) {
+            return null;
         }
 
-        //check permission
-        $AuthPermission = new AuthPermissionService($request);
-        if (!$AuthPermission->check()) {
-            return redirect('denied-permission');
-        }
-
-        return $next($request);
+        return $request->getHost() === config('tenancy.platform_host')
+            ? route('platform.login.show')
+            : $request->getSchemeAndHttpHost() . '/login';
     }
 }

@@ -51,6 +51,8 @@ class Notification extends Model
      */
     protected $attributes = [
         'priority' => 'normal',
+        'color' => 'primary',
+        'is_dismissible' => true,
     ];
 
     /**
@@ -372,7 +374,8 @@ class Notification extends Model
             'action_url' => $options['action_url'] ?? null,
             'action_text' => $options['action_text'] ?? null,
             'icon' => $options['icon'] ?? null,
-            'color' => $options['color'] ?? null,
+            'color' => $options['color'] ?? 'primary',
+            'is_dismissible' => $options['is_dismissible'] ?? true,
         ]);
     }
 

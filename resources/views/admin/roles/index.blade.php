@@ -1,4 +1,4 @@
-@extends('admin.index')
+@extends('admin.layouts.tenant-app')
 @section('page-header', __('roles.title'))
 @section('page-sub_header', __('roles.subtitle'))
 

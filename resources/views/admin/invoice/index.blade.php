@@ -1,11 +1,11 @@
-@extends('admin.main-content')
+@extends('admin.layouts.tenant-app')
 
 @section('title', 'Quản lý hóa đơn')
 
 @section('style')
     <link rel="stylesheet" href="{{ asset('admin-assets/assets/plugins/custom/datatables/datatables.bundle.css') }}" />
-    <link href="{{ asset('admin-assets/css/globals.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('admin-assets/globals/table-row-expansion.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('admin-assets/css/table-loading.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('admin-assets/css/invoice-list.css') }}" rel="stylesheet" type="text/css" />
 @endsection
 
@@ -23,7 +23,7 @@
                 @include('admin.invoice.elements.filter')
 
                 <!--begin::Content-->
-                <div class="flex-lg-row-fluid ms-lg-15 order-2 order-lg-2">
+                <div class="flex-lg-row-fluid ms-lg-10 order-2 order-lg-2">
                     <div class="d-flex flex-column gap-7 gap-lg-10">
 
                         <!--begin::Card-->
@@ -73,6 +73,13 @@
                                         </ul>
                                     </div>
                                     <!--end::Bulk Actions Dropdown-->
+
+                                    <!--begin::Reset Filters-->
+                                    <button type="button" class="btn btn-light-warning" id="reset_filters_btn">
+                                        <i class="fas fa-redo"></i>
+                                        Reset Filters
+                                    </button>
+                                    <!--end::Reset Filters-->
 
                                     <!--begin::Export-->
                                     <div class="btn-group">
@@ -379,12 +386,12 @@
 
 @section('scripts')
     <!-- Include global utilities and filter scripts -->
-    <script src="{{ asset('admin-assets/globals/date-utils.js') }}"></script>
-    <script src="{{ asset('admin-assets/globals/filter.js') }}"></script>
-    <script src="{{ asset('admin-assets/globals/column-visibility.js') }}"></script>
+    <script src="{{ asset('admin-assets/globals/date-utils.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('admin-assets/globals/filter.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('admin-assets/globals/column-visibility.js') }}?v={{ time() }}"></script>
     <!-- Include base table manager and invoice-specific scripts -->
-    <script src="{{ asset('admin-assets/js/base/table-manager.js') }}"></script>
-    <script src="{{ asset('admin-assets/js/invoices/invoice-manager.js') }}"></script>
+    <script src="{{ asset('admin-assets/js/base/table-manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('admin-assets/js/invoices/invoice-manager.js') }}?v={{ time() }}"></script>
 
     <script>
         // Invoice routes configuration
@@ -425,7 +432,65 @@
                     window.invoiceTableManager.loadData();
                 }
             }, 100);
+
+            // Apply saved filter state to UI after filters are loaded
+            setTimeout(() => {
+                applySavedFilterState();
+            }, 500);
         });
+
+        /**
+         * Apply saved filter state to UI elements
+         */
+        function applySavedFilterState() {
+            const savedState = window.KTGlobalFilter.loadFilterState('invoices');
+            if (!savedState) return;
+
+            console.log('Applying saved filter state to UI:', savedState);
+
+            // Apply status filter
+            if (savedState.status && savedState.status.length > 0) {
+                $('#status_filter').val(savedState.status).trigger('change.select2');
+            }
+
+            // Apply delivery status filter
+            if (savedState.delivery_status) {
+                $('#delivery_status_filter').val(savedState.delivery_status).trigger('change.select2');
+            }
+
+            // Apply creator filter
+            if (savedState.created_by) {
+                $('#creator_filter').val(savedState.created_by).trigger('change.select2');
+            }
+
+            // Apply seller filter
+            if (savedState.sold_by) {
+                $('#seller_filter').val(savedState.sold_by).trigger('change.select2');
+            }
+
+            // Apply sale channel filter
+            if (savedState.sale_channel) {
+                $('#sale_channel_filter').val(savedState.sale_channel).trigger('change.select2');
+            }
+
+            // Apply payment method filter
+            if (savedState.payment_method) {
+                $('#payment_method_filter').val(savedState.payment_method).trigger('change.select2');
+            }
+
+            // Apply time filter
+            if (savedState.time_filter_display) {
+                $(`input[name="time_filter_display"][value="${savedState.time_filter_display}"]`).prop('checked', true);
+            }
+            if (savedState.date_from) {
+                $('#date_from').val(savedState.date_from);
+            }
+            if (savedState.date_to) {
+                $('#date_to').val(savedState.date_to);
+            }
+
+            console.log('Saved filter state applied to UI');
+        }
     </script>
 @endsection
 

@@ -1757,6 +1757,11 @@ function setupDropdownHandlers(tabId, tabContent) {
     tabContent.on('click', `#${tabId}_branchShopToggle`, function(e) {
         e.stopPropagation();
 
+        // Check if user can change branch
+        if (typeof window.canChangeBranch !== 'undefined' && !window.canChangeBranch) {
+            return; // Staff cannot change branch
+        }
+
         const menu = tabContent.find(`#${tabId}_branchShopMenu`);
         const isVisible = menu.hasClass('show');
 

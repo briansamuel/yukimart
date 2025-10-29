@@ -45,8 +45,14 @@ class InvoiceTableManager extends BaseTableManager {
 
     // Override parent's init to add detail panel functionality
     init() {
+        // Load saved filter state before calling parent init
+        this.loadSavedFilterState();
+
         // Call parent init first
         super.init();
+
+        // Initialize reset filters button
+        this.initResetFilters();
 
         // Create border spans for detail panel visual separation
         this.createBorderSpans();
@@ -69,6 +75,80 @@ class InvoiceTableManager extends BaseTableManager {
         this.initExportFunctionality();
 
         console.log('Invoice detail panel functionality initialized');
+    }
+
+    /**
+     * Load saved filter state from localStorage
+     */
+    loadSavedFilterState() {
+        if (typeof window.KTGlobalFilter !== 'undefined') {
+            const savedState = window.KTGlobalFilter.loadFilterState('invoices');
+            if (savedState) {
+                // Merge saved state with current filters
+                this.currentFilters = { ...this.currentFilters, ...savedState };
+                console.log('Loaded saved filter state:', this.currentFilters);
+            }
+        }
+    }
+
+    /**
+     * Save current filter state to localStorage
+     */
+    saveFilterState() {
+        if (typeof window.KTGlobalFilter !== 'undefined') {
+            window.KTGlobalFilter.saveFilterState('invoices', this.currentFilters);
+        }
+    }
+
+    /**
+     * Initialize Reset Filters button
+     */
+    initResetFilters() {
+        const resetBtn = document.getElementById('reset_filters_btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                console.log('Resetting filters...');
+
+                // Clear localStorage
+                if (typeof window.KTGlobalFilter !== 'undefined') {
+                    window.KTGlobalFilter.clearFilterState('invoices');
+                }
+
+                // Reset to default filters
+                this.currentFilters = { ...this.config.defaultFilters };
+
+                // Reset UI elements
+                this.resetFilterUI();
+
+                // Reload data
+                this.loadData();
+            });
+            console.log('Reset filters button initialized');
+        }
+    }
+
+    /**
+     * Reset all filter UI elements to default state
+     */
+    resetFilterUI() {
+        // Reset search
+        const searchInput = document.querySelector('input[data-kt-invoice-table-filter="search"]');
+        if (searchInput) searchInput.value = '';
+
+        // Reset time filter to "Tháng này"
+        const thisMonthRadio = document.querySelector('input[name="time_filter_display"][value="this_month"]');
+        if (thisMonthRadio) thisMonthRadio.checked = true;
+
+        // Reset date inputs
+        const dateFrom = document.getElementById('date_from');
+        const dateTo = document.getElementById('date_to');
+        if (dateFrom) dateFrom.value = '';
+        if (dateTo) dateTo.value = '';
+
+        // Reset all Select2 filters
+        $('#status_filter, #delivery_status_filter, #creator_filter, #seller_filter, #sale_channel_filter, #payment_method_filter').val(null).trigger('change');
+
+        console.log('Filter UI reset to default state');
     }
     
     initSearch() {
@@ -127,6 +207,9 @@ class InvoiceTableManager extends BaseTableManager {
     
     loadData() {
         console.log('Loading invoices with filters:', this.currentFilters);
+
+        // Save current filter state
+        this.saveFilterState();
 
         // Cancel previous request
         if (this.currentRequest) {
@@ -225,6 +308,11 @@ class InvoiceTableManager extends BaseTableManager {
                 const name = $input.attr('name') || $input.attr('id');
 
                 if (name) {
+                    // Skip time_filter_display radio buttons - we'll use hidden #time_filter instead
+                    if (name === 'time_filter_display') {
+                        return; // Skip this input
+                    }
+
                     if ($input.is(':checkbox')) {
                         if (name === 'status[]') {
                             // Handle status checkboxes - collect into status array
@@ -375,6 +463,12 @@ class InvoiceTableManager extends BaseTableManager {
 
         // Bind row events
         this.bindRowEvents();
+
+        // Update virtual scrollbar after data is rendered
+        setTimeout(() => {
+            this.updateVirtualScrollbar();
+            console.log('Virtual scrollbar updated after rendering invoices');
+        }, 100);
     }
 
     renderInvoices(invoices) {
@@ -570,6 +664,9 @@ class InvoiceTableManager extends BaseTableManager {
                 $openRow.remove();
             });
         });
+
+        // Clean up border elements when closing rows
+        this.cleanupBorderElements();
 
         // Remove expanded class from all rows
         $('.invoice-row').removeClass('expanded kt-table-row-active');
@@ -772,58 +869,137 @@ class InvoiceTableManager extends BaseTableManager {
     }
 
     /**
-     * Update border spans position (from invoice-list.js)
+     * Update border spans position (adapted from orders)
      */
     updateBorderSpansPosition($clickedRow, $detailRow) {
         setTimeout(() => {
-            const $container = $('#kt_invoices_container_body');
-            const $borderLeft = $container.find('.kt-table-detail-border-left');
-            const $borderRight = $container.find('.kt-table-detail-border-right');
-
             // Find the active invoice row with expanded class
-            const $activeRow=$container.find('.invoice-row.expanded.kt-table-row-active');
-            
+            const $activeRow = $('.invoice-row.expanded.kt-table-row-active');
 
             if ($activeRow.length === 0) {
                 console.log('No active expanded invoice row found');
                 return;
             }
 
-            // Calculate position based on the active row position within the container
-            const containerOffset = $container.offset();
-            const activeRowOffset = $activeRow.offset();
-            const relativeTop = activeRowOffset.top - containerOffset.top;
+            // Find border elements within the detail row
+            const $borderLeft = $detailRow.find('.kt-table-detail-border-left');
+            const $borderRight = $detailRow.find('.kt-table-detail-border-right');
 
-            // Get invoice detail panel height
-            const $detailPanel = $detailRow.find('.kt-table-detail-container');
-            const detailPanelHeight = $detailPanel.outerHeight();
-            const activeRowHeight = $activeRow.outerHeight();
-            const totalHeight = activeRowHeight + detailPanelHeight;
+            if ($borderLeft.length === 0 || $borderRight.length === 0) {
+                console.log('Border elements not found in detail row');
+                return;
+            }
 
-            // Position border spans based on active row
-            $borderLeft.css({
-                'top': relativeTop + 'px',
-                'height': totalHeight + 'px',
-                'display': 'block'
-            });
+            // Store border elements for scroll updates
+            this.$activeBorderLeft = $borderLeft;
+            this.$activeBorderRight = $borderRight;
+            this.$activeDetailRow = $detailRow;
 
-            $borderRight.css({
-                'top': relativeTop + 'px',
-                'height': totalHeight + 'px',
-                'display': 'block'
-            });
+            // Initial positioning
+            this.updateBorderElementsPosition();
 
-            console.log('Border spans updated based on active row:', {
-                activeRowFound: $activeRow.length > 0,
-                activeRowClasses: $activeRow.attr('class'),
-                relativeTop: relativeTop,
-                totalHeight: totalHeight,
-                activeRowHeight: activeRowHeight,
-                detailPanelHeight: detailPanelHeight,
-                containerOffset: containerOffset,
-                activeRowOffset: activeRowOffset
-            });
-        }, 100); // Small delay to ensure content is rendered
+            // Setup horizontal scroll listener for table container
+            this.setupBorderScrollListener();
+
+            console.log('Border elements initialized and scroll listener setup');
+        }, 100);
+    }
+
+    /**
+     * Update border elements position based on current scroll and active row
+     */
+    updateBorderElementsPosition() {
+        if (!this.$activeBorderLeft || !this.$activeBorderRight || !this.$activeDetailRow) {
+            return;
+        }
+
+        // Find the active invoice row with expanded class
+        const $activeRow = $('.invoice-row.expanded.kt-table-row-active');
+        if ($activeRow.length === 0) {
+            return;
+        }
+
+        // Get active row height
+        const activeRowHeight = $activeRow.outerHeight();
+
+        // Set top position to negative height of active row
+        const topPosition = -activeRowHeight;
+
+        // Get invoice detail panel height
+        const $detailPanel = this.$activeDetailRow.find('.kt-table-detail-container');
+        const detailPanelHeight = $detailPanel.outerHeight();
+        const totalHeight = activeRowHeight + detailPanelHeight;
+
+        // Get table container scroll position
+        const $tableContainer = $('#kt_invoices_table_container');
+        const scrollLeft = $tableContainer.scrollLeft();
+
+        // Calculate border positions based on scroll
+        const leftPosition = scrollLeft;
+        const rightPosition = scrollLeft;
+
+        // Position border elements with updated left/right based on scroll
+        this.$activeBorderLeft.css({
+            'position': 'absolute',
+            'top': topPosition + 'px',
+            'left': leftPosition + 'px',
+            'width': '2px',
+            'height': totalHeight + 'px',
+            'background': '#e4e6ea',
+            'z-index': '5',
+            'display': 'block'
+        });
+
+        this.$activeBorderRight.css({
+            'position': 'absolute',
+            'top': topPosition + 'px',
+            'right': -rightPosition + 'px', // Negative to move with scroll
+            'width': '2px',
+            'height': totalHeight + 'px',
+            'background': '#e4e6ea',
+            'z-index': '5',
+            'display': 'block'
+        });
+
+        console.log('Border elements position updated:', {
+            scrollLeft: scrollLeft,
+            leftPosition: leftPosition,
+            rightPosition: -rightPosition,
+            topPosition: topPosition,
+            totalHeight: totalHeight
+        });
+    }
+
+    /**
+     * Setup scroll listener for horizontal table scroll
+     */
+    setupBorderScrollListener() {
+        const $tableContainer = $('#kt_invoices_table_container');
+
+        // Remove existing listener to prevent duplicates
+        $tableContainer.off('scroll.borderUpdate');
+
+        // Add scroll listener
+        $tableContainer.on('scroll.borderUpdate', () => {
+            this.updateBorderElementsPosition();
+        });
+
+        console.log('Border scroll listener setup for table container');
+    }
+
+    /**
+     * Clean up border elements and listeners when row is collapsed
+     */
+    cleanupBorderElements() {
+        // Remove scroll listener
+        $('#kt_invoices_table_container').off('scroll.borderUpdate');
+
+        // Clear stored elements
+        this.$activeBorderLeft = null;
+        this.$activeBorderRight = null;
+        this.$activeDetailRow = null;
+
+        console.log('Border elements cleaned up');
     }
 
     /**

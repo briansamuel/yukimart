@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\User;
 use App\Models\Post;
 use App\Models\Notification;
+use App\Services\TenantContextService;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
@@ -38,15 +39,39 @@ class DashboardService
 
     // Product statistics
     public static function totalProducts() {
-        return Product::count();
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return 0;
+        }
+
+        return Product::where('tenant_id', $tenantId)->count();
     }
 
     public static function activeProducts() {
-        return Product::where('product_status', 'publish')->count();
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return 0;
+        }
+
+        return Product::where('tenant_id', $tenantId)
+            ->where('product_status', 'publish')
+            ->count();
     }
 
     public static function takeNewProducts($quantity) {
-        return Product::with('inventory')
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return collect();
+        }
+
+        return Product::where('tenant_id', $tenantId)
+            ->with('inventory')
             ->orderBy('created_at', 'desc')
             ->limit($quantity)
             ->get();
@@ -57,36 +82,87 @@ class DashboardService
 
     // User statistics
     public static function totalUsers() {
-        return User::count();
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return 0;
+        }
+
+        return \App\Models\TenantUser::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->count();
     }
 
     public static function activeUsers() {
-        return User::where('status', 'active')->count();
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return 0;
+        }
+
+        return \App\Models\TenantUser::where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->count();
     }
 
     // Order statistics
     public static function totalOrders() {
-        return \App\Models\Order::count();
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return 0;
+        }
+
+        return \App\Models\Order::where('tenant_id', $tenantId)->count();
     }
 
     // Customer statistics
     public static function totalCustomers() {
-        return \App\Models\Customer::count();
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return 0;
+        }
+
+        return \App\Models\Customer::where('tenant_id', $tenantId)->count();
     }
 
     // Today's sales statistics
     public static function getTodaySalesStats() {
         $today = \Carbon\Carbon::today();
+        $tenantContextService = app(TenantContextService::class);
+        $tenantId = $tenantContextService->getCurrentTenantId();
+
+        if (!$tenantId) {
+            return [
+                'orders_count' => 0,
+                'revenue' => 0,
+                'customers_count' => 0,
+                'avg_order_value' => 0,
+            ];
+        }
 
         return [
-            'orders_count' => \App\Models\Order::whereDate('created_at', $today)->count(),
+            'orders_count' => \App\Models\Order::where('tenant_id', $tenantId)
+                ->whereDate('created_at', $today)
+                ->count(),
             // Revenue lấy từ hóa đơn đã hoàn thành, không phải từ đơn hàng
-            'revenue' => \App\Models\Invoice::whereDate('created_at', $today)
+            'revenue' => \App\Models\Invoice::where('tenant_id', $tenantId)
+                ->whereDate('created_at', $today)
                 ->whereIn('status', ['paid', 'completed'])
                 ->sum('total_amount'),
-            'customers_count' => \App\Models\Order::whereDate('created_at', $today)->distinct('customer_id')->count(),
+            'customers_count' => \App\Models\Order::where('tenant_id', $tenantId)
+                ->whereDate('created_at', $today)
+                ->distinct('customer_id')
+                ->count(),
             // Average order value vẫn lấy từ orders vì đây là thống kê đơn hàng
-            'avg_order_value' => \App\Models\Order::whereDate('created_at', $today)->avg('final_amount') ?? 0,
+            'avg_order_value' => \App\Models\Order::where('tenant_id', $tenantId)
+                ->whereDate('created_at', $today)
+                ->avg('final_amount') ?? 0,
         ];
     }
 

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\DashboardService;
+use App\Http\Traits\ApiOptimizationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Order;
@@ -14,46 +16,39 @@ use App\Helpers\PeriodHelper;
 
 class DashboardController extends Controller
 {
+    use ApiOptimizationTrait;
     /**
-     * Get comprehensive dashboard statistics
+     * Get comprehensive dashboard statistics with aggressive caching
      */
     public function index(Request $request)
     {
-        try {
-            // Get all dashboard data similar to Admin DashboardController
-            $data = [
-                // Basic statistics
-                'statistics' => [
-                    'total_products' => DashboardService::totalProducts(),
-                    'active_products' => DashboardService::activeProducts(),
-                    'total_orders' => DashboardService::totalOrders(),
-                    'total_customers' => DashboardService::totalCustomers(),
-                    'total_users' => DashboardService::totalUsers(),
-                    'active_users' => DashboardService::activeUsers(),
-                    'total_invoices' => Invoice::count(),
-                    'low_stock_products' => Product::where('reorder_point', '>', 0)
-                        ->whereHas('inventory', function($query) {
-                            $query->whereRaw('quantity <= reorder_point');
-                        })->count(),
-                ],
-                
-                // Today's sales statistics
-                'today_sales' => DashboardService::getTodaySalesStats(),
-                
-                // Recent content
-                'recent_products' => DashboardService::takeNewProducts(10),
-                'recent_activities' => DashboardService::getRecentActivities(15),
-                
-                // Chart data
-                'revenue_chart' => DashboardService::getRevenueChartData(),
-                'top_products_chart' => DashboardService::getTopProductsChartData(),
-            ];
+        $startTime = microtime(true);
 
-            return response()->json([
+        try {
+            // Generate cache key for dashboard data
+            $cacheKey = 'dashboard_overview_' . date('Y-m-d-H');
+
+            // Try to get cached dashboard data (15 minutes cache)
+            $data = Cache::remember($cacheKey, 900, function() {
+                return $this->generateDashboardData();
+            });
+
+            // Create response with optimization headers
+            $response = response()->json([
                 'status' => 'success',
                 'message' => 'Dashboard data retrieved successfully',
-                'data' => $data
+                'data' => $data,
+                'meta' => [
+                    'cached' => Cache::has($cacheKey),
+                    'cache_key' => $cacheKey,
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                ]
             ], 200);
+
+            $response = $this->addPerformanceHeaders($response, $startTime);
+            $response = $this->addRateLimitHeaders($response, 120, 1); // 120 requests per minute
+
+            return $response;
 
         } catch (\Exception $e) {
             Log::error('Dashboard data retrieval failed: ' . $e->getMessage());
@@ -66,55 +61,50 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get dashboard statistics with period filter
+     * Get dashboard statistics with period filter and smart caching
      */
     public function getStats(Request $request)
     {
+        $startTime = microtime(true);
+
         try {
-            $period = $request->get('period', 'today'); // today, yesterday, month, last_month, year
+            $period = $request->get('period', 'today');
 
             // Validate period using PeriodHelper
             if (!PeriodHelper::isValidPeriod($period)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Invalid period. Valid periods: ' . implode(', ', PeriodHelper::getValidPeriods())
-                ], 400);
+                return $this->errorResponse(
+                    'Invalid period. Valid periods: ' . implode(', ', PeriodHelper::getValidPeriods()),
+                    400
+                );
             }
 
-            // Get date range for period filter using PeriodHelper
-            $dateRange = PeriodHelper::getDateRangeForPeriod($period);
+            // Generate cache key based on period and date
+            $cacheKey = "dashboard_stats_{$period}_" . date('Y-m-d-H');
 
-            // Calculate period-specific statistics
-            $periodStats = $this->calculatePeriodStats($dateRange, $period);
+            // Smart caching based on period
+            $cacheMinutes = $this->getCacheMinutesForPeriod($period);
 
-            // Get overall statistics (not period-dependent)
-            $overallStats = [
-                'total_products' => DashboardService::totalProducts(),
-                'active_products' => DashboardService::activeProducts(),
-                'total_customers' => DashboardService::totalCustomers(),
-                'total_users' => DashboardService::totalUsers(),
-                'active_users' => DashboardService::activeUsers(),
-                'low_stock_products' => Product::where('reorder_point', '>', 0)
-                    ->whereHas('inventory', function($query) {
-                        $query->whereRaw('quantity <= reorder_point');
-                    })->count(),
-            ];
+            // Get cached or calculate statistics
+            $stats = Cache::remember($cacheKey, $cacheMinutes * 60, function() use ($period) {
+                return $this->calculateStatsForPeriod($period);
+            });
 
-        // Get inventory statistics
-        $inventoryStats = $this->calculateInventoryStats();
-
-            // Get period info using PeriodHelper
-            $periodInfo = PeriodHelper::getPeriodInfo($period);
-
-            // Combine period stats with overall stats and inventory stats
-            $stats = array_merge($overallStats, $periodStats, $inventoryStats, $periodInfo);
-
-            return response()->json([
+            // Create response with optimization headers
+            $response = response()->json([
                 'status' => 'success',
                 'message' => 'Statistics retrieved successfully',
                 'data' => $stats,
-                'meta' => $periodInfo
+                'meta' => [
+                    'period' => $period,
+                    'cached' => Cache::has($cacheKey),
+                    'cache_minutes' => $cacheMinutes,
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                ]
             ], 200);
+
+            $response = $this->addPerformanceHeaders($response, $startTime);
+
+            return $response;
 
         } catch (\Exception $e) {
             Log::error('Dashboard statistics failed: ' . $e->getMessage());
@@ -171,55 +161,40 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get top selling products
+     * Get top selling products with caching
      */
     public function getTopProducts(Request $request)
     {
+        $startTime = microtime(true);
+
         try {
-            $limit = $request->get('limit', 10);
-            $type = $request->get('type', 'quantity'); // quantity or revenue
-            $period = $request->get('period', 'month'); // today, yesterday, month, last_month, year
+            $limit = min($request->get('limit', 10), 50); // Max 50 products
+            $type = $request->get('type', 'quantity');
+            $period = $request->get('period', 'month');
 
-            // Get date range for period filter using PeriodHelper
-            $dateRange = PeriodHelper::getDateRangeForPeriod($period);
+            // Validate inputs
+            $validTypes = ['quantity', 'revenue'];
+            if (!in_array($type, $validTypes)) {
+                return $this->errorResponse(
+                    'Invalid type. Valid types: ' . implode(', ', $validTypes),
+                    400
+                );
+            }
 
-            // Build query based on invoices and invoice_items
-            $orderByField = $type === 'revenue' ? 'total_revenue' : 'sold_quantity';
+            if (!PeriodHelper::isValidPeriod($period)) {
+                return $this->errorResponse(
+                    'Invalid period. Valid periods: ' . implode(', ', PeriodHelper::getValidPeriods()),
+                    400
+                );
+            }
 
-            // Query from invoice_items to get products that actually have sales
-            $query = \App\Models\InvoiceItem::select('invoice_items.product_id')
-                ->selectRaw('products.product_name as name')
-                ->selectRaw('products.sku')
-                ->selectRaw('products.product_thumbnail as image')
-                ->selectRaw('COALESCE(SUM(invoice_items.line_total), 0) as total_revenue')
-                ->selectRaw('COALESCE(SUM(invoice_items.quantity), 0) as sold_quantity')
-                ->join('invoices', function($join) use ($dateRange) {
-                    $join->on('invoice_items.invoice_id', '=', 'invoices.id')
-                         ->whereIn('invoices.status', ['paid', 'completed']);
+            // Generate cache key
+            $cacheKey = "dashboard_top_products_{$type}_{$period}_{$limit}_" . date('Y-m-d-H');
 
-                    // Apply date filter
-                    if ($dateRange['start'] && $dateRange['end']) {
-                        $join->whereBetween('invoices.created_at', [$dateRange['start'], $dateRange['end']]);
-                    } elseif ($dateRange['start']) {
-                        $join->where('invoices.created_at', '>=', $dateRange['start']);
-                    }
-                })
-                ->leftJoin('products', 'invoice_items.product_id', '=', 'products.id')
-                ->groupBy('invoice_items.product_id', 'products.product_name', 'products.sku', 'products.product_thumbnail')
-                ->orderBy($orderByField, 'desc')
-                ->limit($limit);
-
-            $products = $query->get()
-                ->map(function($item) {
-                    return [
-                        'id' => $item->product_id,
-                        'name' => $item->name ?? 'Unknown Product',
-                        'sku' => $item->sku ?? 'N/A',
-                        'total_revenue' => (float) ($item->total_revenue ?? 0),
-                        'image' => $item->image ?  $item->image : null,
-                        'sold_quantity' => (int) ($item->sold_quantity ?? 0)
-                    ];
-                });
+            // Cache for 10 minutes
+            $products = Cache::remember($cacheKey, 600, function() use ($type, $period, $limit) {
+                return $this->getTopProductsDataOptimized($type, $period, $limit);
+            });
 
 
 
@@ -232,12 +207,9 @@ class DashboardController extends Controller
                 'meta' => [
                     'type' => $type,
                     'period' => $period,
-                    'period_name' => PeriodHelper::getPeriodName($period),
                     'limit' => $limit,
-                    'date_range' => [
-                        'start' => $dateRange['start'] ? $dateRange['start']->format('Y-m-d H:i:s') : null,
-                        'end' => $dateRange['end'] ? $dateRange['end']->format('Y-m-d H:i:s') : null
-                    ]
+                    'cached' => Cache::has($cacheKey),
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
                 ]
             ], 200);
 
@@ -501,5 +473,143 @@ class DashboardController extends Controller
             'products_in_stock' => $productsInStock,
             'products_out_of_stock' => $productsOutOfStock,
         ];
+    }
+
+    /**
+     * Generate dashboard data with optimized queries
+     */
+    private function generateDashboardData()
+    {
+        return [
+            // Basic statistics (cached for 15 minutes)
+            'statistics' => Cache::remember('dashboard_basic_stats', 900, function() {
+                return [
+                    'total_products' => Product::count(),
+                    'active_products' => Product::where('product_status', 'publish')->count(),
+                    'total_orders' => Order::count(),
+                    'total_customers' => Customer::count(),
+                    'total_invoices' => Invoice::count(),
+                    'low_stock_products' => Product::where('reorder_point', '>', 0)
+                        ->whereHas('inventory', function($query) {
+                            $query->whereRaw('quantity <= reorder_point');
+                        })->count(),
+                ];
+            }),
+
+            // Today's sales (cached for 5 minutes)
+            'today_sales' => Cache::remember('dashboard_today_sales', 300, function() {
+                return DashboardService::getTodaySalesStats();
+            }),
+
+            // Recent content (cached for 2 minutes)
+            'recent_products' => Cache::remember('dashboard_recent_products', 120, function() {
+                return DashboardService::takeNewProducts(10);
+            }),
+            'recent_activities' => Cache::remember('dashboard_recent_activities', 120, function() {
+                return DashboardService::getRecentActivities(15);
+            }),
+
+            // Chart data (cached for 10 minutes)
+            'revenue_chart' => Cache::remember('dashboard_revenue_chart', 600, function() {
+                return DashboardService::getRevenueChartData();
+            }),
+            'top_products_chart' => Cache::remember('dashboard_top_products_chart', 600, function() {
+                return DashboardService::getTopProductsChartData();
+            }),
+        ];
+    }
+
+    /**
+     * Calculate statistics for specific period with caching
+     */
+    private function calculateStatsForPeriod($period)
+    {
+        $dateRange = PeriodHelper::getDateRangeForPeriod($period);
+
+        // Period-specific statistics
+        $periodStats = $this->calculatePeriodStats($dateRange, $period);
+
+        // Overall statistics (cached separately)
+        $overallStats = Cache::remember('dashboard_overall_stats', 900, function() {
+            return [
+                'total_products' => Product::count(),
+                'active_products' => Product::where('product_status', 'publish')->count(),
+                'total_customers' => Customer::count(),
+                'low_stock_products' => Product::where('reorder_point', '>', 0)
+                    ->whereHas('inventory', function($query) {
+                        $query->whereRaw('quantity <= reorder_point');
+                    })->count(),
+            ];
+        });
+
+        // Inventory statistics (cached for 10 minutes)
+        $inventoryStats = Cache::remember('dashboard_inventory_stats', 600, function() {
+            return $this->calculateInventoryStats();
+        });
+
+        // Period info
+        $periodInfo = PeriodHelper::getPeriodInfo($period);
+
+        return array_merge($overallStats, $periodStats, $inventoryStats, $periodInfo);
+    }
+
+    /**
+     * Get cache minutes based on period type
+     */
+    private function getCacheMinutesForPeriod($period)
+    {
+        $cacheMinutes = [
+            'today' => 2,        // 2 minutes for today (most dynamic)
+            'yesterday' => 10,   // 10 minutes for yesterday
+            'month' => 10,       // 10 minutes for current month
+            'last_month' => 15,  // 15 minutes for last month (more static)
+            'year' => 15,        // 15 minutes for current year
+            'last_year' => 30,   // 30 minutes for last year (very static)
+        ];
+
+        return $cacheMinutes[$period] ?? 10; // Default 10 minutes
+    }
+
+    /**
+     * Get optimized top products data
+     */
+    private function getTopProductsDataOptimized($type, $period, $limit)
+    {
+        $dateRange = PeriodHelper::getDateRangeForPeriod($period);
+        $orderByField = $type === 'revenue' ? 'total_revenue' : 'sold_quantity';
+
+        // Optimized query with proper joins and indexing
+        $query = \App\Models\InvoiceItem::select('invoice_items.product_id')
+            ->selectRaw('products.product_name as name')
+            ->selectRaw('products.sku')
+            ->selectRaw('products.product_thumbnail as image')
+            ->selectRaw('COALESCE(SUM(invoice_items.line_total), 0) as total_revenue')
+            ->selectRaw('COALESCE(SUM(invoice_items.quantity), 0) as sold_quantity')
+            ->join('invoices', function($join) use ($dateRange) {
+                $join->on('invoice_items.invoice_id', '=', 'invoices.id')
+                     ->whereIn('invoices.status', ['paid', 'completed']);
+
+                if ($dateRange['start'] && $dateRange['end']) {
+                    $join->whereBetween('invoices.created_at', [$dateRange['start'], $dateRange['end']]);
+                } elseif ($dateRange['start']) {
+                    $join->where('invoices.created_at', '>=', $dateRange['start']);
+                }
+            })
+            ->leftJoin('products', 'invoice_items.product_id', '=', 'products.id')
+            ->groupBy('invoice_items.product_id', 'products.product_name', 'products.sku', 'products.product_thumbnail')
+            ->orderBy($orderByField, 'desc')
+            ->limit($limit);
+
+        return $query->get()->map(function($item) {
+            return [
+                'id' => $item->product_id,
+                'name' => $item->name ?? 'Unknown Product',
+                'sku' => $item->sku ?? 'N/A',
+                'total_revenue' => (float) ($item->total_revenue ?? 0),
+                'image' => $item->image ? asset('storage/' . $item->image) : null,
+                'sold_quantity' => (int) ($item->sold_quantity ?? 0),
+                'formatted_revenue' => number_format($item->total_revenue ?? 0, 0, ',', '.') . '₫'
+            ];
+        });
     }
 }

@@ -13,17 +13,87 @@
     --kt-dark: #3f4254;
     --kt-muted: #a1a5b7;
     --kt-border: #e4e6ef;
+    --kt-menu-hover-bg: #e6f1fe;
 }
 
+@media (min-width: 1632px) {
+    body {
+        overflow: hidden;
+    }
+    .tenant-container {
+        max-width: 121rem !important;
+        
+    }
+}
+.header-top, .header-nav {
+    padding: 1rem;
+} 
 /* ==============================================
    FILTER COMPONENTS - Shared across modules
    ============================================== */
 
 /* Filter form styling - applies to all filter forms */
+.filter-sidebar {
+    min-height: 0;
+    overflow-y: hidden; /* Hidden by default */
+    max-height: calc(100dvh - var(--kt-app-header-height, 56px) - 100px);
+    background: white;
+    border-radius: 10px;
+    position: relative;
+}
+
+.filter-sidebar:hover {
+    overflow-y: overlay; /* Use overlay to prevent layout shift */
+}
+
+/* Chromium/WebKit (Chrome, Edge, Safari) */
+.filter-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.filter-sidebar::-webkit-scrollbar-button,
+.filter-sidebar::-webkit-scrollbar-button:start:decrement,
+.filter-sidebar::-webkit-scrollbar-button:end:increment {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    background-clip: content-box;
+    border-right: 2px solid transparent;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+    background-clip: content-box;
+    border-right: 2px solid transparent;
+}
+
+.filter-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Firefox */
+.filter-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Firefox hack for overlay scrollbar */
+@-moz-document url-prefix() {
+    .filter-sidebar {
+        overflow-y: scroll;
+        scrollbar-width: thin;
+    }
+}
+
 .filter-form .card,
 .filter-block {
-    border: 1px solid var(--kt-border);
-    border-radius: 0.75rem;
+    /* border: 1px solid var(--kt-border); */
+    /* border-radius: 0.75rem; */
     box-shadow: 0 0.1rem 1rem 0.25rem rgba(0, 0, 0, 0.05);
     margin-bottom: 1rem;
 }
@@ -131,9 +201,9 @@
 
 /* Time panel styling - Hidden by default, absolute position popup */
 .time-options-panel {
-    position: absolute !important;
-    top: 100% !important;
-    left: 100% !important;
+    position: fixed !important;
+    /* top: 100% !important;
+    left: 100% !important; */
     z-index: 1055 !important;
     margin-top: 0.5rem !important;
     width: 800px !important;
@@ -331,30 +401,90 @@
 .kt_table_container_body {position: relative !important;}
 .kt_table_responsive_container {
     overflow-x: auto !important;
-    overflow-y: visible !important;
+    overflow-y: hidden !important;
     width: 100% !important;
     position: static !important;
+    max-height: calc(100dvh - var(--kt-app-header-height, 56px) - 290px);
     /* Custom scrollbar styling */
     scrollbar-width: thin;
     scrollbar-color: #e1e5e9 #f5f8fa;
 }
 
-.kt_table_responsive_container::-webkit-scrollbar {
+/* .kt_table_responsive_container::-webkit-scrollbar:vertical { width: 0; }
+.kt_table_responsive_container table::-webkit-scrollbar:vertical { width: 0; } */
+/* (tuỳ chọn) vẫn giữ thanh ngang bình thường */
+
+/* Hide native scrollbar */
+/* .kt_table_responsive_container::-webkit-scrollbar {
+    height: 0px;
+    width: 0px;
+} */
+
+
+/* Virtual Scrollbar Container */
+.kt_table_responsive_container {
+    position: relative;
+    --virtual-thumb-width: 0px;
+    --virtual-thumb-left: 2px;
+}
+
+/* Virtual Scrollbar Track */
+.kt_table_responsive_container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 6px;
+    border: 1px solid #e4e6ef;
+    z-index: 20;
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Virtual Scrollbar Thumb - Using a dedicated element instead of pseudo-element to avoid conflicts */
+.kt_table_responsive_container .virtual-scrollbar-thumb {
+    position: absolute;
+    bottom: 2px;
+    left: var(--virtual-thumb-left, 2px);
+    width: var(--virtual-thumb-width, 0px);
     height: 8px;
-}
-
-.kt_table_responsive_container::-webkit-scrollbar-track {
-    background: #f5f8fa;
+    background: linear-gradient(135deg, #009ef7 0%, #0084d4 50%, #006bb3 100%);
     border-radius: 4px;
+    z-index: 21;
+    transition: all 0.2s ease;
+    box-shadow:
+        0 2px 4px rgba(0, 158, 247, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    cursor: grab;
+    pointer-events: auto;
+    opacity: 0.8;
+    display: block;
 }
 
-.kt_table_responsive_container::-webkit-scrollbar-thumb {
-    background: #e1e5e9;
-    border-radius: 4px;
+/* Hover effects */
+.kt_table_responsive_container:hover .virtual-scrollbar-thumb {
+    opacity: 1;
+    box-shadow:
+        0 3px 6px rgba(0, 158, 247, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-.kt_table_responsive_container::-webkit-scrollbar-thumb:hover {
-    background: #d1d5db;
+/* Dragging state */
+.kt_table_responsive_container.virtual-scrollbar-dragging .virtual-scrollbar-thumb {
+    cursor: grabbing;
+    background: linear-gradient(135deg, #0084d4 0%, #006bb3 50%, #005a9e 100%);
+    box-shadow:
+        0 4px 8px rgba(0, 158, 247, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Hide virtual scrollbar when no scrolling needed */
+.kt_table_responsive_container[style*="--virtual-thumb-width: 0px"] .virtual-scrollbar-thumb {
+    display: none;
 }
 
 /* Table Base Styles */
@@ -666,6 +796,7 @@
 
 /* ===== SCROLL INDICATORS ===== */
 
+.kt_table_responsive {position: relative;}
 /* Add subtle shadow to indicate scrollable content */
 .kt_table_responsive_container::before {
     content: '';
@@ -975,6 +1106,51 @@
     .time-options-panel.hiding {
         transform: translateY(-10px) !important;
     }
+}
+
+/* ==============================================
+   SETTINGS SIDEBAR MENU STYLES
+   ============================================== */
+
+/* Settings sidebar menu item hover effect */
+#kt_settings_sidebar_menu .menu-item .menu-link {
+    color: #181c32;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    border-radius: 0.475rem;
+    padding: 0.65rem 1rem;
+    font-size: 1.2rem;
+}
+
+#kt_settings_sidebar_menu .menu-item .menu-link:hover {
+    background-color: var(--kt-menu-hover-bg);
+    color: var(--kt-primary);
+}
+
+#kt_settings_sidebar_menu .menu-item .menu-link.active {
+    background-color: var(--kt-menu-hover-bg);
+    color: var(--kt-primary);
+}
+
+#kt_settings_sidebar_menu .menu-item .menu-link .menu-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    margin-right: 0.5rem;
+    transition: color 0.2s ease;
+}
+
+#kt_settings_sidebar_menu .menu-item .menu-link .menu-icon i {
+
+    transition: color 0.2s ease;
+}
+
+#kt_settings_sidebar_menu .menu-item .menu-link:hover .menu-icon i {
+    color: var(--kt-primary);
+}
+
+#kt_settings_sidebar_menu .menu-item .menu-link.active .menu-icon i {
+    color: var(--kt-primary);
 }
 
 /* Utility Classes - Shared across modules */

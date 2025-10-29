@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Traits\TenantScoped;
 use App\Events\InvoiceStatusChanged;
 
 class Invoice extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, TenantScoped;
 
     protected $guarded = [];
 

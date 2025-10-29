@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\UserTimeStamp;
 use App\Traits\HasNotifications;
+use App\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, UserTimeStamp, HasNotifications;
+    use HasFactory, SoftDeletes, UserTimeStamp, HasNotifications, TenantScoped;
 
     /**
      * The attributes that aren't mass assignable.
@@ -113,7 +114,7 @@ class Product extends Model
     protected function productEditUrl(): Attribute
     {
         return new Attribute(
-            get: fn($value, $attributes) => route('admin.products.edit', ['id' => $attributes['id']]),
+            get: fn($value, $attributes) => route('admin.products.edit', ['product' => $attributes['id']]),
         );
     }
 

@@ -25,27 +25,41 @@ class NotificationSettingController extends Controller
     {
         try {
             $user = Auth::user();
-            
+
+            // Check if user wants simplified format (default: true)
+            $simplified = $request->input('simplified', true);
+
             // Ensure user has default settings
             NotificationSetting::createDefaultForUser($user->id);
-            
-            // Get user settings grouped by category
-            $settingsByCategory = NotificationSetting::getUserSettingsByCategory($user->id);
-            
-            // Get available channels
-            $availableChannels = NotificationSetting::getAvailableChannels();
-            
-            // Get categories
-            $categories = NotificationSetting::getCategories();
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'settings_by_category' => $settingsByCategory,
-                    'available_channels' => $availableChannels,
-                    'categories' => $categories,
-                ]
-            ]);
+            if ($simplified) {
+                // Return simplified flat structure
+                $settings = NotificationSetting::getUserSettingsSimplified($user->id);
+                $summary = NotificationSetting::getUserSettingsSummary($user->id);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'settings' => $settings,
+                        'summary' => $summary,
+                        'available_channels' => NotificationSetting::getAvailableChannels(),
+                    ]
+                ]);
+            } else {
+                // Return original complex structure for backward compatibility
+                $settingsByCategory = NotificationSetting::getUserSettingsByCategory($user->id);
+                $availableChannels = NotificationSetting::getAvailableChannels();
+                $categories = NotificationSetting::getCategories();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'settings_by_category' => $settingsByCategory,
+                        'available_channels' => $availableChannels,
+                        'categories' => $categories,
+                    ]
+                ]);
+            }
 
         } catch (\Exception $e) {
             return response()->json([

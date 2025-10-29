@@ -85,9 +85,17 @@ trait FilterableTrait
         if ($request->filled('status')) {
             $statuses = $request->input('status');
             if (!is_array($statuses)) {
-                $statuses = [$statuses];
+                // Handle comma-separated string
+                $statuses = explode(',', $statuses);
+                $statuses = array_map('trim', $statuses);
             }
-            $query->whereIn($config['statusColumn'], $statuses);
+            // Filter out empty values
+            $statuses = array_filter($statuses, function($status) {
+                return !empty($status) && $status !== '';
+            });
+            if (!empty($statuses)) {
+                $query->whereIn($config['statusColumn'], $statuses);
+            }
         } elseif ($request->filled('status_filters') && is_array($request->input('status_filters'))) {
             $query->whereIn($config['statusColumn'], $request->input('status_filters'));
         }

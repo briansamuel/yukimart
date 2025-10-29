@@ -1,4 +1,4 @@
-@extends('admin.index')
+@extends('admin.layouts.tenant-app')
 
 @section('title', 'Quản Lý Tồn Kho')
 @section('page-header', 'Quản Lý Tồn Kho')

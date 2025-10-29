@@ -17,7 +17,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const HOME = '/home';
+    public const HOME = '/admin/dashboard';
 
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
@@ -33,11 +33,22 @@ class RouteServiceProvider extends ServiceProvider
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));
 
+            // Load platform routes FIRST to avoid subdomain conflicts
+            Route::middleware('web')
+                ->group(base_path('routes/platform.php'));
+
+            // Load tenant routes (handles subdomain routing) with web middleware
+            Route::middleware('web')
+                ->group(base_path('routes/tenant.php'));
+
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
 
             Route::middleware('web')->namespace('Admin')
                 ->group(base_path('routes/admin.php'));
+
+            Route::middleware('web')
+                ->group(base_path('routes/business.php'));
         });
     }
 

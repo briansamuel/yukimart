@@ -1,4 +1,4 @@
-@extends('admin.index')
+@extends('admin.layouts.tenant-app')
 @section('page-header', __('customer.customers'))
 @section('page-sub_header', __('customer.manage_customers'))
 

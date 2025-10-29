@@ -34,6 +34,11 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\InvoiceStatusChanged::class => [
             \App\Listeners\SendInvoiceNotificationListener::class,
         ],
+
+        // Notification Events
+        'eloquent.created: App\Models\Notification' => [
+            \App\Listeners\SendFCMNotificationListener::class,
+        ],
     ];
 
     /**

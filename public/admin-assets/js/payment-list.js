@@ -34,7 +34,7 @@ var KTPaymentsList = function () {
 
                     // Populate creators dropdown
                     if (data.data.creators && data.data.creators.length > 0) {
-                        populateSelectElement('#kt_payment_filter_form select[name="created_by"]', data.data.creators, 'Chọn người tạo');
+                        populateSelectElement('#kt_payment_filter_form select[name="creator_id"]', data.data.creators, 'Chọn người tạo');
                     }
 
                     // Populate staff dropdown (sellers)

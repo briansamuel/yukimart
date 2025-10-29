@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin\CMS;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\BaseTenantController;
 use App\Models\Payment;
 use App\Models\Invoice;
 use App\Models\ReturnOrder;
@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
-class PaymentController extends Controller
+class PaymentController extends BaseTenantController
 {
     protected $paymentService;
 
@@ -50,146 +50,11 @@ class PaymentController extends Controller
      */
     public function getPaymentsAjax(Request $request)
     {
-        $query = Payment::with(['customer', 'branchShop', 'creator', 'collector', 'bankAccount']);
-
-        // Apply time filter first (this will override date_from/date_to if present)
-        if ($request->filled('time_filter')) {
-            $timeFilter = $request->time_filter;
-            $now = now();
-
-            // Debug log
-            Log::info('PaymentController getPaymentsAjax - Time filter applied', [
-                'filter' => $timeFilter,
-                'current_time' => $now->toDateTimeString()
-            ]);
-
-            switch ($timeFilter) {
-                case 'today':
-                    $dateFrom = $now->copy()->startOfDay();
-                    $dateTo = $now->copy()->endOfDay();
-                    break;
-                case 'yesterday':
-                    $dateFrom = $now->copy()->subDay()->startOfDay();
-                    $dateTo = $now->copy()->subDay()->endOfDay();
-                    break;
-                case 'this_week':
-                    $dateFrom = $now->copy()->startOfWeek();
-                    $dateTo = $now->copy()->endOfWeek();
-                    break;
-                case 'last_week':
-                    $dateFrom = $now->copy()->subWeek()->startOfWeek();
-                    $dateTo = $now->copy()->subWeek()->endOfWeek();
-                    break;
-                case '7_days':
-                case 'last_7_days':
-                    $dateFrom = $now->copy()->subDays(6)->startOfDay();
-                    $dateTo = $now->copy()->endOfDay();
-                    break;
-                case 'this_month':
-                    $dateFrom = $now->copy()->startOfMonth();
-                    $dateTo = $now->copy()->endOfMonth();
-                    break;
-                case 'last_month':
-                    $dateFrom = $now->copy()->subMonth()->startOfMonth();
-                    $dateTo = $now->copy()->subMonth()->endOfMonth();
-                    break;
-                case '30_days':
-                case 'last_30_days':
-                    $dateFrom = $now->copy()->subDays(29)->startOfDay();
-                    $dateTo = $now->copy()->endOfDay();
-                    break;
-                case 'this_quarter':
-                    $dateFrom = $now->copy()->startOfQuarter();
-                    $dateTo = $now->copy()->endOfQuarter();
-                    break;
-                case 'last_quarter':
-                    $dateFrom = $now->copy()->subQuarter()->startOfQuarter();
-                    $dateTo = $now->copy()->subQuarter()->endOfQuarter();
-                    break;
-                case 'this_year':
-                    $dateFrom = $now->copy()->startOfYear();
-                    $dateTo = $now->copy()->endOfYear();
-                    break;
-                case 'last_year':
-                    $dateFrom = $now->copy()->subYear()->startOfYear();
-                    $dateTo = $now->copy()->subYear()->endOfYear();
-                    break;
-                case 'custom':
-                    // For custom, use the provided date_from and date_to
-                    $dateFrom = $request->filled('date_from') ? \Carbon\Carbon::parse($request->date_from)->startOfDay() : null;
-                    $dateTo = $request->filled('date_to') ? \Carbon\Carbon::parse($request->date_to)->endOfDay() : null;
-                    break;
-                default:
-                    $dateFrom = null;
-                    $dateTo = null;
-                    break;
-            }
-
-            // Apply the calculated date range
-            if ($dateFrom) {
-                $query->where('payment_date', '>=', $dateFrom);
-            }
-            if ($dateTo) {
-                $query->where('payment_date', '<=', $dateTo);
-            }
-
-            // Debug log for calculated date range
-            Log::info('PaymentController getPaymentsAjax - Date range calculated', [
-                'time_filter' => $timeFilter,
-                'date_from' => $dateFrom ? $dateFrom->format('Y-m-d H:i:s') : null,
-                'date_to' => $dateTo ? $dateTo->format('Y-m-d H:i:s') : null
-            ]);
-        } else {
-            // Fallback to manual date filters if no time_filter is provided
-            if ($request->filled('date_from')) {
-                $query->whereDate('payment_date', '>=', $request->date_from);
-            }
-
-            if ($request->filled('date_to')) {
-                $query->whereDate('payment_date', '<=', $request->date_to);
-            }
-        }
-
-        // Apply other filters
-        if ($request->filled('payment_type')) {
-            $query->where('payment_type', $request->payment_type);
-        }
-
-        if ($request->filled('payment_method')) {
-            $query->where('payment_method', $request->payment_method);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('branch_shop_id')) {
-            $query->where('branch_shop_id', $request->branch_shop_id);
-        }
-
-        if ($request->filled('creator_id')) {
-            $query->where('created_by', $request->creator_id);
-        }
-
-        if ($request->filled('staff_id')) {
-            $query->where('collector_id', $request->staff_id);
-        }
-
-        // Search functionality
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('payment_number', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function($customerQuery) use ($search) {
-                      $customerQuery->where('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        // Pagination
+        // Get pagination parameters
         $perPage = $request->get('per_page', 10);
-        $payments = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Use PaymentService to get payments with filters
+        $payments = $this->paymentService->getPaymentsWithFilters($request, $perPage);
 
         return response()->json([
             'success' => true,

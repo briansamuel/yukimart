@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin\CMS;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\BaseTenantController;
 use App\Models\ReturnOrder;
 use App\Models\ReturnOrderItem;
 use App\Models\Invoice;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-class ReturnController extends Controller
+class ReturnController extends BaseTenantController
 {
     use FilterableTrait, HandlesApiErrors;
 
@@ -248,9 +248,14 @@ class ReturnController extends Controller
             $query->where('refund_method', $params['refund_method']);
         }
 
-        // Filter by branch shop
+        // Filter by branch shop (support both single and multiple)
         if (!empty($params['branch_shop_id'])) {
             $query->where('branch_shop_id', $params['branch_shop_id']);
+        } elseif (!empty($params['branch_shop_ids'])) {
+            $branchShopIds = is_array($params['branch_shop_ids'])
+                ? $params['branch_shop_ids']
+                : explode(',', $params['branch_shop_ids']);
+            $query->whereIn('branch_shop_id', $branchShopIds);
         }
 
         // Filter by invoice
@@ -575,10 +580,19 @@ class ReturnController extends Controller
     /**
      * Get detail panel for return order (AJAX).
      */
-    public function getDetailPanel($id)
+    public function getDetailPanel()
     {
         try {
-            $returnOrder = ReturnOrder::with([
+            // Get return ID from route parameter (not method parameter to avoid subdomain conflict)
+            $id = request()->route('id');
+
+            Log::info('Loading return detail panel', [
+                'return_id' => $id,
+                'request_url' => request()->fullUrl(),
+                'route_params' => request()->route()->parameters()
+            ]);
+
+            $return = ReturnOrder::with([
                 'customer',
                 'branchShop',
                 'invoice',
@@ -587,11 +601,26 @@ class ReturnController extends Controller
                 'returnOrderItems.product'
             ])->findOrFail($id);
 
-            return view('admin.returns.partials.detail-panel', compact('returnOrder'))->render();
+            Log::info('Return order found', [
+                'return_id' => $return->id,
+                'return_number' => $return->return_number,
+                'customer_id' => $return->customer_id
+            ]);
+
+            $html = view('admin.returns.partials.detail-panel', compact('return'))->render();
+
+            Log::info('Detail panel rendered successfully', ['return_id' => $id]);
+
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Error getting return detail panel: ' . $e->getMessage(), [
-                'return_id' => $id
+                'return_id' => request()->route('id'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([

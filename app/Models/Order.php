@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Traits\UserTimeStamp;
 use App\Traits\HasNotifications;
+use App\Traits\TenantScoped;
 use Carbon\Carbon;
 use App\Events\OrderStatusChanged;
 
 class Order extends Model
 {
-    use HasFactory, UserTimeStamp, HasNotifications;
+    use HasFactory, UserTimeStamp, HasNotifications, TenantScoped;
 
     protected $guarded = [];
 
@@ -53,6 +54,8 @@ class Order extends Model
     protected static function boot()
     {
         parent::boot();
+
+        // TenantScope is automatically applied by TenantScoped trait
 
         // Note: OrderCreated event is dispatched manually in OrderService
         // after order is fully created to ensure correct data in notifications

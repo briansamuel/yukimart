@@ -1,8 +1,11 @@
-@extends('admin.main-content')
+@extends('admin.layouts.tenant-app')
 
 @section('title', 'Quản lý phiếu thu/chi')
 
 @section('style')
+<link rel="stylesheet" href="{{ asset('admin-assets/assets/plugins/custom/datatables/datatables.bundle.css') }}" />
+<link href="{{ asset('admin-assets/css/globals.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ asset('admin-assets/css/table-loading.css') }}" rel="stylesheet" type="text/css" />
 <link rel="stylesheet" href="{{ asset('admin-assets/css/payment-list.css') }}" />
 @include('admin.payment.elements.row-expansion-styles')
 @endsection
@@ -21,37 +24,37 @@
                 @include('admin.payment.elements.filter')
 
                 <!--begin::Content-->
-                <div class="flex-lg-row-fluid ms-lg-15 order-2 order-lg-2">
+                <div class="flex-lg-row-fluid ms-lg-10 order-2 order-lg-2">
                     <div class="d-flex flex-column gap-7 gap-lg-10">
 
                     <!--begin::Summary Cards-->
                     <div class="row g-5 g-xl-8">
-                        <div class="col-xl-3">
-                            <div class="summary-card income">
+                        <div class="col-xl-3 col-sm-6">
+                            <div class="summary-card mb-0 income">
                                 <div class="summary-title">Quỹ đầu kỳ</div>
                                 <div class="summary-value" id="opening_balance">
                                     <i class="fas fa-spinner fa-spin"></i> Đang tải...
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xl-3">
-                            <div class="summary-card total">
+                        <div class="col-xl-3 col-sm-6">
+                            <div class="summary-card mb-0 total">
                                 <div class="summary-title">Tổng thu</div>
                                 <div class="summary-value text-success" id="total_income">
                                     <i class="fas fa-spinner fa-spin"></i> Đang tải...
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xl-3">
-                            <div class="summary-card expense">
+                        <div class="col-xl-3 col-sm-6">
+                            <div class="summary-card mb-0 expense">
                                 <div class="summary-title">Tổng chi</div>
                                 <div class="summary-value text-danger" id="total_expense">
                                     <i class="fas fa-spinner fa-spin"></i> Đang tải...
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xl-3">
-                            <div class="summary-card balance">
+                        <div class="col-xl-3 col-sm-6">
+                            <div class="summary-card mb-0 balance">
                                 <div class="summary-title">Quỹ cuối kỳ</div>
                                 <div class="summary-value" id="closing_balance">
                                     <i class="fas fa-spinner fa-spin"></i> Đang tải...
@@ -162,7 +165,7 @@
                         <!--begin::Card body-->
                         <div class="card-body pt-0">
                             <!--begin::Table container-->
-                            <div class="table-responsive">
+                            <div id="payments_table_container" class="table-responsive" style="position: relative; overflow-x: auto; max-height: 523px;">
                                 <!--begin::Table-->
                                 <table id="payments_custom_table" class="table align-middle table-row-dashed fs-6 gy-5">
                                     <!--begin::Table head-->
@@ -183,7 +186,7 @@
                                         <!--end::Table row-->
                                     </thead>
                                     <!--begin::Table body-->
-                                    <tbody class="fw-semibold text-gray-600" id="payments-table-body">
+                                    <tbody class="fw-semibold text-gray-600">
                                         <!-- Data will be loaded via AJAX -->
                                         <tr>
                                             <td colspan="6" class="text-center py-10">
@@ -203,11 +206,21 @@
                             <!--end::Table container-->
                             
                             <!--begin::Pagination-->
-                            <div class="d-flex flex-stack flex-wrap pt-10" id="payments-pagination">
-                                <div class="fs-6 fw-semibold text-gray-700" id="payments-info">
-                                    Hiển thị 0 đến 0 của 0 kết quả
+                            <div class="d-flex flex-stack flex-wrap pt-10">
+                                <div class="d-flex align-items-center">
+                                    <div class="fs-6 fw-semibold text-gray-700" id="kt_payments_table_info">
+                                        Hiển thị 0 đến 0 của 0 kết quả
+                                    </div>
+                                    <div class="ms-5">
+                                        <select class="form-select form-select-sm w-auto" id="kt_payments_per_page">
+                                            <option value="10">10 / trang</option>
+                                            <option value="25" selected>25 / trang</option>
+                                            <option value="50">50 / trang</option>
+                                            <option value="100">100 / trang</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <ul class="pagination" id="payments-pagination-links">
+                                <ul class="pagination kt_table_pagination" id="kt_payments_table_pagination">
                                     <!-- Pagination links will be generated here -->
                                 </ul>
                             </div>
@@ -284,88 +297,154 @@ $.ajaxSetup({
     };
 })();
 </script>
-<script src="{{ asset('admin-assets/js/payment-list.js') }}?v={{ time() }}&debug=1"></script>
+
+<!-- Include global utilities and filter scripts -->
+<script src="{{ asset('admin-assets/globals/date-utils.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('admin-assets/globals/filter.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('admin-assets/globals/column-visibility.js') }}?v={{ time() }}"></script>
+
+<!-- Include base table manager and payment-specific scripts -->
+<script src="{{ asset('admin-assets/js/base/table-manager.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('admin-assets/js/payments/payment-manager.js') }}?v={{ time() }}"></script>
+
 <script>
 // Set global variable for AJAX URL
-var paymentAjaxUrl = "{{ route('admin.payment.ajax') }}";
+window.paymentAjaxUrl = "{{ route('admin.payment.ajax') }}";
 
-// Initialize payment list functionality
-$(document).ready(function() {
+// Initialize payment manager when document is ready
+document.addEventListener('DOMContentLoaded', function() {
     console.log('Payment index view JavaScript loaded');
-    console.log('paymentAjaxUrl:', paymentAjaxUrl);
+    console.log('paymentAjaxUrl:', window.paymentAjaxUrl);
 
-    // Test summary endpoint directly and update cards
-    console.log('Testing summary endpoint...');
-    $.ajax({
-        url: '/admin/payments/summary',
-        type: 'GET',
-        data: { time_filter: 'this_month' },
-        beforeSend: function() {
-            console.log('Loading summary data...');
-            $('#opening_balance').html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
-            $('#total_income').html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
-            $('#total_expense').html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
-            $('#closing_balance').html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
-        },
-        success: function(response) {
-            console.log('✅ SUMMARY SUCCESS:', response);
+    // Initialize PaymentTableManager FIRST
+    if (typeof PaymentTableManager !== 'undefined') {
+        console.log('Initializing PaymentTableManager...');
+        const paymentManager = new PaymentTableManager();
+        paymentManager.init();
 
-            // Update summary cards directly
-            if (response.success && response.data) {
-                function formatCurrency(amount) {
-                    return new Intl.NumberFormat('vi-VN').format(amount);
+        // Make it globally accessible for debugging
+        window.paymentManager = paymentManager;
+
+        // Initialize filters using KTGlobalFilter AFTER paymentManager is created
+        if (typeof KTGlobalFilter !== 'undefined') {
+            KTGlobalFilter.initAllFilters('#kt_payment_filter_form', function() {
+                if (window.paymentManager) {
+                    // Reset to page 1 when filter changes
+                    window.paymentManager.currentFilters.page = 1;
+                    window.paymentManager.loadData();
                 }
-
-                $('#opening_balance').text(formatCurrency(response.data.opening_balance));
-                $('#total_income').text(formatCurrency(response.data.total_income));
-                $('#total_expense').text('-' + formatCurrency(response.data.total_expense));
-                $('#closing_balance').text(formatCurrency(response.data.closing_balance));
-
-                console.log('✅ Summary cards updated successfully!');
-                console.log('Data:', {
-                    opening: formatCurrency(response.data.opening_balance),
-                    income: formatCurrency(response.data.total_income),
-                    expense: formatCurrency(response.data.total_expense),
-                    closing: formatCurrency(response.data.closing_balance)
-                });
-            } else {
-                console.error('❌ Invalid response format:', response);
-                showErrorOnCards('Dữ liệu không hợp lệ');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ SUMMARY ERROR:', status, error);
-            console.error('Response:', xhr.responseText);
-
-            var errorMessage = 'Lỗi kết nối';
-            if (xhr.status === 401) {
-                errorMessage = 'Chưa đăng nhập';
-            } else if (xhr.status === 403) {
-                errorMessage = 'Không có quyền truy cập';
-            } else if (xhr.status === 404) {
-                errorMessage = 'Không tìm thấy endpoint';
-            } else if (xhr.status >= 500) {
-                errorMessage = 'Lỗi server';
-            }
-
-            showErrorOnCards(errorMessage);
+            }, {
+                timeFilter: true,
+                statusFilter: false, // We handle status manually
+                creatorsFilter: false,
+                sellersFilter: false,
+                approversFilter: false,
+                branchShopsFilter: false,
+                saleChannelsFilter: false,
+                paymentMethodsFilter: false,
+                deliveryStatusFilter: false,
+                deliveryTimeFilter: false,
+                loadAllData: false // Don't load data automatically, we'll do it manually
+            });
+            console.log('KTGlobalFilter initialized for payments');
+        } else {
+            console.error('KTGlobalFilter not found');
         }
-    });
 
-    function showErrorOnCards(message) {
-        $('#opening_balance').html('<span class="text-danger">' + message + '</span>');
-        $('#total_income').html('<span class="text-danger">' + message + '</span>');
-        $('#total_expense').html('<span class="text-danger">' + message + '</span>');
-        $('#closing_balance').html('<span class="text-danger">' + message + '</span>');
-    }
-
-    // Initialize KTPaymentsList when document is ready
-    if (typeof KTPaymentsList !== 'undefined') {
-        console.log('Initializing KTPaymentsList...');
-        KTPaymentsList.init();
+        // Initialize manual event listeners for payment-specific filters
+        initPaymentFilters();
     } else {
-        console.error('KTPaymentsList not found');
+        console.error('PaymentTableManager not found');
     }
 });
+
+/**
+ * Initialize event listeners for payment-specific filters
+ */
+function initPaymentFilters() {
+    console.log('Initializing payment-specific filters...');
+
+    // Helper function to reload data
+    const reloadData = function() {
+        if (window.paymentManager) {
+            window.paymentManager.currentFilters.page = 1;
+            window.paymentManager.loadData();
+        }
+    };
+
+    // 1. Status checkboxes (status_paid, status_pending, status_cancelled)
+    $('#status_paid, #status_pending, #status_cancelled').on('change', function() {
+        console.log('Status filter changed:', this.id, this.checked);
+        reloadData();
+    });
+
+    // 2. Payment method radio buttons
+    $('input[name="payment_method"]').on('change', function() {
+        console.log('Payment method filter changed:', this.value);
+        reloadData();
+    });
+
+    // 3. Document type checkboxes (doc_receipt, doc_disbursement)
+    $('#doc_receipt, #doc_disbursement').on('change', function() {
+        console.log('Document type filter changed:', this.id, this.checked);
+        reloadData();
+    });
+
+    // 4. Business result buttons
+    $('#business_result_all, #business_result_yes, #business_result_no').on('click', function() {
+        // Update button states
+        $('#business_result_all, #business_result_yes, #business_result_no')
+            .removeClass('btn-primary')
+            .addClass('btn-light');
+        $(this).removeClass('btn-light').addClass('btn-primary');
+
+        // Set hidden input value
+        let value = '';
+        if (this.id === 'business_result_yes') value = '1';
+        else if (this.id === 'business_result_no') value = '0';
+
+        // Create or update hidden input
+        let hiddenInput = $('#business_result_filter');
+        if (hiddenInput.length === 0) {
+            $('<input type="hidden" id="business_result_filter" name="business_result" />').appendTo('#kt_payment_filter_form');
+            hiddenInput = $('#business_result_filter');
+        }
+        hiddenInput.val(value);
+
+        console.log('Business result filter changed:', value);
+        reloadData();
+    });
+
+    // 4. Select2 dropdowns - need to wait for Select2 initialization
+    setTimeout(function() {
+        // Income type select2
+        $('#income_type_filter').on('change', function() {
+            console.log('Income type filter changed:', $(this).val());
+            reloadData();
+        });
+
+        // Creator select2
+        $('#creator_filter').on('change', function() {
+            console.log('Creator filter changed:', $(this).val());
+            reloadData();
+        });
+
+        // Staff select2
+        $('#staff_filter').on('change', function() {
+            console.log('Staff filter changed:', $(this).val());
+            reloadData();
+        });
+
+        // Recipient select2
+        $('#recipient_filter').on('change', function() {
+            console.log('Recipient filter changed:', $(this).val());
+            reloadData();
+        });
+
+        console.log('Select2 filter listeners initialized');
+    }, 500);
+
+    console.log('Payment-specific filters initialized');
+}
 </script>
 @endsection

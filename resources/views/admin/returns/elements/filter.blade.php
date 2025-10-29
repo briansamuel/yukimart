@@ -132,9 +132,20 @@
             </div>
             <!--end::Card header-->
             <!--begin::Card body-->
-            <div  class="card-body pt-0">
-                
+            <div class="card-body pt-0">
                 <div class="d-flex flex-column">
+                    <div class="form-check form-check-custom form-check-solid mb-3">
+                        <input class="form-check-input" type="checkbox" name="status[]" value="pending" id="status_pending" checked/>
+                        <label class="form-check-label fw-semibold" for="status_pending">
+                            Chờ duyệt
+                        </label>
+                    </div>
+                    <div class="form-check form-check-custom form-check-solid mb-3">
+                        <input class="form-check-input" type="checkbox" name="status[]" value="approved" id="status_approved" checked/>
+                        <label class="form-check-label fw-semibold" for="status_approved">
+                            Đã duyệt
+                        </label>
+                    </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
                         <input class="form-check-input" type="checkbox" name="status[]" value="completed" id="status_completed" checked/>
                         <label class="form-check-label fw-semibold" for="status_completed">
@@ -142,17 +153,38 @@
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-3">
-                        <input class="form-check-input" type="checkbox" name="status[]" value="cancelled" id="status_cancelled" checked/>
-                        <label class="form-check-label fw-semibold" for="status_cancelled">
-                            Đã hủy
+                        <input class="form-check-input" type="checkbox" name="status[]" value="rejected" id="status_rejected"/>
+                        <label class="form-check-label fw-semibold" for="status_rejected">
+                            Từ chối
                         </label>
                     </div>
-
                 </div>
             </div>
             <!--end::Card body-->
         </div>
         <!--end::Status Filter Block-->
+
+        <!--begin::Branch Shop Filter Block-->
+        <div class="card card-flush mb-5">
+            <!--begin::Card header-->
+            <div class="card-header pt-5">
+                <!--begin::Card title-->
+                <div class="card-title d-flex align-items-center justify-content-between w-100">
+                    <h3 class="fw-bold text-dark">Chi nhánh</h3>
+                    <i class="fas fa-chevron-up fs-3 text-muted"></i>
+                </div>
+                <!--end::Card title-->
+            </div>
+            <!--end::Card header-->
+            <!--begin::Card body-->
+            <div class="card-body pt-0">
+                <select class="form-select form-select-solid" multiple="multiple" data-kt-select2="true" data-placeholder="Chọn chi nhánh" data-allow-clear="true" name="branch_shop_ids[]" id="branch_shop_filter">
+                    <option></option>
+                </select>
+            </div>
+            <!--end::Card body-->
+        </div>
+        <!--end::Branch Shop Filter Block-->
 
         <!--begin::Creator Filter Block-->
         <div class="card card-flush mb-5">

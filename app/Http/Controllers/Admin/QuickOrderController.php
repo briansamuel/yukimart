@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\BaseTenantController;
 use App\Services\QuickOrderService;
 use App\Services\OrderService;
 use App\Services\ReturnOrderService;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-class QuickOrderController extends Controller
+class QuickOrderController extends BaseTenantController
 {
     protected $quickOrderService;
     protected $orderService;
@@ -36,21 +36,36 @@ class QuickOrderController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $tenantContextService = app(\App\Services\TenantContextService::class);
+        $currentTenantId = $tenantContextService->getCurrentTenantId();
+
+        // Get user's role in current tenant
+        $userTenantRole = $user->getRoleInTenant($currentTenantId);
+
         // Get default customer and branch shop from user settings
-        $userSettings = Auth::user()->settings ?? collect();
+        $userSettings = $user->settings ?? collect();
         $defaultCustomerId = $userSettings->get('default_customer_id');
         $defaultBranchShopId = $userSettings->get('branch_shop_id');
 
         // Get customers and branch shops for dropdowns
         $customers = Customer::active()->orderBy('name')->get();
 
-        // Get branch shops based on user role
-        if (Auth::user()->is_root == 1) {
-            // Super Admin: Show all branch shops
-            $branchShops = BranchShop::active()->orderBy('name')->get();
+        // Get branch shops based on user's tenant role
+        // Owner, Admin, Manager: Can see all branch shops in tenant
+        // Staff: Can only see branch shops they belong to
+        if (in_array($userTenantRole, [\App\Models\TenantUser::ROLE_OWNER, \App\Models\TenantUser::ROLE_ADMIN, \App\Models\TenantUser::ROLE_MANAGER])) {
+            // Get all branch shops in current tenant
+            $branchShops = BranchShop::active()
+                                    ->where('tenant_id', $currentTenantId)
+                                    ->orderBy('name')
+                                    ->get();
         } else {
-            // Regular User: Show only branch shops they belong to
-            $branchShops = Auth::user()->currentBranchShops()->orderBy('name')->get();
+            // Staff: Show only branch shops they belong to
+            $branchShops = $user->currentBranchShops()
+                                ->where('tenant_id', $currentTenantId)
+                                ->orderBy('name')
+                                ->get();
         }
 
         $bankAccounts = BankAccount::getActive();
@@ -59,19 +74,34 @@ class QuickOrderController extends Controller
         $defaultCustomer = $defaultCustomerId ? Customer::find($defaultCustomerId) : $customers->first();
 
         // Get default branch shop
-        $defaultBranchShop = $defaultBranchShopId ? BranchShop::find($defaultBranchShopId) : $branchShops->first();
+        // Priority: 1. User setting, 2. Primary branch (is_primary=true), 3. First branch
+        if ($defaultBranchShopId) {
+            $defaultBranchShop = BranchShop::find($defaultBranchShopId);
+        } else {
+            // Try to get primary branch from user_branch_shops pivot
+            $primaryBranch = $user->currentBranchShops()
+                                  ->where('branch_shops.tenant_id', $currentTenantId)
+                                  ->where('user_branch_shops.is_primary', true)
+                                  ->first();
+
+            $defaultBranchShop = $primaryBranch ?: $branchShops->first();
+        }
 
         // Get sellers based on user role and branch shops
         $sellers = collect();
-        if (Auth::user()->is_root == 1) {
-            // Super Admin: Get all active users
-            $sellers = User::where('status', 'active')
-                          ->orderBy('full_name')
-                          ->select('id', 'full_name', 'email', 'phone')
-                          ->get();
+        if (in_array($userTenantRole, [\App\Models\TenantUser::ROLE_OWNER, \App\Models\TenantUser::ROLE_ADMIN, \App\Models\TenantUser::ROLE_MANAGER])) {
+            // Get all active users in current tenant
+            $sellers = User::whereHas('tenants', function($query) use ($currentTenantId) {
+                $query->where('tenants.id', $currentTenantId)
+                      ->where('tenant_users.is_active', true);
+            })
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->select('id', 'full_name', 'email', 'phone')
+            ->get();
         } else {
-            // Regular User: Get users from their branch shops
-            $userBranchShopIds = Auth::user()->currentBranchShops()->pluck('branch_shops.id');
+            // Staff: Get users from their branch shops
+            $userBranchShopIds = $user->currentBranchShops()->pluck('branch_shops.id');
             if ($userBranchShopIds->isNotEmpty()) {
                 $sellers = User::whereHas('currentBranchShops', function($query) use ($userBranchShopIds) {
                     $query->whereIn('branch_shops.id', $userBranchShopIds);
@@ -87,6 +117,9 @@ class QuickOrderController extends Controller
         // Check if this is a return order request
         $isReturnOrder = $request->get('type') === 'return';
 
+        // Pass user tenant role to view
+        $canChangeBranch = in_array($userTenantRole, [\App\Models\TenantUser::ROLE_OWNER, \App\Models\TenantUser::ROLE_ADMIN, \App\Models\TenantUser::ROLE_MANAGER]);
+
         return view('admin.quick-order.index', compact(
             'customers',
             'branchShops',
@@ -94,7 +127,8 @@ class QuickOrderController extends Controller
             'defaultBranchShop',
             'bankAccounts',
             'sellers',
-            'isReturnOrder'
+            'isReturnOrder',
+            'canChangeBranch'
         ));
     }
 

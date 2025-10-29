@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Http\Resources\V1\OrderResource;
+use App\Http\Resources\V1\OrderListResource;
+use App\Http\Traits\ApiOptimizationTrait;
+use App\Http\Requests\Api\V1\Order\OrderListRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -12,70 +15,57 @@ use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    use ApiOptimizationTrait;
     /**
      * Display a listing of orders with pagination and filters
      */
-    public function index(Request $request)
+    public function index(OrderListRequest $request)
     {
+        $startTime = microtime(true);
+
         try {
-            $query = Order::with(['customer', 'branchShop', 'creator', 'seller']);
-            
-            // Apply filters
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
+            // Generate cache key for this request
+            $cacheKey = $this->generateCacheKey($request, 'orders_list');
+
+            // Try to get cached response (short cache for orders due to frequent updates)
+            $cachedResponse = $this->cacheResponse($cacheKey, null, 1); // 1 minute cache
+
+            if ($cachedResponse) {
+                $response = response()->json($cachedResponse);
+                return $this->addPerformanceHeaders($response, $startTime);
             }
-            
-            if ($request->filled('payment_status')) {
-                $query->where('payment_status', $request->payment_status);
+
+            // Parse include parameter for dynamic relationship loading
+            $includes = $this->parseOrderIncludes($request->get('include', 'customer,branchShop,creator,seller'));
+
+            // Base query with optimized eager loading
+            $query = Order::query();
+
+            // Apply dynamic includes
+            if (!empty($includes)) {
+                $query->with($includes);
             }
-            
-            if ($request->filled('delivery_status')) {
-                $query->where('delivery_status', $request->delivery_status);
-            }
-            
-            if ($request->filled('customer_id')) {
-                $query->where('customer_id', $request->customer_id);
-            }
-            
-            if ($request->filled('branch_shop_id')) {
-                $query->where('branch_shop_id', $request->branch_shop_id);
-            }
-            
-            if ($request->filled('order_type')) {
-                $query->where('order_type', $request->order_type);
-            }
-            
-            if ($request->filled('date_from')) {
-                $query->whereDate('order_date', '>=', $request->date_from);
-            }
-            
-            if ($request->filled('date_to')) {
-                $query->whereDate('order_date', '<=', $request->date_to);
-            }
-            
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('order_number', 'like', "%{$search}%")
-                      ->orWhere('customer_name', 'like', "%{$search}%")
-                      ->orWhere('customer_phone', 'like', "%{$search}%")
-                      ->orWhere('reference_number', 'like', "%{$search}%");
-                });
-            }
-            
-            // Sorting
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
-            
-            // Pagination
-            $perPage = $request->get('per_page', 15);
-            $orders = $query->paginate($perPage);
-            
-            return response()->json([
+
+            // Apply filters with optimization
+            $this->applyOrderFilters($query, $request);
+
+            // Apply sorting
+            $this->applyOrderSorting($query, $request);
+
+            // Optimized pagination
+            $orders = $this->optimizePagination($query, $request);
+
+            // Transform to resource collection
+            $resourceCollection = OrderListResource::collection($orders);
+
+            // Parse fields for field selection
+            $fields = $this->parseFields($request->get('fields'));
+
+            // Prepare response data
+            $responseData = [
                 'status' => 'success',
                 'message' => 'Orders retrieved successfully',
-                'data' => OrderResource::collection($orders),
+                'data' => $resourceCollection,
                 'meta' => [
                     'current_page' => $orders->currentPage(),
                     'last_page' => $orders->lastPage(),
@@ -83,8 +73,24 @@ class OrderController extends Controller
                     'total' => $orders->total(),
                     'from' => $orders->firstItem(),
                     'to' => $orders->lastItem(),
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
                 ]
-            ], 200);
+            ];
+
+            // Apply field filtering if requested
+            if (!empty($fields)) {
+                $responseData = $this->filterFields($responseData, $fields);
+            }
+
+            // Cache the response
+            $this->cacheResponse($cacheKey, $responseData, 1);
+
+            // Create response with optimization headers
+            $response = response()->json($responseData, 200);
+            $response = $this->addPerformanceHeaders($response, $startTime);
+            $response = $this->addRateLimitHeaders($response);
+
+            return $response;
             
         } catch (\Exception $e) {
             Log::error('Order listing failed: ' . $e->getMessage());
@@ -369,5 +375,178 @@ class OrderController extends Controller
         } while (Order::where('order_number', $number)->exists());
         
         return $number;
+    }
+
+    /**
+     * Parse include parameter for dynamic relationship loading
+     */
+    private function parseOrderIncludes($includeParam)
+    {
+        if (empty($includeParam)) {
+            return [];
+        }
+
+        $includes = [];
+        $availableIncludes = [
+            'customer' => 'customer:id,customer_name,email,phone',
+            'branchShop' => 'branchShop:id,name',
+            'creator' => 'creator:id,username,full_name',
+            'seller' => 'seller:id,username,full_name',
+            'orderItems' => [
+                'orderItems:id,order_id,product_id,product_name,product_sku,quantity,unit_price,line_total',
+                'orderItems.product:id,product_name,product_thumbnail,sku'
+            ]
+        ];
+
+        $requestedIncludes = explode(',', $includeParam);
+
+        foreach ($requestedIncludes as $include) {
+            $include = trim($include);
+            if (isset($availableIncludes[$include])) {
+                if (is_array($availableIncludes[$include])) {
+                    $includes = array_merge($includes, $availableIncludes[$include]);
+                } else {
+                    $includes[] = $availableIncludes[$include];
+                }
+            }
+        }
+
+        return $includes;
+    }
+
+    /**
+     * Apply filters to order query with optimization
+     */
+    private function applyOrderFilters($query, $request)
+    {
+        // Status filters (support arrays)
+        if ($request->filled('status')) {
+            if (is_array($request->status)) {
+                $query->whereIn('status', $request->status);
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        if ($request->filled('payment_status')) {
+            if (is_array($request->payment_status)) {
+                $query->whereIn('payment_status', $request->payment_status);
+            } else {
+                $query->where('payment_status', $request->payment_status);
+            }
+        }
+
+        if ($request->filled('delivery_status')) {
+            if (is_array($request->delivery_status)) {
+                $query->whereIn('delivery_status', $request->delivery_status);
+            } else {
+                $query->where('delivery_status', $request->delivery_status);
+            }
+        }
+
+        if ($request->filled('order_type')) {
+            if (is_array($request->order_type)) {
+                $query->whereIn('order_type', $request->order_type);
+            } else {
+                $query->where('order_type', $request->order_type);
+            }
+        }
+
+        if ($request->filled('priority')) {
+            if (is_array($request->priority)) {
+                $query->whereIn('priority', $request->priority);
+            } else {
+                $query->where('priority', $request->priority);
+            }
+        }
+
+        // Relationship filters
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('branch_shop_id')) {
+            $query->where('branch_shop_id', $request->branch_shop_id);
+        }
+
+        if ($request->filled('created_by')) {
+            $query->where('created_by', $request->created_by);
+        }
+
+        if ($request->filled('sold_by')) {
+            $query->where('sold_by', $request->sold_by);
+        }
+
+        // Amount filters
+        if ($request->filled('min_amount')) {
+            $query->where('final_amount', '>=', $request->min_amount);
+        }
+        if ($request->filled('max_amount')) {
+            $query->where('final_amount', '<=', $request->max_amount);
+        }
+
+        // Date filters
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        if ($request->filled('order_date_from')) {
+            $query->whereDate('order_date', '>=', $request->order_date_from);
+        }
+        if ($request->filled('order_date_to')) {
+            $query->whereDate('order_date', '<=', $request->order_date_to);
+        }
+
+        if ($request->filled('delivery_date_from')) {
+            $query->whereDate('delivery_date', '>=', $request->delivery_date_from);
+        }
+        if ($request->filled('delivery_date_to')) {
+            $query->whereDate('delivery_date', '<=', $request->delivery_date_to);
+        }
+
+        // Enhanced search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $searchFields = $request->get('search_fields', ['order_number', 'customer_name', 'customer_phone', 'reference_number']);
+
+            $query->where(function($q) use ($search, $searchFields) {
+                if (in_array('order_number', $searchFields)) {
+                    $q->orWhere('order_number', 'like', "%{$search}%");
+                }
+                if (in_array('customer_name', $searchFields)) {
+                    $q->orWhere('customer_name', 'like', "%{$search}%");
+                }
+                if (in_array('customer_phone', $searchFields)) {
+                    $q->orWhere('customer_phone', 'like', "%{$search}%");
+                }
+                if (in_array('reference_number', $searchFields)) {
+                    $q->orWhere('reference_number', 'like', "%{$search}%");
+                }
+            });
+        }
+    }
+
+    /**
+     * Apply sorting to order query
+     */
+    private function applyOrderSorting($query, $request)
+    {
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        // Validate sort fields
+        $allowedSortFields = [
+            'id', 'order_number', 'order_date', 'delivery_date', 'final_amount',
+            'status', 'payment_status', 'delivery_status', 'created_at', 'updated_at'
+        ];
+
+        if (in_array($sortBy, $allowedSortFields)) {
+            $query->orderBy($sortBy, $sortOrder === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
     }
 }

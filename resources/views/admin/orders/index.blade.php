@@ -1,4 +1,4 @@
-@extends('admin.main-content')
+@extends('admin.layouts.tenant-app')
 
 @section('title', 'Quản lý đơn hàng')
 
@@ -23,7 +23,7 @@
                 @include('admin.orders.elements.filter')
 
                 <!--begin::Content-->
-                <div class="flex-lg-row-fluid ms-lg-15 order-2 order-lg-2">
+                <div class="flex-lg-row-fluid ms-lg-10 order-2 order-lg-2">
                     <div class="d-flex flex-column gap-7 gap-lg-10">
                         <!--begin::Card-->
                         <div class="card card-flush">
@@ -75,6 +75,13 @@
                                     </div>
                                     <!--end::Bulk Actions Dropdown-->
                                     
+                                    <!--begin::Reset Filters-->
+                                    <button type="button" class="btn btn-light-warning" id="reset_filters_btn">
+                                        <i class="fas fa-redo"></i>
+                                        Reset Filters
+                                    </button>
+                                    <!--end::Reset Filters-->
+
                                     <!--begin::Export dropdown-->
                                     <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
                                         data-kt-menu-placement="bottom-end">
@@ -208,7 +215,7 @@
                                     <!--end::Column visibility-->
 
                                     <!--begin::Add order-->
-                                    <a href="{{ route('admin.order.add') }}" class="btn btn-primary">
+                                    <a href="{{ route('admin.order.create') }}" class="btn btn-primary">
                                         <i class="fas fa-plus"></i>
                                         Thêm mới
                                     </a>
@@ -318,6 +325,198 @@
                                     </ul>
                                 </div>
                                 <!--end::Pagination-->
+
+                                <!-- Order Detail Panel -->
+                                <div id="order-detail-panel" class="order-detail-panel mt-10" style="display: none;">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div class="card-title">
+                                                <h3 class="fw-bold">Chi tiết đơn hàng</h3>
+                                            </div>
+                                            <div class="card-toolbar">
+                                                <button type="button" class="btn btn-sm btn-icon btn-active-light-primary" id="close-order-detail">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <!-- Order Information -->
+                                                <div class="col-md-6">
+                                                    <div class="card card-flush h-md-100">
+                                                        <div class="card-header">
+                                                            <div class="card-title">
+                                                                <h4>Thông tin đơn hàng</h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card-body pt-5">
+                                                            <div class="table-responsive">
+                                                                <table class="table align-middle table-row-dashed fs-6 gy-5">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td class="text-muted">Mã đơn hàng:</td>
+                                                                            <td class="fw-bold" id="detail-order-code">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Trạng thái:</td>
+                                                                            <td id="detail-status">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Thanh toán:</td>
+                                                                            <td id="detail-payment-status">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Giao hàng:</td>
+                                                                            <td id="detail-delivery-status">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Ngày tạo:</td>
+                                                                            <td id="detail-created-at">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Người tạo:</td>
+                                                                            <td id="detail-creator">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Người bán:</td>
+                                                                            <td id="detail-seller">-</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Customer Information -->
+                                                <div class="col-md-6">
+                                                    <div class="card card-flush h-md-100">
+                                                        <div class="card-header">
+                                                            <div class="card-title">
+                                                                <h4>Thông tin khách hàng</h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card-body pt-5">
+                                                            <div class="table-responsive">
+                                                                <table class="table align-middle table-row-dashed fs-6 gy-5">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td class="text-muted">Tên khách hàng:</td>
+                                                                            <td class="fw-bold" id="detail-customer-name">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Số điện thoại:</td>
+                                                                            <td id="detail-customer-phone">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Email:</td>
+                                                                            <td id="detail-customer-email">-</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td class="text-muted">Chi nhánh:</td>
+                                                                            <td id="detail-branch-shop">-</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Financial Summary -->
+                                            <div class="row mt-5">
+                                                <div class="col-12">
+                                                    <div class="card card-flush">
+                                                        <div class="card-header">
+                                                            <div class="card-title">
+                                                                <h4>Tổng kết tài chính</h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card-body pt-5">
+                                                            <div class="row">
+                                                                <div class="col-md-3">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="symbol symbol-50px me-5">
+                                                                            <span class="symbol-label bg-light-primary">
+                                                                                <i class="fas fa-shopping-cart text-primary fs-2x"></i>
+                                                                            </span>
+                                                                        </div>
+                                                                        <div class="d-flex flex-column">
+                                                                            <span class="text-muted fs-7">Số lượng</span>
+                                                                            <span class="fw-bold fs-3" id="detail-total-quantity">0</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="symbol symbol-50px me-5">
+                                                                            <span class="symbol-label bg-light-success">
+                                                                                <i class="fas fa-money-bill text-success fs-2x"></i>
+                                                                            </span>
+                                                                        </div>
+                                                                        <div class="d-flex flex-column">
+                                                                            <span class="text-muted fs-7">Tổng tiền</span>
+                                                                            <span class="fw-bold fs-3 text-success" id="detail-total-amount">0 ₫</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="symbol symbol-50px me-5">
+                                                                            <span class="symbol-label bg-light-info">
+                                                                                <i class="fas fa-credit-card text-info fs-2x"></i>
+                                                                            </span>
+                                                                        </div>
+                                                                        <div class="d-flex flex-column">
+                                                                            <span class="text-muted fs-7">Đã thanh toán</span>
+                                                                            <span class="fw-bold fs-3 text-info" id="detail-paid-amount">0 ₫</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="symbol symbol-50px me-5">
+                                                                            <span class="symbol-label bg-light-warning">
+                                                                                <i class="fas fa-exclamation-triangle text-warning fs-2x"></i>
+                                                                            </span>
+                                                                        </div>
+                                                                        <div class="d-flex flex-column">
+                                                                            <span class="text-muted fs-7">Còn lại</span>
+                                                                            <span class="fw-bold fs-3 text-warning" id="detail-remaining-amount">0 ₫</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Action Buttons -->
+                                            <div class="row mt-5">
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-end">
+                                                        <button type="button" class="btn btn-light me-3" id="close-order-detail-bottom">
+                                                            <i class="fas fa-times"></i>
+                                                            Đóng
+                                                        </button>
+                                                        <button type="button" class="btn btn-primary me-3" id="edit-order-btn">
+                                                            <i class="fas fa-edit"></i>
+                                                            Chỉnh sửa
+                                                        </button>
+                                                        <button type="button" class="btn btn-success" id="export-order-btn">
+                                                            <i class="fas fa-download"></i>
+                                                            Xuất Excel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- End Order Detail Panel -->
+
                             </div>
                             <!--end::Card body-->
                         </div>
@@ -329,6 +528,7 @@
         </div>
     </div>
     <!--end::Content-->
+     @include('admin.elements.time_options_panel')
 @endsection
 
 @section('scripts')
@@ -338,19 +538,20 @@
     <script src="{{ asset('admin-assets/globals/column-visibility.js') }}"></script>
     <!-- Include base table manager and order-specific manager -->
     <script src="{{ asset('admin-assets/js/base/table-manager.js') }}"></script>
-    <script src="{{ asset('admin-assets/js/orders/order-manager.js') }}"></script>
+    <script src="{{ asset('admin-assets/js/orders/order-manager.js') }}?v={{ time() }}"></script>
 
     <script>
         // Order routes configuration
         window.orderRoutes = {
-            data: '{{ route('admin.order.ajax') }}',
-            get: '{{ route('admin.order.get', ':id') }}',
-            detail: '{{ route('admin.order.detail', ':id') }}',
-            update: '{{ route('admin.order.edit.action', ':id') }}',
-            delete: '{{ route('admin.order.delete', ':id') }}',
-            bulkDelete: '{{ route('admin.order.bulk.delete') }}',
-            bulkUpdate: '{{ route('admin.order.bulk.status.update') }}',
-            export: '{{ route('admin.order.export.single', ':id') }}'
+            data: '{{ url('/admin/orders/ajax') }}',
+            get: '{{ url('/admin/orders/get/:id') }}',
+            detail: '{{ url('/admin/orders/detail/:id') }}',
+            edit: '{{ url('/admin/orders/edit/:id') }}',
+            update: '{{ url('/admin/orders/update/:id') }}',
+            delete: '{{ url('/admin/orders/delete/:id') }}',
+            bulkDelete: '{{ url('/admin/orders/bulk-delete') }}',
+            bulkUpdate: '{{ url('/admin/orders/bulk-update') }}',
+            export: '{{ url('/admin/orders/export/:id') }}'
         };
 
         // Initialize when DOM is ready
@@ -362,10 +563,16 @@
 
             // Initialize filters using KTGlobalFilter AFTER orderTableManager is created
             if (typeof KTGlobalFilter !== 'undefined') {
-                KTGlobalFilter.initAllFilters('#kt_orders_filter_form', 'orders', function() {
+                KTGlobalFilter.initAllFilters('#kt_orders_filter_form', function() {
                     if (window.orderTableManager) {
+                        // Reset to page 1 when filter changes
+                        window.orderTableManager.currentFilters.page = 1;
                         window.orderTableManager.loadData();
                     }
+                }, {
+                    module: 'orders',
+                    deliveryStatusFilter: true,
+                    deliveryTimeFilter: true
                 });
             }
 
@@ -376,7 +583,211 @@
                     window.orderTableManager.loadData();
                 }
             }, 100);
+
+            // Apply saved filter state to UI after filters are loaded
+            setTimeout(() => {
+                applySavedFilterState();
+            }, 500);
+
+            // Initialize order detail panel functionality
+            initOrderDetailPanel();
         });
+
+        /**
+         * Apply saved filter state to UI elements
+         */
+        function applySavedFilterState() {
+            const savedState = window.KTGlobalFilter.loadFilterState('orders');
+            if (!savedState) return;
+
+            console.log('Applying saved filter state to UI:', savedState);
+
+            // Apply status filter
+            if (savedState.status && savedState.status.length > 0) {
+                $('#status_filter').val(savedState.status).trigger('change.select2');
+            }
+
+            // Apply delivery status filter
+            if (savedState.delivery_status) {
+                $('#delivery_status_filter').val(savedState.delivery_status).trigger('change.select2');
+            }
+
+            // Apply creator filter
+            if (savedState.created_by) {
+                $('#creator_filter').val(savedState.created_by).trigger('change.select2');
+            }
+
+            // Apply seller filter
+            if (savedState.sold_by) {
+                $('#seller_filter').val(savedState.sold_by).trigger('change.select2');
+            }
+
+            // Apply sale channel filter
+            if (savedState.sale_channel) {
+                $('#sale_channel_filter').val(savedState.sale_channel).trigger('change.select2');
+            }
+
+            // Apply payment method filter
+            if (savedState.payment_method) {
+                $('#payment_method_filter').val(savedState.payment_method).trigger('change.select2');
+            }
+
+            // Apply time filter
+            if (savedState.time_filter_display) {
+                $(`input[name="time_filter_display"][value="${savedState.time_filter_display}"]`).prop('checked', true);
+            }
+            if (savedState.date_from) {
+                $('#date_from').val(savedState.date_from);
+            }
+            if (savedState.date_to) {
+                $('#date_to').val(savedState.date_to);
+            }
+
+            // Apply delivery time filter
+            if (savedState.delivery_time_filter) {
+                $(`input[name="delivery_time_filter"][value="${savedState.delivery_time_filter}"]`).prop('checked', true);
+            }
+            if (savedState.delivery_date_from) {
+                $('#delivery_date_from').val(savedState.delivery_date_from);
+            }
+            if (savedState.delivery_date_to) {
+                $('#delivery_date_to').val(savedState.delivery_date_to);
+            }
+
+            console.log('Saved filter state applied to UI');
+        }
+
+        /**
+         * Initialize order detail panel functionality
+         */
+        function initOrderDetailPanel() {
+            console.log('Initializing order detail panel...');
+
+            // DISABLED: OrderTableManager now handles row clicks with detail panel expansion
+            // Handle row click events to show order details
+            // $(document).on('click', '#kt_orders_table tbody tr', function(e) {
+            //     // Prevent action if clicking on checkbox or action buttons
+            //     if ($(e.target).is('input[type="checkbox"]') || $(e.target).closest('.btn').length > 0) {
+            //         return;
+            //     }
+
+            //     const orderId = $(this).data('order-id');
+            //     if (orderId) {
+            //         showOrderDetail(orderId);
+            //     }
+            // });
+
+            // Handle close button clicks
+            $(document).on('click', '#close-order-detail, #close-order-detail-bottom', function() {
+                hideOrderDetail();
+            });
+
+            // Handle action buttons
+            $(document).on('click', '#edit-order-btn', function() {
+                const orderId = $('#order-detail-panel').data('current-order-id');
+                if (orderId) {
+                    window.location.href = window.orderRoutes.edit.replace(':id', orderId);
+                }
+            });
+
+            $(document).on('click', '#export-order-btn', function() {
+                const orderId = $('#order-detail-panel').data('current-order-id');
+                if (orderId) {
+                    window.location.href = window.orderRoutes.export.replace(':id', orderId);
+                }
+            });
+
+            console.log('Order detail panel initialized successfully');
+        }
+
+        /**
+         * Show order detail panel with data
+         */
+        function showOrderDetail(orderId) {
+            console.log('Showing order detail for ID:', orderId);
+
+            // Show loading state
+            $('#order-detail-panel').show();
+            $('#order-detail-panel').data('current-order-id', orderId);
+
+            // Fetch order details
+            $.ajax({
+                url: window.orderRoutes.detail.replace(':id', orderId),
+                method: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        populateOrderDetail(response.data);
+                    } else {
+                        console.error('Failed to load order details:', response.message);
+                        hideOrderDetail();
+                        alert('Không thể tải chi tiết đơn hàng: ' + (response.message || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading order details:', error);
+                    hideOrderDetail();
+                    alert('Có lỗi xảy ra khi tải chi tiết đơn hàng');
+                }
+            });
+        }
+
+        /**
+         * Hide order detail panel
+         */
+        function hideOrderDetail() {
+            $('#order-detail-panel').hide();
+            $('#order-detail-panel').removeData('current-order-id');
+        }
+
+        /**
+         * Populate order detail panel with data
+         */
+        function populateOrderDetail(order) {
+            console.log('Populating order detail with data:', order);
+
+            // Order information
+            $('#detail-order-code').text(order.order_code || '-');
+            $('#detail-status').html(order.status_label || '-');
+            $('#detail-payment-status').html(order.payment_status_label || '-');
+            $('#detail-delivery-status').html(order.delivery_status_label || '-');
+            $('#detail-created-at').text(order.created_at || '-');
+            $('#detail-creator').text(order.creator_name || '-');
+            $('#detail-seller').text(order.seller_name || '-');
+
+            // Customer information
+            $('#detail-customer-name').text(order.customer_name || '-');
+            $('#detail-customer-phone').text(order.customer_phone || '-');
+            $('#detail-customer-email').text(order.customer_email || '-');
+            $('#detail-branch-shop').text(order.branch_shop_name || '-');
+
+            // Financial summary
+            $('#detail-total-quantity').text(order.total_quantity || 0);
+            $('#detail-total-amount').text(order.total_amount_formatted || '0 ₫');
+            $('#detail-paid-amount').text(order.paid_amount_formatted || '0 ₫');
+
+            // Calculate remaining amount
+            const totalAmount = parseFloat(order.total_amount || 0);
+            const paidAmount = parseFloat(order.paid_amount || 0);
+            const remainingAmount = totalAmount - paidAmount;
+            $('#detail-remaining-amount').text(formatCurrency(remainingAmount) + ' ₫');
+
+            // Update remaining amount color based on value
+            const $remainingElement = $('#detail-remaining-amount');
+            if (remainingAmount > 0) {
+                $remainingElement.removeClass('text-success').addClass('text-warning');
+            } else {
+                $remainingElement.removeClass('text-warning').addClass('text-success');
+            }
+
+            console.log('Order detail populated successfully');
+        }
+
+        /**
+         * Format currency number
+         */
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount);
+        }
     </script>
 @endsection
 
@@ -391,5 +802,5 @@
 
     <!-- Page specific scripts -->
     <script src="{{ asset('admin-assets/js/base/table-manager.js') }}"></script>
-    <script src="{{ asset('admin-assets/js/orders/order-manager.js') }}"></script>
+    <script src="{{ asset('admin-assets/js/orders/order-manager.js') }}?v={{ time() }}"></script>
 @endsection

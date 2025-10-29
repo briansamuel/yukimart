@@ -7,7 +7,7 @@
 @endsection
 @section('content')
 
-    <form id="kt_add_product_form" class="form fv-plugins-bootstrap5 fv-plugins-framework" action="{{ route('admin.products.add.action') }}">
+    <form id="kt_add_product_form" class="form fv-plugins-bootstrap5 fv-plugins-framework" action="{{ route('admin.products.create.action') }}">
         {{ csrf_field() }}
         <div class="row">
             @include('admin.elements.error_flash')

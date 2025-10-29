@@ -167,40 +167,44 @@
                 <div class="branch-time-row">
                     <!-- Branch Shop Column -->
                     <div class="col-6">
-                        <div class="info-dropdown" id="TAB_ID_branchShopDropdown">
+                        <div class="info-dropdown {{ !$canChangeBranch ? 'disabled' : '' }}" id="TAB_ID_branchShopDropdown">
                             <div class="info-label">Chi nhánh</div>
-                            <div class="info-dropdown-toggle" id="TAB_ID_branchShopToggle">
+                            <div class="info-dropdown-toggle {{ !$canChangeBranch ? 'disabled' : '' }}" id="TAB_ID_branchShopToggle">
                                 <div class="info-dropdown-icon branch-icon">
                                     <i class="fas fa-building"></i>
                                 </div>
                                 <span id="TAB_ID_branchShopName">{{ $defaultBranchShop->name ?? 'Chọn chi nhánh' }}</span>
-                                <i class="fas fa-chevron-down"></i>
+                                @if($canChangeBranch)
+                                    <i class="fas fa-chevron-down"></i>
+                                @endif
                             </div>
-                            <div class="info-dropdown-menu" id="TAB_ID_branchShopMenu">
-                                <div class="info-dropdown-search">
-                                    <input type="text" placeholder="Tìm chi nhánh..." id="TAB_ID_branchShopSearch">
-                                </div>
-                                <div id="TAB_ID_branchShopList">
-                                    @foreach($branchShops as $branchShop)
-                                        <div class="info-dropdown-item {{ ($defaultBranchShop && $defaultBranchShop->id == $branchShop->id) ? 'selected' : '' }}"
-                                             data-branch-id="{{ $branchShop->id }}"
-                                             data-branch-name="{{ $branchShop->name }}">
-                                            <div class="info-dropdown-icon branch-icon">
-                                                <i class="fas fa-building"></i>
-                                            </div>
-                                            <div class="info-dropdown-text">
-                                                <span class="info-dropdown-title">{{ $branchShop->name }}</span>
-                                                @if($branchShop->address)
-                                                    <span class="info-dropdown-subtitle">{{ $branchShop->address }}</span>
+                            @if($canChangeBranch)
+                                <div class="info-dropdown-menu" id="TAB_ID_branchShopMenu">
+                                    <div class="info-dropdown-search">
+                                        <input type="text" placeholder="Tìm chi nhánh..." id="TAB_ID_branchShopSearch">
+                                    </div>
+                                    <div id="TAB_ID_branchShopList">
+                                        @foreach($branchShops as $branchShop)
+                                            <div class="info-dropdown-item {{ ($defaultBranchShop && $defaultBranchShop->id == $branchShop->id) ? 'selected' : '' }}"
+                                                 data-branch-id="{{ $branchShop->id }}"
+                                                 data-branch-name="{{ $branchShop->name }}">
+                                                <div class="info-dropdown-icon branch-icon">
+                                                    <i class="fas fa-building"></i>
+                                                </div>
+                                                <div class="info-dropdown-text">
+                                                    <span class="info-dropdown-title">{{ $branchShop->name }}</span>
+                                                    @if($branchShop->address)
+                                                        <span class="info-dropdown-subtitle">{{ $branchShop->address }}</span>
+                                                    @endif
+                                                </div>
+                                                @if($defaultBranchShop && $defaultBranchShop->id == $branchShop->id)
+                                                    <i class="fas fa-check ms-auto"></i>
                                                 @endif
                                             </div>
-                                            @if($defaultBranchShop && $defaultBranchShop->id == $branchShop->id)
-                                                <i class="fas fa-check ms-auto"></i>
-                                            @endif
-                                        </div>
-                                    @endforeach
+                                        @endforeach
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
 

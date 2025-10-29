@@ -3,21 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-class Role extends Model
+class Role extends SpatieRole
 {
     use HasFactory;
 
     protected $fillable = [
         'name',
+        'guard_name',
         'display_name',
         'description',
         'is_active',
         'sort_order',
         'settings',
+        'tenant_id',
     ];
 
     protected $casts = [
@@ -49,22 +50,26 @@ class Role extends Model
 
     /**
      * Relationship with permissions
+     * NOTE: Commented out to use Spatie's permissions() relationship
+     * which uses 'role_has_permissions' table instead of 'role_permissions'
      */
-    public function permissions(): BelongsToMany
-    {
-        return $this->belongsToMany(Permission::class, 'role_permissions')
-            ->withTimestamps();
-    }
+    // public function permissions(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Permission::class, 'role_permissions')
+    //         ->withTimestamps();
+    // }
 
     /**
      * Relationship with users
+     * NOTE: Commented out to use Spatie's users() relationship
+     * which uses 'model_has_roles' table instead of 'user_roles'
      */
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'user_roles')
-            ->withPivot(['assigned_at', 'assigned_by', 'expires_at', 'is_active'])
-            ->withTimestamps();
-    }
+    // public function users(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(User::class, 'user_roles')
+    //         ->withPivot(['assigned_at', 'assigned_by', 'expires_at', 'is_active'])
+    //         ->withTimestamps();
+    // }
 
     /**
      * Relationship with user roles
@@ -138,30 +143,7 @@ class Role extends Model
         return $this;
     }
 
-    /**
-     * Sync permissions for role
-     */
-    public function syncPermissions(array $permissions)
-    {
-        $permissionIds = [];
-
-        foreach ($permissions as $permission) {
-            if (is_string($permission)) {
-                $permissionModel = Permission::where('name', $permission)->first();
-                if ($permissionModel) {
-                    $permissionIds[] = $permissionModel->id;
-                }
-            } elseif ($permission instanceof Permission) {
-                $permissionIds[] = $permission->id;
-            } elseif (is_numeric($permission)) {
-                $permissionIds[] = $permission;
-            }
-        }
-
-        $this->permissions()->sync($permissionIds);
-
-        return $this;
-    }
+    // syncPermissions method is inherited from Spatie\Permission\Models\Role
 
     /**
      * Get role display name
@@ -250,7 +232,9 @@ class Role extends Model
      */
     public function getUsersCountAttribute()
     {
-        return $this->users()->wherePivot('is_active', true)->count();
+        // Spatie's users() relationship uses model_has_roles table
+        // which doesn't have is_active column
+        return $this->users()->count();
     }
 
     /**

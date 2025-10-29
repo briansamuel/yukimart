@@ -44,6 +44,55 @@ var KTGlobalFilter = function () {
     };
 
     /**
+     * Save filter state to localStorage
+     * @param {string} page - Page identifier (e.g., 'products', 'orders', 'invoices')
+     * @param {Object} filters - Filter object to save
+     */
+    var saveFilterState = function(page, filters) {
+        try {
+            const storageKey = `${page}_filters`;
+            localStorage.setItem(storageKey, JSON.stringify(filters));
+            console.log(`Filter state saved for ${page}:`, filters);
+        } catch (error) {
+            console.error('Error saving filter state:', error);
+        }
+    };
+
+    /**
+     * Load filter state from localStorage
+     * @param {string} page - Page identifier (e.g., 'products', 'orders', 'invoices')
+     * @returns {Object|null} Saved filter object or null if not found
+     */
+    var loadFilterState = function(page) {
+        try {
+            const storageKey = `${page}_filters`;
+            const savedState = localStorage.getItem(storageKey);
+            if (savedState) {
+                const filters = JSON.parse(savedState);
+                console.log(`Filter state loaded for ${page}:`, filters);
+                return filters;
+            }
+        } catch (error) {
+            console.error('Error loading filter state:', error);
+        }
+        return null;
+    };
+
+    /**
+     * Clear filter state from localStorage
+     * @param {string} page - Page identifier (e.g., 'products', 'orders', 'invoices')
+     */
+    var clearFilterState = function(page) {
+        try {
+            const storageKey = `${page}_filters`;
+            localStorage.removeItem(storageKey);
+            console.log(`Filter state cleared for ${page}`);
+        } catch (error) {
+            console.error('Error clearing filter state:', error);
+        }
+    };
+
+    /**
      * Load filter data from server and populate select element
      * @param {string} url - API endpoint URL
      * @param {jQuery} selectElement - jQuery select element to populate
@@ -356,6 +405,17 @@ var KTGlobalFilter = function () {
                 $('#time_filter').val(selectedValue);
                 console.log('Time filter updated to:', selectedValue);
 
+                // Clear date_from and date_to when switching from custom filter
+                $('#date_from').val('');
+                $('#date_to').val('');
+                console.log('Cleared date_from and date_to inputs');
+
+                // Clear custom date range state from localStorage
+                var module = options.module || 'default';
+                var stateKey = 'custom_date_range_' + module;
+                localStorage.removeItem(stateKey);
+                console.log('Cleared custom date range state from localStorage');
+
                 // Reload data when switching back from custom filter
                 callLoadDataCallback();
             }
@@ -433,6 +493,22 @@ var KTGlobalFilter = function () {
      */
     var loadCustomDateRangeState = function() {
         try {
+            // Check if current time filter is "custom"
+            var currentTimeFilter = $('#time_filter').val();
+            var customRadio = $('#time_custom');
+            var isCustomSelected = customRadio.length > 0 && customRadio.is(':checked');
+
+            // Only load custom date range if "custom" filter is selected
+            if (currentTimeFilter !== 'custom' && !isCustomSelected) {
+                console.log('Skipping custom date range load - current filter is not custom:', currentTimeFilter);
+
+                // Clear date_from and date_to inputs to prevent sending old values
+                $('#date_from').val('');
+                $('#date_to').val('');
+
+                return false;
+            }
+
             var saved = localStorage.getItem('global_custom_date_range');
             if (saved) {
                 var state = JSON.parse(saved);
@@ -461,18 +537,34 @@ var KTGlobalFilter = function () {
     };
 
     /**
+     * Debounce timer for filter changes
+     */
+    var filterDebounceTimer = null;
+
+    /**
+     * Debounced callback function
+     * @param {number} delay - Delay in milliseconds (default: 300)
+     */
+    var debouncedCallback = function(delay = 300) {
+        clearTimeout(filterDebounceTimer);
+        filterDebounceTimer = setTimeout(function() {
+            callLoadDataCallback();
+        }, delay);
+    };
+
+    /**
      * Initialize status filter checkboxes
      * @param {string} formSelector - CSS selector for the filter form
      */
     var initFilterStatus = function(formSelector) {
         console.log('Initializing status filter for form:', formSelector);
-        
+
         // Handle status checkbox changes
         $(formSelector + ' input[name="status[]"]').on('change', function() {
             console.log('Status filter changed:', $(this).val(), $(this).is(':checked'));
-            callLoadDataCallback();
+            debouncedCallback(300);
         });
-        
+
         console.log('Status filter initialized successfully');
     };
 
@@ -493,7 +585,7 @@ var KTGlobalFilter = function () {
         // Handle creators select change
         creatorSelect.on('change', function() {
             console.log('Creators filter changed:', $(this).val());
-            callLoadDataCallback();
+            debouncedCallback(300);
         });
 
         console.log('Creators filter initialized successfully');
@@ -516,10 +608,56 @@ var KTGlobalFilter = function () {
         // Handle sellers select change
         sellerSelect.on('change', function() {
             console.log('Sellers filter changed:', $(this).val());
-            callLoadDataCallback();
+            debouncedCallback(300);
         });
 
         console.log('Sellers filter initialized successfully');
+    };
+
+    /**
+     * Initialize approvers filter (Select2) - for return orders
+     * @param {string} formSelector - CSS selector for the filter form
+     */
+    var initFilterApprovers = function(formSelector) {
+        console.log('Initializing approvers filter for form:', formSelector);
+
+        const approverSelect = $(formSelector + ' select[name="approver_id"]');
+
+        // Load approvers data from server (use creators endpoint as they share same data)
+        if (!allDataLoaded && !window.filterDataLoaded?.approvers && approverSelect.length > 0) {
+            loadFilterData('/admin/filters/creators?type=all', approverSelect, 'Chọn người nhận trả');
+        }
+
+        // Handle approvers select change
+        approverSelect.on('change', function() {
+            console.log('Approvers filter changed:', $(this).val());
+            debouncedCallback(300);
+        });
+
+        console.log('Approvers filter initialized successfully');
+    };
+
+    /**
+     * Initialize branch shops filter (Select2)
+     * @param {string} formSelector - CSS selector for the filter form
+     */
+    var initFilterBranchShops = function(formSelector) {
+        console.log('Initializing branch shops filter for form:', formSelector);
+
+        const branchShopSelect = $(formSelector + ' select[name="branch_shop_ids[]"]');
+
+        // Load branch shops data from server if select element exists and not already loaded
+        if (!allDataLoaded && !window.filterDataLoaded?.branchShops && branchShopSelect.length > 0) {
+            loadFilterData('/admin/filters/branch-shops?type=all', branchShopSelect, 'Chọn chi nhánh');
+        }
+
+        // Handle branch shops select change
+        branchShopSelect.on('change', function() {
+            console.log('Branch shops filter changed:', $(this).val());
+            debouncedCallback(300);
+        });
+
+        console.log('Branch shops filter initialized successfully');
     };
 
     /**
@@ -539,17 +677,13 @@ var KTGlobalFilter = function () {
         // Handle sale channels input change
         $(formSelector + ' input[name="sale_channel"]').on('input change', function() {
             console.log('Sale channels filter changed:', $(this).val());
-            // Add debounce for input fields
-            clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(function() {
-                callLoadDataCallback();
-            }, 500);
+            debouncedCallback(500);
         });
 
         // Handle sale channels select change
         channelSelect.on('change', function() {
             console.log('Sale channels select changed:', $(this).val());
-            callLoadDataCallback();
+            debouncedCallback(300);
         });
 
         console.log('Sale channels filter initialized successfully');
@@ -572,10 +706,42 @@ var KTGlobalFilter = function () {
         // Handle payment methods select change
         paymentMethodSelect.on('change', function() {
             console.log('Payment methods filter changed:', $(this).val());
-            callLoadDataCallback();
+            debouncedCallback(300);
         });
 
         console.log('Payment methods filter initialized successfully');
+    };
+
+    /**
+     * Initialize delivery status filter checkboxes
+     * @param {string} formSelector - CSS selector for the filter form
+     */
+    var initFilterDeliveryStatus = function(formSelector) {
+        console.log('Initializing delivery status filter for form:', formSelector);
+
+        // Handle delivery status checkbox changes
+        $(formSelector + ' input[type="checkbox"][id^="delivery_"]').on('change', function() {
+            console.log('Delivery status filter changed:', $(this).val(), $(this).is(':checked'));
+            debouncedCallback(300);
+        });
+
+        console.log('Delivery status filter initialized successfully');
+    };
+
+    /**
+     * Initialize delivery time filter radio buttons
+     * @param {string} formSelector - CSS selector for the filter form
+     */
+    var initFilterDeliveryTime = function(formSelector) {
+        console.log('Initializing delivery time filter for form:', formSelector);
+
+        // Handle delivery time radio button changes
+        $(formSelector + ' input[name="delivery_time_filter"]').on('change', function() {
+            console.log('Delivery time filter changed:', $(this).val());
+            debouncedCallback(300);
+        });
+
+        console.log('Delivery time filter initialized successfully');
     };
 
     /**
@@ -583,6 +749,28 @@ var KTGlobalFilter = function () {
      */
     var showTimePanel = function() {
         if (timeOptionsPanel) {
+            // Get time-filter-container position
+            var appContainer = document.querySelector('.app-container');
+            var container = document.querySelector('.time-filter-container');
+            if (container) {
+                var rect = container.getBoundingClientRect();
+
+                // Calculate position: right of container, top + 40px
+                var rightPos = rect.right + 40;
+                var topPos = rect.top;
+
+                console.log('Time filter container position:', {
+                    containerRect: rect,
+                    windowWidth: window.innerWidth,
+                    calculatedRight: rightPos,
+                    calculatedTop: topPos
+                });
+
+                // Set position for panel
+                timeOptionsPanel.style.left = rightPos + 'px';
+                timeOptionsPanel.style.top = topPos + 'px';
+            }
+
             timeOptionsPanel.classList.remove('hiding');
             timeOptionsPanel.classList.add('show');
             console.log('Time panel shown');
@@ -653,12 +841,28 @@ var KTGlobalFilter = function () {
             initFilterSellers(formSelector);
         }
 
+        if (options.approversFilter !== false) {
+            initFilterApprovers(formSelector);
+        }
+
+        if (options.branchShopsFilter !== false) {
+            initFilterBranchShops(formSelector);
+        }
+
         if (options.saleChannelsFilter !== false) {
             initFilterSaleChannels(formSelector);
         }
 
         if (options.paymentMethodsFilter !== false) {
             initFilterPaymentMethods(formSelector);
+        }
+
+        if (options.deliveryStatusFilter !== false) {
+            initFilterDeliveryStatus(formSelector);
+        }
+
+        if (options.deliveryTimeFilter !== false) {
+            initFilterDeliveryTime(formSelector);
         }
 
         // Load all filter data after filters are initialized
@@ -681,12 +885,17 @@ var KTGlobalFilter = function () {
         initFilterStatus: initFilterStatus,
         initFilterCreators: initFilterCreators,
         initFilterSellers: initFilterSellers,
+        initFilterApprovers: initFilterApprovers,
+        initFilterBranchShops: initFilterBranchShops,
         initFilterSaleChannels: initFilterSaleChannels,
         initFilterPaymentMethods: initFilterPaymentMethods,
+        initFilterDeliveryStatus: initFilterDeliveryStatus,
+        initFilterDeliveryTime: initFilterDeliveryTime,
 
         // Utility methods
         setLoadDataCallback: setLoadDataCallback,
         callLoadDataCallback: callLoadDataCallback,
+        debouncedCallback: debouncedCallback,
         showTimePanel: showTimePanel,
         hideTimePanel: hideTimePanel,
 
@@ -698,6 +907,11 @@ var KTGlobalFilter = function () {
         setDefaultCustomDateRange: setDefaultCustomDateRange,
         saveCustomDateRangeState: saveCustomDateRangeState,
         loadCustomDateRangeState: loadCustomDateRangeState,
+
+        // Filter state persistence methods
+        saveFilterState: saveFilterState,
+        loadFilterState: loadFilterState,
+        clearFilterState: clearFilterState,
 
         // Main initializer
         initAllFilters: initAllFilters,

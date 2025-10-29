@@ -1,4 +1,4 @@
-@extends('admin.index')
+@extends('admin.layouts.tenant-app')
 @section('page-header', __('roles.role_details'))
 @section('page-sub_header', $role->display_name)
 

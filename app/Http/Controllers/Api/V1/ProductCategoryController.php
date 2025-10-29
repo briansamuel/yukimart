@@ -4,110 +4,132 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProductCategory;
+use App\Http\Traits\ApiOptimizationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProductCategoryController extends Controller
 {
+    use ApiOptimizationTrait;
     /**
-     * Display a listing of product categories
+     * Display a listing of product categories with aggressive caching
      */
     public function index(Request $request)
     {
+        $startTime = microtime(true);
+
         try {
-            $query = ProductCategory::with(['parent', 'children']);
-            
-            // Apply filters
-            if ($request->filled('parent_id')) {
-                if ($request->parent_id === 'null' || $request->parent_id === '0') {
-                    $query->whereNull('parent_id'); // Root categories
-                } else {
-                    $query->where('parent_id', $request->parent_id);
-                }
-            }
-            
-            if ($request->filled('is_active')) {
-                $query->where('is_active', $request->boolean('is_active'));
-            }
-            
-            if ($request->filled('show_in_menu')) {
-                $query->where('show_in_menu', $request->boolean('show_in_menu'));
-            }
-            
-            if ($request->filled('show_on_homepage')) {
-                $query->where('show_on_homepage', $request->boolean('show_on_homepage'));
-            }
-            
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%")
-                      ->orWhere('slug', 'like', "%{$search}%");
-                });
-            }
-            
-            // Sorting
-            $sortBy = $request->get('sort_by', 'sort_order');
-            $sortDirection = $request->get('sort_direction', 'asc');
-            
-            if (in_array($sortBy, ['name', 'sort_order', 'created_at', 'updated_at'])) {
-                $query->orderBy($sortBy, $sortDirection);
-            } else {
-                $query->orderBy('sort_order')->orderBy('name');
-            }
-            
+            // Generate cache key for this request
+            $cacheKey = $this->generateCacheKey($request, 'product_categories');
+
             // Response format
-            $format = $request->get('format', 'paginated'); // paginated, tree, flat
-            
+            $format = $request->get('format', 'paginated');
+
+            // For tree format, use aggressive caching (30 minutes)
             if ($format === 'tree') {
-                // Return hierarchical tree structure
-                $categories = $query->whereNull('parent_id')->get();
-                $tree = $this->buildCategoryTree($categories);
-                
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Categories tree retrieved successfully',
-                    'data' => $tree
-                ], 200);
-            } elseif ($format === 'flat') {
+                $cachedResponse = Cache::remember($cacheKey . '_tree', 1800, function() use ($request) {
+                    return $this->generateTreeResponse($request);
+                });
+
+                $response = response()->json($cachedResponse);
+                return $this->addPerformanceHeaders($response, $startTime);
+            }
+
+            // For other formats, use shorter caching (10 minutes)
+            $cachedResponse = $this->cacheResponse($cacheKey, null, 10);
+
+            if ($cachedResponse) {
+                $response = response()->json($cachedResponse);
+                return $this->addPerformanceHeaders($response, $startTime);
+            }
+
+            // Parse include parameter for dynamic relationship loading
+            $includes = $this->parseCategoryIncludes($request->get('include', 'parent,children'));
+
+            // Base query with optimized eager loading
+            $query = ProductCategory::query();
+
+            // Apply dynamic includes
+            if (!empty($includes)) {
+                $query->with($includes);
+            }
+
+            // Apply filters with optimization
+            $this->applyCategoryFilters($query, $request);
+
+            // Apply sorting
+            $this->applyCategorySorting($query, $request);
+
+            // Handle different response formats
+            if ($format === 'flat') {
                 // Return flat list without pagination
-                $categories = $query->get()->map(function($category) {
-                    return $this->formatCategoryData($category);
+                $categories = $query->get();
+
+                // Parse fields for field selection
+                $fields = $this->parseFields($request->get('fields'));
+
+                // Apply field selection if specified
+                $categoryData = $categories->map(function($category) use ($fields) {
+                    $data = $this->formatCategoryData($category);
+                    return !empty($fields) ? $this->applyFieldSelection($data, $fields) : $data;
                 });
-                
-                return response()->json([
+
+                // Prepare response data
+                $responseData = [
                     'status' => 'success',
                     'message' => 'Categories retrieved successfully',
-                    'data' => $categories,
-                    'total' => $categories->count()
-                ], 200);
+                    'data' => $categoryData,
+                    'meta' => [
+                        'total' => $categoryData->count(),
+                        'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                    ]
+                ];
             } else {
-                // Default paginated response
-                $perPage = $request->get('per_page', 15);
-                $categories = $query->paginate($perPage);
+                // Paginated response
+                $categories = $this->optimizePagination($query, $request);
 
-                $formattedCategories = collect($categories->items())->map(function($category) {
-                    return $this->formatCategoryData($category);
+                // Parse fields for field selection
+                $fields = $this->parseFields($request->get('fields'));
+
+                // Transform to formatted data
+                $categoryData = $categories->getCollection()->map(function($category) use ($fields) {
+                    $data = $this->formatCategoryData($category);
+                    return !empty($fields) ? $this->applyFieldSelection($data, $fields) : $data;
                 });
 
-                return response()->json([
+                // Update collection with formatted data
+                $categories->setCollection($categoryData);
+
+                // Prepare response data
+                $responseData = [
                     'status' => 'success',
                     'message' => 'Categories retrieved successfully',
-                    'data' => $formattedCategories,
-                    'pagination' => [
+                    'data' => $categories->items(),
+                    'meta' => [
                         'current_page' => $categories->currentPage(),
                         'last_page' => $categories->lastPage(),
                         'per_page' => $categories->perPage(),
                         'total' => $categories->total(),
                         'from' => $categories->firstItem(),
                         'to' => $categories->lastItem(),
+                        'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
                     ]
-                ], 200);
+                ];
             }
+
+            // Cache the response
+            $this->cacheResponse($cacheKey, $responseData, 10); // 10 minutes cache
+
+            // Create response with optimization headers
+            $response = response()->json($responseData, 200);
+            $response = $this->addPerformanceHeaders($response, $startTime);
+            $response = $this->addRateLimitHeaders($response, 120, 1); // 120 requests per minute
+
+            return $response;
             
         } catch (\Exception $e) {
             Log::error('Product categories retrieval failed: ' . $e->getMessage());
@@ -351,27 +373,41 @@ class ProductCategoryController extends Controller
     }
 
     /**
-     * Get menu tree structure
+     * Get menu tree structure with aggressive caching
      */
     public function getMenuTree()
     {
-        try {
-            $menuTree = ProductCategory::getMenuTree();
-            $formattedTree = $this->buildCategoryTree($menuTree);
+        $startTime = microtime(true);
 
-            return response()->json([
+        try {
+            // Use aggressive caching for menu tree (60 minutes)
+            $cacheKey = 'product_categories_menu_tree';
+
+            $menuData = Cache::remember($cacheKey, 3600, function() {
+                $menuTree = ProductCategory::getMenuTree();
+                return $this->buildCategoryTreeOptimized($menuTree);
+            });
+
+            // Prepare response data
+            $responseData = [
                 'status' => 'success',
                 'message' => 'Menu tree retrieved successfully',
-                'data' => $formattedTree
-            ], 200);
+                'data' => $menuData,
+                'meta' => [
+                    'cached' => Cache::has($cacheKey),
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                ]
+            ];
+
+            // Create response with optimization headers
+            $response = response()->json($responseData, 200);
+            $response = $this->addPerformanceHeaders($response, $startTime);
+
+            return $response;
 
         } catch (\Exception $e) {
             Log::error('Menu tree retrieval failed: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to retrieve menu tree',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to retrieve menu tree', 500);
         }
     }
 
@@ -480,5 +516,247 @@ class ProductCategoryController extends Controller
 
             return $data;
         });
+    }
+
+    /**
+     * Generate tree response with caching
+     */
+    private function generateTreeResponse($request)
+    {
+        $startTime = microtime(true);
+
+        // Parse include parameter for dynamic relationship loading
+        $includes = $this->parseCategoryIncludes($request->get('include', 'parent,children'));
+
+        // Base query with optimized eager loading
+        $query = ProductCategory::query();
+
+        // Apply dynamic includes
+        if (!empty($includes)) {
+            $query->with($includes);
+        }
+
+        // Apply filters
+        $this->applyCategoryFilters($query, $request);
+
+        // Apply sorting
+        $this->applyCategorySorting($query, $request);
+
+        // Get root categories and build tree
+        $categories = $query->whereNull('parent_id')->get();
+        $tree = $this->buildCategoryTreeOptimized($categories);
+
+        return [
+            'status' => 'success',
+            'message' => 'Categories tree retrieved successfully',
+            'data' => $tree,
+            'meta' => [
+                'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+            ]
+        ];
+    }
+
+    /**
+     * Parse category includes for dynamic relationship loading
+     */
+    private function parseCategoryIncludes($includeString)
+    {
+        if (empty($includeString)) {
+            return [];
+        }
+
+        $availableIncludes = [
+            'parent' => 'parent:id,name,slug,parent_id',
+            'children' => 'children:id,name,slug,parent_id,sort_order',
+            'products' => 'products:id,product_name,sku,category_id',
+            'allChildren' => 'allChildren:id,name,slug,parent_id,sort_order'
+        ];
+
+        $requestedIncludes = array_map('trim', explode(',', $includeString));
+        $validIncludes = [];
+
+        foreach ($requestedIncludes as $include) {
+            if (isset($availableIncludes[$include])) {
+                $validIncludes[] = $availableIncludes[$include];
+            }
+        }
+
+        return $validIncludes;
+    }
+
+    /**
+     * Apply filters to category query with optimization
+     */
+    private function applyCategoryFilters($query, $request)
+    {
+        // Parent ID filter
+        if ($request->filled('parent_id')) {
+            if ($request->parent_id === 'null' || $request->parent_id === '0') {
+                $query->whereNull('parent_id'); // Root categories
+            } else {
+                $query->where('parent_id', $request->parent_id);
+            }
+        }
+
+        // Active status filter
+        if ($request->filled('is_active')) {
+            $query->where('is_active', $request->boolean('is_active'));
+        }
+
+        // Menu visibility filter
+        if ($request->filled('show_in_menu')) {
+            $query->where('show_in_menu', $request->boolean('show_in_menu'));
+        }
+
+        // Homepage visibility filter
+        if ($request->filled('show_on_homepage')) {
+            $query->where('show_on_homepage', $request->boolean('show_on_homepage'));
+        }
+
+        // Level filter
+        if ($request->filled('level')) {
+            $query->where('level', $request->level);
+        }
+
+        // Enhanced search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $searchFields = $request->get('search_fields', ['name', 'description', 'slug']);
+
+            $query->where(function($q) use ($search, $searchFields) {
+                foreach ($searchFields as $field) {
+                    if (in_array($field, ['name', 'description', 'slug'])) {
+                        $q->orWhere($field, 'like', "%{$search}%");
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Apply sorting to category query
+     */
+    private function applyCategorySorting($query, $request)
+    {
+        $sortBy = $request->get('sort_by', 'sort_order');
+        $sortDirection = $request->get('sort_direction', 'asc');
+
+        // Validate sort field
+        $validSortFields = ['name', 'sort_order', 'level', 'created_at', 'updated_at'];
+
+        if (!in_array($sortBy, $validSortFields)) {
+            $sortBy = 'sort_order';
+        }
+
+        // Validate sort direction
+        if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+            $sortDirection = 'asc';
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // Secondary sort by name for consistency
+        if ($sortBy !== 'name') {
+            $query->orderBy('name', 'asc');
+        }
+    }
+
+    /**
+     * Build optimized category tree with better performance
+     */
+    private function buildCategoryTreeOptimized($categories)
+    {
+        return $categories->map(function($category) {
+            $data = $this->formatCategoryData($category);
+
+            // Recursively build children if they exist
+            if ($category->children && $category->children->count() > 0) {
+                $data['children'] = $this->buildCategoryTreeOptimized($category->children);
+            } else {
+                $data['children'] = [];
+            }
+
+            return $data;
+        });
+    }
+
+    /**
+     * Get category statistics with caching
+     */
+    public function statistics()
+    {
+        $startTime = microtime(true);
+
+        try {
+            // Use aggressive caching for statistics (30 minutes)
+            $cacheKey = 'product_categories_statistics';
+
+            $stats = Cache::remember($cacheKey, 1800, function() {
+                return $this->calculateCategoryStatistics();
+            });
+
+            // Prepare response data
+            $responseData = [
+                'status' => 'success',
+                'message' => 'Category statistics retrieved successfully',
+                'data' => $stats,
+                'meta' => [
+                    'cached' => Cache::has($cacheKey),
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                ]
+            ];
+
+            // Create response with optimization headers
+            $response = response()->json($responseData, 200);
+            $response = $this->addPerformanceHeaders($response, $startTime);
+
+            return $response;
+
+        } catch (\Exception $e) {
+            Log::error('Category statistics failed: ' . $e->getMessage());
+            return $this->errorResponse('Failed to retrieve category statistics', 500);
+        }
+    }
+
+    /**
+     * Calculate category statistics
+     */
+    private function calculateCategoryStatistics()
+    {
+        $totalCategories = ProductCategory::count();
+        $activeCategories = ProductCategory::where('is_active', true)->count();
+        $inactiveCategories = ProductCategory::where('is_active', false)->count();
+        $rootCategories = ProductCategory::whereNull('parent_id')->count();
+        $menuCategories = ProductCategory::where('show_in_menu', true)->count();
+        $homepageCategories = ProductCategory::where('show_on_homepage', true)->count();
+
+        // Get statistics by level
+        $byLevel = ProductCategory::groupBy('level')
+            ->selectRaw('level, count(*) as count')
+            ->get()
+            ->keyBy('level')
+            ->map(function($item) {
+                return [
+                    'level' => $item->level,
+                    'count' => (int) $item->count
+                ];
+            });
+
+        // Get categories with products count
+        $categoriesWithProducts = ProductCategory::has('products')->count();
+        $categoriesWithoutProducts = $totalCategories - $categoriesWithProducts;
+
+        return [
+            'total_categories' => $totalCategories,
+            'active_categories' => $activeCategories,
+            'inactive_categories' => $inactiveCategories,
+            'root_categories' => $rootCategories,
+            'menu_categories' => $menuCategories,
+            'homepage_categories' => $homepageCategories,
+            'categories_with_products' => $categoriesWithProducts,
+            'categories_without_products' => $categoriesWithoutProducts,
+            'by_level' => $byLevel,
+            'activity_percentage' => $totalCategories > 0 ? round(($activeCategories / $totalCategories) * 100, 2) : 0
+        ];
     }
 }
