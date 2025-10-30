@@ -786,7 +786,7 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
         // --------------------------------------------------------------------
         Route::prefix('report')->name('admin.report.')->group(function () {
             Route::get('/end-of-day', [App\Http\Controllers\Tenant\PlaceholderController::class, 'reportEndOfDay'])->name('end-of-day');
-            Route::get('/sales', [App\Http\Controllers\Tenant\PlaceholderController::class, 'reportSales'])->name('sales');
+            Route::get('/sales', [App\Http\Controllers\Tenant\Reports\BusinessReportController::class, 'index'])->name('sales');
             Route::get('/orders', [App\Http\Controllers\Tenant\PlaceholderController::class, 'reportOrders'])->name('orders');
             Route::get('/products', [App\Http\Controllers\Tenant\PlaceholderController::class, 'reportProducts'])->name('products');
             Route::get('/customers', [App\Http\Controllers\Tenant\PlaceholderController::class, 'reportCustomers'])->name('customers');
