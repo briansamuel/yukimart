@@ -5,12 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Traits\TenantScoped;
+use App\Traits\UserTimeStamp;
 
 class ProductAttributeValue extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped, UserTimeStamp;
 
     protected $fillable = [
+        'tenant_id',
         'attribute_id',
         'value',
         'slug',
@@ -45,6 +48,14 @@ class ProductAttributeValue extends Model
                 $value->slug = Str::slug($value->value);
             }
         });
+    }
+
+    /**
+     * Get the tenant that owns the attribute value.
+     */
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     /**

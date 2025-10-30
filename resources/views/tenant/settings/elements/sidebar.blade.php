@@ -12,11 +12,67 @@
                 <!--begin::Menu-->
                 <div class="menu menu-column menu-rounded menu-sub-indention fw-semibold px-5"
                     id="kt_settings_sidebar_menu" data-kt-menu="true">
-                    <div class="menu-item pt-5" bis_skin_checked="1"><!--begin:Menu content-->
-                        <div class="menu-content" bis_skin_checked="1"><span
-                                class="menu-heading fw-bold text-uppercase fs-7">Cửa hàng</span></div>
-                        <!--end:Menu content-->
+
+                    <!--begin::Menu section - QUẢN LÝ-->
+                    <div class="menu-item pt-5">
+                        <div class="menu-content">
+                            <span class="menu-heading fw-bold text-uppercase fs-7">Quản lý</span>
+                        </div>
                     </div>
+                    <!--end::Menu section-->
+
+                    <!--begin::Menu item - Hàng hóa-->
+                    <div class="menu-item">
+                        <a class="menu-link {{ Request::is('admin/settings/products*') ? 'active' : '' }}"
+                            href="{{ route('admin.settings.products.index') }}">
+                            <span class="menu-icon">
+                                <i class="fas fa-box fs-3"></i>
+                            </span>
+                            <span class="menu-title">Hàng hóa</span>
+                        </a>
+                    </div>
+                    <!--end::Menu item-->
+
+                    <!--begin::Menu item - Đơn hàng (Placeholder)-->
+                    <div class="menu-item">
+                        <a class="menu-link" href="#" style="opacity: 0.5; cursor: not-allowed;">
+                            <span class="menu-icon">
+                                <i class="fas fa-shopping-cart fs-3"></i>
+                            </span>
+                            <span class="menu-title">Đơn hàng</span>
+                        </a>
+                    </div>
+                    <!--end::Menu item-->
+
+                    <!--begin::Menu item - Khách hàng (Placeholder)-->
+                    <div class="menu-item">
+                        <a class="menu-link" href="#" style="opacity: 0.5; cursor: not-allowed;">
+                            <span class="menu-icon">
+                                <i class="fas fa-users fs-3"></i>
+                            </span>
+                            <span class="menu-title">Khách hàng</span>
+                        </a>
+                    </div>
+                    <!--end::Menu item-->
+
+                    <!--begin::Menu item - Sổ quỹ (Placeholder)-->
+                    <div class="menu-item">
+                        <a class="menu-link" href="#" style="opacity: 0.5; cursor: not-allowed;">
+                            <span class="menu-icon">
+                                <i class="fas fa-wallet fs-3"></i>
+                            </span>
+                            <span class="menu-title">Sổ quỹ</span>
+                        </a>
+                    </div>
+                    <!--end::Menu item-->
+
+                    <!--begin::Menu section - CỬA HÀNG-->
+                    <div class="menu-item pt-5">
+                        <div class="menu-content">
+                            <span class="menu-heading fw-bold text-uppercase fs-7">Cửa hàng</span>
+                        </div>
+                    </div>
+                    <!--end::Menu section-->
                     <!--begin::Menu item - Thông tin cửa hàng-->
                     <div class="menu-item">
                         <a class="menu-link {{ Request::is('admin/settings/retailer-info*') ? 'active' : '' }}"

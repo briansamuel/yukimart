@@ -158,6 +158,7 @@
     <!--end::Virtual Scrollbar Script -->
     <!--begin::Page Scripts(used by this page) -->
     @yield('scripts')
+    @stack('scripts')
     <!--end::Javascript-->
 </body>
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Tenant\Staff;
+namespace App\Http\Controllers\Tenant\Settings\Shop;
 
 use App\Http\Controllers\Tenant\BaseTenantController;
 use App\Models\User;
@@ -125,7 +125,7 @@ class UserManagerController extends BaseTenantController
                 'recordsFiltered' => 0,
                 'data' => [],
                 'success' => false,
-                'error' => 'Có lỗi xảy ra khi tải d�?liệu: ' . $e->getMessage()
+                'error' => 'Có lỗi xảy ra khi tải dữ liệu: ' . $e->getMessage()
             ]);
         }
     }
@@ -262,7 +262,7 @@ class UserManagerController extends BaseTenantController
                 'recordsFiltered' => 0,
                 'data' => [],
                 'success' => false,
-                'error' => 'Có lỗi xảy ra khi tải d�?liệu: ' . $e->getMessage()
+                'error' => 'Có lỗi xảy ra khi tải dữ liệu: ' . $e->getMessage()
             ]);
         }
     }
@@ -291,15 +291,15 @@ class UserManagerController extends BaseTenantController
                 'password' => 'required|string|min:6|confirmed',
                 'role_id' => 'nullable|exists:roles,id',
             ], [
-                'full_name.required' => 'Vui lòng nhập tên hiển th�?,
-                'phone.required' => 'Vui lòng nhập s�??iện thoại',
+                'full_name.required' => 'Vui lòng nhập tên hiển thị',
+                'phone.required' => 'Vui lòng nhập số điện thoại',
                 'email.required' => 'Vui lòng nhập email',
-                'email.email' => 'Email không hợp l�?,
-                'email.unique' => 'Email ?ã tồn tại',
-                'username.required' => 'Vui lòng nhập tên ??ng nhập',
-                'username.unique' => 'Tên ??ng nhập ?ã tồn tại trong h�?thống',
+                'email.email' => 'Email không hợp lệ',
+                'email.unique' => 'Email đã tồn tại',
+                'username.required' => 'Vui lòng nhập tên đăng nhập',
+                'username.unique' => 'Tên đăng nhập đã tồn tại trong hệ thống',
                 'password.required' => 'Vui lòng nhập mật khẩu',
-                'password.min' => 'Mật khẩu phải có ít nhất 6 ký t�?,
+                'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
                 'password.confirmed' => 'Mật khẩu xác nhận không khớp',
                 'role_id.exists' => 'Vai trò không tồn tại',
             ]);
@@ -307,7 +307,7 @@ class UserManagerController extends BaseTenantController
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'D�?liệu không hợp l�?,
+                    'message' => 'Dữ liệu không hợp lệ',
                     'errors' => $validator->errors()
                 ], 422);
             }
@@ -342,7 +342,7 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Tạo t?i khoản th?nh công',
+                'message' => 'Tạo tài khoản thành công',
                 'data' => $user
             ]);
 
@@ -355,7 +355,7 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi tạo t?i khoản: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi tạo tài khoản: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -463,13 +463,13 @@ class UserManagerController extends BaseTenantController
             ];
 
             $messages = [
-                'full_name.required' => 'Vui lòng nhập tên hiển th�?,
-                'phone.required' => 'Vui lòng nhập s�??iện thoại',
+                'full_name.required' => 'Vui lòng nhập tên hiển thị',
+                'phone.required' => 'Vui lòng nhập số điện thoại',
                 'email.required' => 'Vui lòng nhập email',
-                'email.email' => 'Email không hợp l�?,
-                'email.unique' => 'Email ?ã tồn tại',
-                'username.required' => 'Vui lòng nhập tên ??ng nhập',
-                'username.unique' => 'Tên ??ng nhập ?ã tồn tại',
+                'email.email' => 'Email không hợp lệ',
+                'email.unique' => 'Email đã tồn tại',
+                'username.required' => 'Vui lòng nhập tên đăng nhập',
+                'username.unique' => 'Tên đăng nhập đã tồn tại',
                 'role_id.exists' => 'Vai trò không tồn tại',
             ];
 
@@ -477,7 +477,7 @@ class UserManagerController extends BaseTenantController
             if ($request->filled('password')) {
                 $rules['password'] = 'required|string|min:6|confirmed';
                 $messages['password.required'] = 'Vui lòng nhập mật khẩu';
-                $messages['password.min'] = 'Mật khẩu phải có ít nhất 6 ký t�?;
+                $messages['password.min'] = 'Mật khẩu phải có ít nhất 6 ký tự';
                 $messages['password.confirmed'] = 'Mật khẩu xác nhận không khớp';
             }
 
@@ -487,7 +487,7 @@ class UserManagerController extends BaseTenantController
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'D�?liệu không hợp l�?,
+                    'message' => 'Dữ liệu không hợp lệ',
                     'errors' => $validator->errors()
                 ], 422);
             }
@@ -523,7 +523,7 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cập nhật thông tin th?nh công',
+                'message' => 'Cập nhật thông tin thành công',
                 'data' => $user
             ]);
 
@@ -568,14 +568,14 @@ class UserManagerController extends BaseTenantController
                 'new_password' => 'required|string|min:6|confirmed',
             ], [
                 'new_password.required' => 'Vui lòng nhập mật khẩu mới',
-                'new_password.min' => 'Mật khẩu mới phải có ít nhất 6 ký t�?,
+                'new_password.min' => 'Mật khẩu mới phải có ít nhất 6 ký tự',
                 'new_password.confirmed' => 'Mật khẩu xác nhận không khớp',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'D�?liệu không hợp l�?,
+                    'message' => 'Dữ liệu không hợp lệ',
                     'errors' => $validator->errors()
                 ], 422);
             }
@@ -587,7 +587,7 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => '?ổi mật khẩu th?nh công'
+                'message' => 'Đổi mật khẩu thành công'
             ]);
 
         } catch (Exception $e) {
@@ -597,7 +597,7 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi ?ổi mật khẩu: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi đổi mật khẩu: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -620,7 +620,7 @@ class UserManagerController extends BaseTenantController
             if ($currentUser->id == $id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Bạn không th�?ngừng hoạt ?ộng t?i khoản của chính mình'
+                    'message' => 'Bạn không thể ngừng hoạt động tài khoản của chính mình'
                 ], 403);
             }
 
@@ -643,7 +643,7 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Ngừng hoạt ?ộng t?i khoản th?nh công'
+                'message' => 'Ngừng hoạt động tài khoản thành công'
             ]);
 
         } catch (Exception $e) {
@@ -653,7 +653,7 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra khi ngừng hoạt ?ộng: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi ngừng hoạt động: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -664,8 +664,8 @@ class UserManagerController extends BaseTenantController
     private function getStatusLabel($status)
     {
         $labels = [
-            'active' => '<span class="badge badge-light-success">Hoạt ?ộng</span>',
-            'inactive' => '<span class="badge badge-light-danger">Không hoạt ?ộng</span>',
+            'active' => '<span class="badge badge-light-success">Hoạt động</span>',
+            'inactive' => '<span class="badge badge-light-danger">Không hoạt động</span>',
         ];
 
         return $labels[$status] ?? '<span class="badge badge-light-secondary">N/A</span>';
@@ -702,13 +702,13 @@ class UserManagerController extends BaseTenantController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Gán vai trò th?nh công'
+                'message' => 'Gán vai trò thành công'
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $e->errors()
             ], 422);
 

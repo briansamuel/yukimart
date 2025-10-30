@@ -28,6 +28,9 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
 
+        // Register explicit route model bindings to avoid conflicts with {tenant} subdomain parameter
+        $this->registerModelBindings();
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
@@ -50,6 +53,21 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/business.php'));
         });
+    }
+
+    /**
+     * Register explicit route model bindings.
+     *
+     * NOTE: Route model binding is NOT used for tenant-scoped models like Product
+     * because binding happens BEFORE middleware execution, so tenant context is not available yet.
+     * Instead, we manually query products in controller methods using tenant scope.
+     *
+     * @return void
+     */
+    protected function registerModelBindings()
+    {
+        // No bindings for tenant-scoped models
+        // Products are manually queried in controllers after tenant middleware runs
     }
 
     /**

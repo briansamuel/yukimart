@@ -161,6 +161,30 @@ class Product extends Model
     }
 
     /**
+     * Get all additional images for this product (excluding main thumbnail)
+     */
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Get all units for this product
+     */
+    public function units()
+    {
+        return $this->hasMany(ProductUnit::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Get the base unit for this product
+     */
+    public function baseUnit()
+    {
+        return $this->hasOne(ProductUnit::class)->where('is_base_unit', true);
+    }
+
+    /**
      * Get all marketplace links for this product
      */
     public function marketplaceLinks()
@@ -229,6 +253,8 @@ class Product extends Model
             ->where('status', MarketplaceProductLink::STATUS_ACTIVE)
             ->first();
     }
+
+
 
     /**
      * Scope a query to only include published products

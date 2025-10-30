@@ -1,423 +1,411 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $pageTitle ?? 'Admin Login' }} - {{ $tenant->name ?? 'YukiMart' }}</title>
+    <meta charset="utf-8" />
+    <title>{{ $pageTitle ?? 'Login' }} - {{ $siteName ?? 'YukiMart' }}</title>
+    <meta name="description" content="YukiMart Admin Login" />
+    <meta name="keywords" content="yukimart, admin, login, management" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ asset('admin-assets/assets/media/logos/favicon.ico') }}" />
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
+    
+    <!-- Global Stylesheets Bundle (includes bootstrap.bundle.css & style.bundle.css) -->
+    <link href="{{ asset('admin-assets/assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('admin-assets/assets/css/style.bundle.css') }}" rel="stylesheet" type="text/css" />
     
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        .auth-form-bg {
+            background-image: url('{{ asset('admin-assets/assets/media/auth/bg10.jpeg') }}');
+        }
+        [data-bs-theme="dark"] .auth-form-bg {
+            background-image: url('{{ asset('admin-assets/assets/media/auth/bg10-dark.jpeg') }}');
         }
         
-        .login-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 3rem;
-            width: 100%;
-            max-width: 450px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .tenant-info {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1rem;
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .tenant-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-        
-        .tenant-url {
-            font-size: 0.9rem;
-            color: #6c757d;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .login-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-        
-        .login-subtitle {
-            color: #6c757d;
-            font-size: 1rem;
-        }
-        
-        .form-floating {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-control {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 1rem;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 1rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: white;
-            width: 100%;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-        }
-        
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        .platform-badge {
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
         }
         
-        .btn-login:disabled {
-            opacity: 0.7;
-            transform: none;
-            box-shadow: none;
+        .tenant-badge {
+            background: linear-gradient(45deg, #009ef7, #50cd89);
+            color: white;
         }
         
-        .alert {
-            border-radius: 10px;
-            border: none;
-            margin-bottom: 1.5rem;
-        }
-        
-        .remember-me {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 1rem;
-        }
-        
-        .form-check-input:checked {
-            background-color: #667eea;
-            border-color: #667eea;
-        }
-        
-        .loading-spinner {
-            display: none;
-        }
-        
-        .demo-credentials {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-top: 1.5rem;
-        }
-        
-        .demo-title {
-            font-weight: 600;
-            color: #856404;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-        
-        .demo-item {
-            font-size: 0.8rem;
-            color: #856404;
-            margin-bottom: 0.25rem;
-            font-family: 'Courier New', monospace;
+        .quick-login-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
         }
         
         .quick-login-btn {
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid rgba(255, 193, 7, 0.5);
-            color: #856404;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 5px;
-            margin-left: 0.5rem;
+            padding: 8px 12px;
+            border: 1px solid var(--kt-border-color);
+            border-radius: 6px;
+            background: var(--kt-body-bg);
+            color: var(--kt-text-color);
+            font-size: 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
         
         .quick-login-btn:hover {
-            background: rgba(255, 193, 7, 0.3);
-            color: #856404;
+            background: var(--kt-primary);
+            color: white;
+            border-color: var(--kt-primary);
         }
     </style>
 </head>
-<body>
-    <div class="login-container">
-        <!-- Tenant Info -->
-        @if($tenant ?? false)
-        <div class="tenant-info">
-            <div class="tenant-name">
-                <i class="fas fa-store me-2"></i>{{ $tenant->name }}
-            </div>
-            <div class="tenant-url">{{ request()->getHost() }}</div>
-        </div>
-        @endif
+
+<body id="kt_body" class="app-blank bgi-size-cover bgi-attachment-fixed bgi-position-center">
+    <!-- Theme mode setup -->
+    <script>
+        var defaultThemeMode = "light";
+        var themeMode;
+        if (document.documentElement) {
+            if (document.documentElement.hasAttribute("data-bs-theme-mode")) {
+                themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+            } else {
+                if (localStorage.getItem("data-bs-theme") !== null) {
+                    themeMode = localStorage.getItem("data-bs-theme");
+                } else {
+                    themeMode = defaultThemeMode;
+                }
+            }
+            if (themeMode === "system") {
+                themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-bs-theme", themeMode);
+        }
+    </script>
+
+    <!-- Root -->
+    <div class="d-flex flex-column flex-root" id="kt_app_root">
+        <!-- Page bg image -->
+        <style>
+            body { 
+                background-image: url('{{ asset('admin-assets/assets/media/auth/bg10.jpeg') }}'); 
+            }
+            [data-bs-theme="dark"] body { 
+                background-image: url('{{ asset('admin-assets/assets/media/auth/bg10-dark.jpeg') }}'); 
+            }
+        </style>
         
-        <!-- Login Header -->
-        <div class="login-header">
-            <h1 class="login-title">
-                <i class="fas fa-user-shield me-2"></i>Admin Login
-            </h1>
-            <p class="login-subtitle">Đăng nhập vào bảng điều khiển quản trị</p>
-        </div>
-
-        <!-- Error Messages -->
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <!-- Login Form -->
-        <form id="tenantLoginForm">
-            @csrf
-            
-            <!-- Email Field -->
-            <div class="form-floating">
-                <input type="email" 
-                       class="form-control @error('email') is-invalid @enderror" 
-                       id="email" 
-                       name="email" 
-                       placeholder="name@example.com"
-                       value="{{ old('email') }}" 
-                       required 
-                       autofocus>
-                <label for="email">
-                    <i class="fas fa-envelope me-2"></i>Email Address
-                </label>
-                @error('email')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <!-- Password Field -->
-            <div class="form-floating">
-                <input type="password" 
-                       class="form-control @error('password') is-invalid @enderror" 
-                       id="password" 
-                       name="password" 
-                       placeholder="Password"
-                       required>
-                <label for="password">
-                    <i class="fas fa-lock me-2"></i>Password
-                </label>
-                @error('password')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <!-- Remember Me -->
-            <div class="remember-me">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="remember" name="remember">
-                    <label class="form-check-label" for="remember">
-                        Ghi nhớ đăng nhập
-                    </label>
+        <!-- Authentication - Sign-in -->
+        <div class="d-flex flex-column flex-lg-row flex-column-fluid">
+            <!-- Aside -->
+            <div class="d-flex flex-lg-row-fluid">
+                <!-- Content -->
+                <div class="d-flex flex-column flex-center pb-0 pb-lg-10 p-10 w-100">
+                    <!-- Image -->
+                    <img class="theme-light-show mx-auto mw-100 w-150px w-lg-300px mb-10 mb-lg-20" 
+                         src="{{ asset('admin-assets/assets/media/auth/agency.png') }}" alt="" />
+                    <img class="theme-dark-show mx-auto mw-100 w-150px w-lg-300px mb-10 mb-lg-20" 
+                         src="{{ asset('admin-assets/assets/media/auth/agency-dark.png') }}" alt="" />
+                    
+                    <!-- Title -->
+                    <h1 class="text-gray-800 fs-2qx fw-bold text-center mb-7">
+                        @if(isset($isPlatform) && $isPlatform)
+                            Platform Management
+                        @else
+                            {{ $tenant->name ?? 'YukiMart' }}
+                        @endif
+                    </h1>
+                    
+                    <!-- Text -->
+                    <div class="text-gray-600 fs-base text-center fw-semibold">
+                        @if(isset($isPlatform) && $isPlatform)
+                            Quản lý toàn bộ hệ thống và tenant
+                        @else
+                            Hệ thống quản lý bán hàng thông minh
+                        @endif
+                    </div>
                 </div>
             </div>
+            
+            <!-- Body -->
+            <div class="d-flex flex-column-fluid flex-lg-row-auto justify-content-center justify-content-lg-end p-12">
+                <!-- Wrapper -->
+                <div class="bg-body d-flex flex-column flex-center rounded-4 w-md-600px p-10">
+                    <!-- Header -->
+                    <div class="d-flex flex-center flex-column-auto mb-15">
+                        <!-- Logo -->
+                        <a href="#" class="mb-7">
+                            <img alt="Logo" src="{{ asset('admin-assets/assets/media/logos/default-dark.svg') }}" class="h-60px" />
+                        </a>
+                        
+                        <!-- Title -->
+                        <h1 class="text-dark fw-bolder mb-3">
+                            @if(isset($isPlatform) && $isPlatform)
+                                <span class="badge platform-badge fs-7 fw-bold me-2">
+                                    <i class="ki-duotone ki-crown fs-6 me-1"></i>PLATFORM
+                                </span>
+                            @else
+                                <span class="badge tenant-badge fs-7 fw-bold me-2">
+                                    <i class="ki-duotone ki-shop fs-6 me-1"></i>TENANT
+                                </span>
+                            @endif
+                            Đăng nhập
+                        </h1>
+                        
+                        <!-- Description -->
+                        <div class="text-gray-500 fw-semibold fs-6">
+                            @if(isset($isPlatform) && $isPlatform)
+                                Truy cập bảng điều khiển quản trị platform
+                            @else
+                                Truy cập bảng điều khiển quản lý cửa hàng
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Form -->
+                    <form class="form w-100" novalidate="novalidate" id="kt_sign_in_form" 
+                          action="{{ isset($isPlatform) && $isPlatform ? route('platform.login') : url('/login') }}" method="POST">
+                        @csrf
+                        
+                        <!-- Alert Container -->
+                        <div id="alert-container" class="mb-5"></div>
+                        
+                        <!-- Email -->
+                        <div class="fv-row mb-8">
+                            <input type="text" placeholder="Email" name="email" id="email" autocomplete="off" 
+                                   class="form-control bg-transparent" value="{{ old('email') }}" />
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="fv-row mb-3">
+                            <input type="password" placeholder="Mật khẩu" name="password" id="password" autocomplete="off" 
+                                   class="form-control bg-transparent" />
+                        </div>
+                        
+                        <!-- Remember me -->
+                        <div class="d-flex flex-stack flex-wrap gap-3 fs-base fw-semibold mb-8">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember" />
+                                <label class="form-check-label text-gray-700" for="remember">
+                                    Ghi nhớ đăng nhập
+                                </label>
+                            </div>
+                            
+                            <a href="#" class="link-primary">
+                                Quên mật khẩu?
+                            </a>
+                        </div>
+                        
+                        <!-- Submit button -->
+                        <div class="d-grid mb-10">
+                            <button type="submit" id="kt_sign_in_submit" class="btn btn-primary">
+                                <span class="indicator-label">Đăng nhập</span>
+                                <span class="indicator-progress">Đang xử lý...
+                                    <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                                </span>
+                            </button>
+                        </div>
+                    </form>
 
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-login" id="loginBtn">
-                <span class="login-text">
-                    <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
-                </span>
-                <span class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin me-2"></i>Đang đăng nhập...
-                </span>
-            </button>
-        </form>
+                    <!-- Demo Credentials -->
+                    <div class="separator separator-content my-14">
+                        <span class="w-125px text-gray-500 fw-semibold fs-7">Demo Credentials</span>
+                    </div>
 
-        <!-- Demo Credentials -->
+                    @if(isset($isPlatform) && $isPlatform)
+                        <!-- Platform Demo Credentials -->
+                        <div class="text-center">
+                            <div class="text-gray-500 fw-semibold fs-6 mb-3">
+                                <i class="ki-duotone ki-key fs-2 text-primary me-2"></i>
+                                Platform Admin (Password: 123456)
+                            </div>
+                            <button type="button" class="btn btn-light-primary btn-sm quick-login-btn"
+                                    onclick="quickLogin('superadmin@yukimart.local', '123456')">
+                                <i class="ki-duotone ki-crown fs-4 me-1"></i>
+                                Super Administrator
+                            </button>
+                        </div>
+                    @else
+                        <!-- Tenant Demo Credentials -->
+                        <div class="text-center">
+                            <div class="text-gray-500 fw-semibold fs-6 mb-3">
+                                <i class="ki-duotone ki-key fs-2 text-primary me-2"></i>
+                                Demo Accounts (Password: 123456)
+                            </div>
+                            <div class="quick-login-grid">
+                                @php
+                                    $host = request()->getHost();
+                                    $emailDomain = match($host) {
+                                        'tenant1.yukimart.local' => 'techmart.local',
+                                        'tenant2.yukimart.local' => 'fashion.local',
+                                        'tenant3.yukimart.local' => 'food.local',
+                                        default => 'demo.local'
+                                    };
 
+                                    $demoUsers = [
+                                        ['role' => 'Owner', 'email' => 'owner@' . $emailDomain, 'icon' => 'crown'],
+                                        ['role' => 'Admin', 'email' => 'admin@' . $emailDomain, 'icon' => 'user-tick'],
+                                        ['role' => 'Manager', 'email' => 'manager@' . $emailDomain, 'icon' => 'people'],
+                                        ['role' => 'Staff', 'email' => 'staff@' . $emailDomain, 'icon' => 'badge']
+                                    ];
+                                @endphp
 
-        @if($tenant)
-        @php
-            $tenantSlug = $tenant->slug ?? 'tenant';
-        @endphp
-        <div class="demo-credentials">
-            <div class="demo-title">
-                <i class="fas fa-key me-2"></i>Demo Credentials (Password: 123456)
-            </div>
-            <div class="demo-item">
-                Owner: owner@<?php echo $tenantSlug; ?>.local
-                <button type="button" class="quick-login-btn" onclick="quickLogin('owner@<?php echo $tenantSlug; ?>.local', '123456')">
-                    Quick Login
-                </button>
-            </div>
-            <div class="demo-item">
-                Admin: admin@<?php echo $tenantSlug; ?>.local
-                <button type="button" class="quick-login-btn" onclick="quickLogin('admin@<?php echo $tenantSlug; ?>.local', '123456')">
-                    Quick Login
-                </button>
-            </div>
-            <div class="demo-item">
-                Manager: manager@<?php echo $tenantSlug; ?>.local
-                <button type="button" class="quick-login-btn" onclick="quickLogin('manager@<?php echo $tenantSlug; ?>.local', '123456')">
-                    Quick Login
-                </button>
-            </div>
-            <div class="demo-item">
-                Staff: staff@<?php echo $tenantSlug; ?>.local
-                <button type="button" class="quick-login-btn" onclick="quickLogin('staff@<?php echo $tenantSlug; ?>.local', '123456')">
-                    Quick Login
-                </button>
+                                @foreach($demoUsers as $user)
+                                    <button type="button" class="btn btn-light-success btn-sm quick-login-btn"
+                                            onclick="quickLogin('{{ $user['email'] }}', '123456')">
+                                        <i class="ki-duotone ki-{{ $user['icon'] }} fs-5 me-1"></i>
+                                        {{ $user['role'] }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
-        @endif
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- Javascript -->
+    <script src="{{ asset('admin-assets/assets/plugins/global/plugins.bundle.js') }}"></script>
+    <script src="{{ asset('admin-assets/assets/js/scripts.bundle.js') }}"></script>
+
+    <!-- Custom Login Script -->
     <script>
         // Quick login function
         function quickLogin(email, password) {
             document.getElementById('email').value = email;
             document.getElementById('password').value = password;
+
+            // Add visual feedback
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+
+            emailInput.classList.add('is-valid');
+            passwordInput.classList.add('is-valid');
+
+            setTimeout(() => {
+                emailInput.classList.remove('is-valid');
+                passwordInput.classList.remove('is-valid');
+            }, 1000);
         }
 
-        // Form submission handling
-        document.getElementById('tenantLoginForm').addEventListener('submit', function() {
-            const loginBtn = document.getElementById('loginBtn');
-            const loginText = loginBtn.querySelector('.login-text');
-            const loadingSpinner = loginBtn.querySelector('.loading-spinner');
-            
-            loginBtn.disabled = true;
-            loginText.style.display = 'none';
-            loadingSpinner.style.display = 'inline';
-        });
+        // Enhanced Metronic Login with Ajax
+        var KTSigninGeneral = function() {
+            var form, submitButton, validator;
 
-        // Tenant Login Form Handler
-        $('#tenantLoginForm').on('submit', function(e) {
-            e.preventDefault();
+            var showMessage = function(message, type = 'error') {
+                const alertContainer = document.getElementById('alert-container');
+                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                const iconClass = type === 'success' ? 'ki-check-circle' : 'ki-cross-circle';
 
-            const form = $(this);
-            const submitBtn = $('#loginBtn');
-            const btnText = submitBtn.find('.btn-text');
-            const loadingSpinner = submitBtn.find('.loading-spinner');
-            const alertContainer = $('#alert-container');
-
-            // Clear previous alerts
-            alertContainer.empty();
-
-            // Show loading state
-            submitBtn.prop('disabled', true);
-            btnText.hide();
-            loadingSpinner.show();
-
-            // Get form data
-            const formData = {
-                email: $('#email').val(),
-                password: $('#password').val(),
-                remember: $('#remember').is(':checked'),
-                _token: $('input[name="_token"]').val()
+                alertContainer.innerHTML = `
+                    <div class="alert ${alertClass} d-flex align-items-center p-5 mb-5">
+                        <i class="ki-duotone ${iconClass} fs-2hx text-${type} me-4"></i>
+                        <div class="d-flex flex-column">
+                            <span class="fw-semibold">${message}</span>
+                        </div>
+                    </div>
+                `;
             };
 
-            // Ajax login request
-            $.ajax({
-                url: '{{ url("/login") }}',
-                type: 'POST',
-                data: formData,
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        // Show success message
-                        alertContainer.html(`
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Login successful! Redirecting...
-                            </div>
-                        `);
+            var handleSubmitAjax = function(e) {
+                validator.validate().then(function(status) {
+                    if (status == 'Valid') {
+                        e.preventDefault();
 
-                        // Redirect after short delay
-                        setTimeout(function() {
-                            window.location.href = response.redirect || '/dashboard';
-                        }, 1000);
-                    } else {
-                        // Show error message
-                        alertContainer.html(`
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                ${response.message || 'Login failed. Please try again.'}
-                            </div>
-                        `);
-                        resetForm();
+                        // Show loading indication
+                        submitButton.setAttribute('data-kt-indicator', 'on');
+                        submitButton.disabled = true;
+
+                        // Clear previous alerts
+                        document.getElementById('alert-container').innerHTML = '';
+
+                        // Get form data
+                        const formData = new FormData(form);
+
+                        // Ajax request
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success || data.status === true) {
+                                showMessage('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+
+                                setTimeout(() => {
+                                    window.location.href = data.redirect || data.url ||
+                                        @if(isset($isPlatform) && $isPlatform)
+                                            '{{ route("platform.admin.dashboard") }}'
+                                        @else
+                                            '/admin/dashboard'
+                                        @endif;
+                                }, 1500);
+                            } else {
+                                showMessage(data.message || data.msg || 'Đăng nhập thất bại. Vui lòng thử lại.', 'error');
+
+                                // Hide loading indication
+                                submitButton.removeAttribute('data-kt-indicator');
+                                submitButton.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Login error:', error);
+                            showMessage('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+
+                            // Hide loading indication
+                            submitButton.removeAttribute('data-kt-indicator');
+                            submitButton.disabled = false;
+                        });
                     }
-                },
-                error: function(xhr) {
-                    let errorMessage = 'An error occurred. Please try again.';
+                });
+            };
 
-                    if (xhr.responseJSON) {
-                        if (xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        } else if (xhr.responseJSON.errors) {
-                            const errors = Object.values(xhr.responseJSON.errors).flat();
-                            errorMessage = errors.join('<br>');
+            return {
+                init: function() {
+                    form = document.querySelector('#kt_sign_in_form');
+                    submitButton = document.querySelector('#kt_sign_in_submit');
+
+                    validator = FormValidation.formValidation(form, {
+                        fields: {
+                            email: {
+                                validators: {
+                                    notEmpty: {
+                                        message: 'Bắt buộc nhập email'
+                                    },
+                                    emailAddress: {
+                                        message: 'Email không hợp lệ'
+                                    }
+                                }
+                            },
+                            password: {
+                                validators: {
+                                    notEmpty: {
+                                        message: 'Bắt buộc nhập mật khẩu'
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            trigger: new FormValidation.plugins.Trigger(),
+                            bootstrap: new FormValidation.plugins.Bootstrap5({
+                                rowSelector: '.fv-row'
+                            })
                         }
-                    }
+                    });
 
-                    alertContainer.html(`
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle me-2"></i>
-                            ${errorMessage}
-                        </div>
-                    `);
-                    resetForm();
+                    submitButton.addEventListener('click', handleSubmitAjax);
                 }
-            });
+            };
+        }();
 
-            function resetForm() {
-                submitBtn.prop('disabled', false);
-                btnText.show();
-                loadingSpinner.hide();
-            }
-        });
-
-        // Auto-focus on email field
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('email').focus();
+        // Initialize on DOM ready
+        KTUtil.onDOMContentLoaded(function() {
+            KTSigninGeneral.init();
         });
     </script>
-</body>
-</html>

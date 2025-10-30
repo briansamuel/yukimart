@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
+// Tenant Controllers
+use App\Http\Controllers\Tenant\Catalog\ProductController;
+// use App\Http\Controllers\Tenant\Catalog\ProductImportController; // TODO: Chưa tồn tại
+
 /*
 |--------------------------------------------------------------------------
 | Tenant Routes
@@ -106,20 +110,20 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
         // --------------------------------------------------------------------
         // PRODUCTS MANAGEMENT
         // --------------------------------------------------------------------
-        // Product Import Routes (must be before {id} routes) - Requires import permission
-        Route::prefix('products/import')->name('admin.products.import.')->middleware('permission:catalog.products.import')->group(function () {
-            Route::get('/', [App\Http\Controllers\Admin\ProductImportController::class, 'index'])->name('index');
-            Route::post('/upload', [App\Http\Controllers\Admin\ProductImportController::class, 'upload'])->name('upload');
-            Route::post('/test-upload', [App\Http\Controllers\Admin\ProductImportController::class, 'testUpload'])->name('test-upload');
-            Route::get('/fields', [App\Http\Controllers\Admin\ProductImportController::class, 'getFields'])->name('fields');
-            Route::get('/preview', [App\Http\Controllers\Admin\ProductImportController::class, 'preview'])->name('preview');
-            Route::get('/stats', [App\Http\Controllers\Admin\ProductImportController::class, 'getFileStats'])->name('stats');
-            Route::post('/validate', [App\Http\Controllers\Admin\ProductImportController::class, 'validateImport'])->name('validate');
-            Route::post('/process', [App\Http\Controllers\Admin\ProductImportController::class, 'process'])->name('process');
-            Route::get('/template', [App\Http\Controllers\Admin\ProductImportController::class, 'downloadTemplate'])->name('template');
-            Route::get('/history', [App\Http\Controllers\Admin\ProductImportController::class, 'history'])->name('history');
-            Route::delete('/clear-session', [App\Http\Controllers\Admin\ProductImportController::class, 'clearSession'])->name('clear-session');
-        });
+        // TODO: Product Import Routes - ProductImportController chưa tồn tại trong Tenant\Catalog
+        // Route::prefix('products/import')->name('admin.products.import.')->middleware('permission:catalog.products.import')->group(function () {
+        //     Route::get('/', [ProductImportController::class, 'index'])->name('index');
+        //     Route::post('/upload', [ProductImportController::class, 'upload'])->name('upload');
+        //     Route::post('/test-upload', [ProductImportController::class, 'testUpload'])->name('test-upload');
+        //     Route::get('/fields', [ProductImportController::class, 'getFields'])->name('fields');
+        //     Route::get('/preview', [ProductImportController::class, 'preview'])->name('preview');
+        //     Route::get('/stats', [ProductImportController::class, 'getFileStats'])->name('stats');
+        //     Route::post('/validate', [ProductImportController::class, 'validateImport'])->name('validate');
+        //     Route::post('/process', [ProductImportController::class, 'process'])->name('process');
+        //     Route::get('/template', [ProductImportController::class, 'downloadTemplate'])->name('template');
+        //     Route::get('/history', [ProductImportController::class, 'history'])->name('history');
+        //     Route::delete('/clear-session', [ProductImportController::class, 'clearSession'])->name('clear-session');
+        // });
 
         Route::prefix('products')->name('admin.products.')->group(function () {
             // Product Attribute Routes (MUST be before routes with {id} parameter)
@@ -129,9 +133,10 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
             Route::post('/attributes/{attributeId}/values', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'storeAttributeValue'])->name('attributes.values.store')->middleware('permission:catalog.products.create');
 
             // Product AJAX Routes (specific paths before {id})
-            Route::get('/ajax/get-list', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'ajaxGetList'])->name('ajax.getList')->middleware('permission:catalog.products.read');
-            Route::get('/ajax', [App\Http\Controllers\Admin\ProductController::class, 'ajax'])->name('ajax')->middleware('permission:catalog.products.read');
-            Route::get('/detail/{productId}', [App\Http\Controllers\Admin\ProductController::class, 'detail'])->name('detail')->middleware('permission:catalog.products.read');
+            Route::get('/ajax/get-list', [ProductController::class, 'ajaxGetList'])->name('ajax.getList')->middleware('permission:catalog.products.read');
+            Route::get('/ajax', [ProductController::class, 'ajax'])->name('ajax')->middleware('permission:catalog.products.read');
+            Route::get('/detail/{productId}', [ProductController::class, 'detail'])->name('detail')->middleware('permission:catalog.products.read');
+            
 
             // Product Action Menu Routes
             Route::post('/{id}/duplicate', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'duplicate'])->name('duplicate')->middleware('permission:catalog.products.create');
@@ -140,9 +145,13 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
             Route::post('/{id}/quick-edit', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'quickEdit'])->name('quick.edit')->middleware('permission:catalog.products.update');
             Route::post('/{id}/adjust-stock', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'adjustStock'])->name('adjust.stock')->middleware('permission:catalog.products.update');
 
+            // Product Units Routes
+            Route::post('/{id}/units', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'saveProductUnits'])->name('units.save')->middleware('permission:catalog.products.update');
+
             // Product Variant Routes
             Route::post('/{id}/variants', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'createVariants'])->name('variants.create')->middleware('permission:catalog.products.create');
             Route::post('/{id}/variants/from-form', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'createVariantsFromForm'])->name('variants.create.form')->middleware('permission:catalog.products.create');
+            Route::post('/{id}/variants/save', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'saveProductVariants'])->name('variants.save')->middleware('permission:catalog.products.update');
             Route::get('/{id}/variants', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'getVariants'])->name('variants.get')->middleware('permission:catalog.products.read');
             Route::put('/{productId}/variants/{variantId}', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'updateVariant'])->name('variants.update')->middleware('permission:catalog.products.update');
             Route::delete('/{productId}/variants/{variantId}', [App\Http\Controllers\Tenant\Catalog\ProductController::class, 'deleteVariant'])->name('variants.delete')->middleware('permission:catalog.products.delete');
@@ -169,7 +178,7 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
         ]);
 
         // Product Resource Routes (with permissions)
-        Route::resource('products', App\Http\Controllers\Admin\ProductController::class)->names([
+        Route::resource('products', ProductController::class)->names([
             'index' => 'admin.products.index',
             'create' => 'admin.products.create',
             'store' => 'admin.products.store',
@@ -221,8 +230,8 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
         Route::prefix('orders')->name('admin.order.')->group(function () {
             // AJAX & Detail endpoints (must be before resource routes)
             Route::get('/ajax', [App\Http\Controllers\Tenant\Sales\OrderController::class, 'ajaxGetOrders'])->name('ajax');
-            Route::get('/get/{order_id}', [App\Http\Controllers\Tenant\Sales\OrderController::class, 'get'])->name('get');
-            Route::get('/detail/{order_id}', [App\Http\Controllers\Tenant\Sales\OrderController::class, 'detail'])->name('detail');
+            Route::get('/get/{order_id}', [App\Http\Controllers\Tenant\Sales\OrderController::class, 'get'])->whereNumber('order_id')->name('get');
+            Route::get('/detail/{order_id}', [App\Http\Controllers\Tenant\Sales\OrderController::class, 'detail'])->whereNumber('order_id')->name('detail');
             Route::get('/print/{orderId}', [App\Http\Controllers\Tenant\Sales\OrderController::class, 'print'])->name('print');
         });
 
@@ -540,6 +549,12 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
         Route::prefix('settings')->name('admin.settings.')->group(function () {
 
             // ----------------------------------------------------------------
+            // SETTINGS SEARCH
+            // ----------------------------------------------------------------
+            Route::get('/search', [App\Http\Controllers\Tenant\Settings\SettingsSearchController::class, 'search'])
+                ->name('search');
+
+            // ----------------------------------------------------------------
             // CATEGORY: SHOP (Cửa h?ng)
             // ----------------------------------------------------------------
             // Retailer Information - Store details, logo, contact info
@@ -589,6 +604,52 @@ Route::domain('{tenant}.yukimart.local')->middleware(['tenant.subdomain'])->grou
                 ->name('branch-manager');
             Route::get('/branch-manager/data', [App\Http\Controllers\Tenant\Settings\Shop\BranchManagerController::class, 'getData'])
                 ->name('branch-manager.data');
+
+            // ----------------------------------------------------------------
+            // CATEGORY: PRODUCTS (Hàng hóa)
+            // ----------------------------------------------------------------
+            // Products Overview - Main products settings page
+            Route::get('/products', [App\Http\Controllers\Tenant\Settings\Products\ProductsController::class, 'index'])
+                ->name('products.index');
+
+            // Units Management - Manage global units (chai, lốc, thùng, etc.)
+            Route::prefix('products')->name('products.')->group(function () {
+                // Units
+                Route::get('/units', [App\Http\Controllers\Tenant\Settings\Products\UnitsController::class, 'index'])
+                    ->name('units.index');
+                Route::get('/units/data', [App\Http\Controllers\Tenant\Settings\Products\UnitsController::class, 'getData'])
+                    ->name('units.data');
+                Route::post('/units', [App\Http\Controllers\Tenant\Settings\Products\UnitsController::class, 'store'])
+                    ->name('units.store');
+                Route::put('/units/{id}', [App\Http\Controllers\Tenant\Settings\Products\UnitsController::class, 'update'])
+                    ->name('units.update');
+                Route::delete('/units/{id}', [App\Http\Controllers\Tenant\Settings\Products\UnitsController::class, 'destroy'])
+                    ->name('units.destroy');
+                Route::post('/units/{id}/toggle-status', [App\Http\Controllers\Tenant\Settings\Products\UnitsController::class, 'toggleStatus'])
+                    ->name('units.toggle-status');
+                Route::post('/units/update-sort-order', [App\Http\Controllers\Tenant\Settings\Products\UnitsController::class, 'updateSortOrder'])
+                    ->name('units.update-sort-order');
+
+                // Attributes
+                Route::get('/attributes', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'index'])
+                    ->name('attributes.index');
+                Route::get('/attributes/data', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'getData'])
+                    ->name('attributes.data');
+                Route::post('/attributes', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'store'])
+                    ->name('attributes.store');
+                Route::put('/attributes/{id}', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'update'])
+                    ->name('attributes.update');
+                Route::delete('/attributes/{id}', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'destroy'])
+                    ->name('attributes.destroy');
+
+                // Attribute Values
+                Route::post('/attributes/{attributeId}/values', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'storeValue'])
+                    ->name('attributes.values.store');
+                Route::put('/attributes/{attributeId}/values/{valueId}', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'updateValue'])
+                    ->name('attributes.values.update');
+                Route::delete('/attributes/{attributeId}/values/{valueId}', [App\Http\Controllers\Tenant\Settings\Products\AttributesController::class, 'destroyValue'])
+                    ->name('attributes.values.destroy');
+            });
 
             // ----------------------------------------------------------------
             // FUTURE CATEGORIES (Placeholder for expansion)

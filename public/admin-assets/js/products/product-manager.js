@@ -573,7 +573,7 @@ class ProductTableManager extends BaseTableManager {
                     <img src="${thumbnail}" alt="${product.product_name}" />
                 </div>
                 <div class="d-flex justify-content-start flex-column">
-                    <span class="text-dark fw-bolder fs-6" style="cursor: pointer;">${product.product_name}</span>
+                    <span class="text-dark fw-bolder fs-6" style="cursor: pointer; white-space: normal; word-wrap: break-word;">${product.product_name}</span>
                     <span class="text-muted fw-bold text-muted d-block fs-7">${product.product_type || 'Simple'}</span>
                 </div>
             </div>
@@ -641,7 +641,7 @@ class ProductTableManager extends BaseTableManager {
                         <small class="text-muted text-uppercase fw-bold">Product Actions</small>
                     </div>
 
-                    <a class="dropdown-item" href="${window.location.origin}/admin/products/${product.id}/edit">
+                    <a class="dropdown-item edit-product-btn" href="#" data-product-id="${product.id}">
                         <i class="fas fa-edit text-primary me-2"></i>
                         Edit Product
                     </a>
@@ -754,6 +754,26 @@ class ProductTableManager extends BaseTableManager {
 
         // Initialize action dropdown menus
         this.initActionMenus();
+
+        // Attach edit button event listeners
+        this.attachEditButtonListeners();
+    }
+
+    /**
+     * Attach event listeners to edit buttons
+     */
+    attachEditButtonListeners() {
+        const editButtons = this.table.querySelectorAll('.edit-product-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const productId = button.dataset.productId;
+                if (window.editProductModal) {
+                    window.editProductModal.openModal(productId);
+                }
+            });
+        });
     }
 
     /**
@@ -1057,6 +1077,22 @@ class ProductTableManager extends BaseTableManager {
             $this.addClass('active');
             $(targetId).addClass('active show');
         });
+
+        // Attach edit button event listener
+        const editButton = $detailRow.find('.edit-product-btn');
+        if (editButton.length) {
+            editButton.on('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const productId = editButton.data('product-id');
+                console.log('Edit button clicked for product:', productId);
+                if (window.editProductModal) {
+                    window.editProductModal.openModal(productId);
+                } else {
+                    console.error('EditProductModal not initialized');
+                }
+            });
+        }
     }
 
     /**

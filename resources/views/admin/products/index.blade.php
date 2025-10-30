@@ -209,7 +209,6 @@
                                                 <th>Tồn kho</th>
                                                 <th>Trạng thái</th>
                                                 <th>Ngày tạo</th>
-                                                <th class="text-end min-w-100px">Actions</th>
                                             </tr>
                                             <!--end::Table row-->
                                         </thead>
@@ -252,6 +251,14 @@
     <!--end::Content-->
     @include('admin.elements.time_options_panel')
 
+    <!--begin::Modals-->
+    @include('admin.products.partials.create_modal')
+    @include('admin.products.partials.edit_modal')
+    @include('admin.products.partials.create_category_modal')
+    @include('admin.products.partials.create_brand_modal')
+    @include('admin.products.partials.setup_modals')
+    <!--end::Modals-->
+
 @endsection
 
 @section('vendor-script')
@@ -283,6 +290,26 @@
     <!--begin::Product Table Manager-->
     <script src="{{ asset('admin-assets/js/products/product-manager.js') }}?v={{ time() }}"></script>
     <!--end::Product Table Manager-->
+
+    <!--begin::Product Image Upload-->
+    <script src="{{ asset('admin-assets/js/products/product-image-upload.js') }}?v={{ time() }}"></script>
+    <!--end::Product Image Upload-->
+
+    <!--begin::Create Product Modal-->
+    <script src="{{ asset('admin-assets/js/products/create-product-modal.js') }}?v={{ time() }}"></script>
+    <!--end::Create Product Modal-->
+
+    <!--begin::Product Units Manager-->
+    <script src="{{ asset('admin-assets/js/products/product-units-manager.js') }}?v={{ time() }}"></script>
+    <!--end::Product Units Manager-->
+
+    <!--begin::Product Attributes Manager-->
+    <script src="{{ asset('admin-assets/js/products/product-attributes-manager.js') }}?v={{ time() }}"></script>
+    <!--end::Product Attributes Manager-->
+
+    <!--begin::Product Variants Manager-->
+    <script src="{{ asset('admin-assets/js/products/product-variants-manager.js') }}?v={{ time() }}"></script>
+    <!--end::Product Variants Manager-->
 
     <!--begin::Page Initialization-->
     <script>

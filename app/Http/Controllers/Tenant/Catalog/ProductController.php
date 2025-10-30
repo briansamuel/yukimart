@@ -6,17 +6,22 @@ use App\Http\Controllers\Tenant\BaseTenantController;
 use App\Services\ValidationService;
 use App\Services\ProductService;
 use App\Services\ProductVariantService;
+use App\Services\ProductUnitService;
 use App\Services\LogsUserService;
 use App\Models\ProductAttribute;
 use App\Models\ProductAttributeValue;
 use App\Models\ProductVariant;
+use App\Models\ProductVariantAttribute;
+use App\Models\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use App\Helpers\Message;
 use App\Helpers\ArrayHelper;
+use App\Models\Product;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends BaseTenantController
 {
@@ -24,15 +29,23 @@ class ProductController extends BaseTenantController
     protected $validator;
     protected $productService;
     protected $variantService;
+    protected $unitService;
     protected $language;
 
-    function __construct(Request $request, ValidationService $validator, ProductService $productService, ProductVariantService $variantService)
+    function __construct(
+        Request $request,
+        ValidationService $validator,
+        ProductService $productService,
+        ProductVariantService $variantService,
+        ProductUnitService $unitService
+    )
     {
         parent::__construct();
         $this->request = $request;
         $this->validator = $validator;
         $this->productService = $productService;
         $this->variantService = $variantService;
+        $this->unitService = $unitService;
         $this->language = App::currentLocale();
         session()->start();
         session()->put('RF.subfolder', "products");
@@ -232,24 +245,77 @@ class ProductController extends BaseTenantController
     }
 
     /**
-     * METHOD show - product detail view
+     * METHOD show - product detail view or JSON
      *
-     * @return view
+     * NOTE: Due to subdomain routing with {tenant} parameter, we cannot use route model binding.
+     * The route has 2 parameters: {tenant} (subdomain) and {product} (product ID).
+     * We must explicitly get product ID from request()->route('product').
+     *
+     * Laravel resource route: GET /admin/products/{product}
+     * Full route: {tenant}.yukimart.local/admin/products/{product}
+     *
+     * @return view|json
      */
-    public function show($id = 0)
+    public function show(Request $request)
     {
-        if (!$id) {
+        // Get product ID from route parameter (NOT from method parameter injection)
+        // because {tenant} subdomain parameter conflicts with route model binding
+        $productId = $request->route('product');
+
+        if (!$productId) {
             abort(404);
         }
 
-        $product = $this->productService->getProductDetail($id);
+        $tenant = $request->attributes->get('tenant');
 
-        if (!$product) {
+        // Manually query product with tenant scope
+        $productModel = \App\Models\Product::where('id', $productId)
+                       ->where('tenant_id', $tenant->id)
+                       ->with(['images' => function($query) {
+                           $query->orderBy('sort_order');
+                       }])
+                       ->first();
+
+        if (!$productModel) {
             abort(404);
         }
 
-        return view('admin.products.show', ['product' => $product]);
+        // If AJAX request, return JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'product' => [
+                    'id' => $productModel->id,
+                    'product_name' => $productModel->product_name,
+                    'sku' => $productModel->sku,
+                    'barcode' => $productModel->barcode,
+                    'category_id' => $productModel->category_id,
+                    'brand' => $productModel->brand,
+                    'cost_price' => $productModel->cost_price,
+                    'sale_price' => $productModel->sale_price,
+                    'points' => $productModel->points,
+                    'weight' => $productModel->weight,
+                    'location' => $productModel->location,
+                    'product_thumbnail' => $productModel->product_thumbnail ? asset('storage/' . $productModel->product_thumbnail) : null,
+                    'product_description' => $productModel->product_description,
+                    'product_content' => $productModel->product_content,
+                    'images' => $productModel->images->map(function($image) {
+                        return [
+                            'id' => $image->id,
+                            'image_path' => asset('storage/' . $image->image_path),
+                            'sort_order' => $image->sort_order
+                        ];
+                    })
+                ]
+            ]);
+        }
+
+        // Otherwise return view
+        return view('admin.products.show', ['product' => $productModel]);
     }
+
+
+
 
     /**
      * METHOD edit - edit view
@@ -1264,6 +1330,604 @@ class ProductController extends BaseTenantController
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update variant prices: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX endpoint for loading products data
+     */
+    public function ajax(Request $request)
+    {
+        try {
+            // Get pagination parameters
+            $perPage = $request->get('per_page', 25);
+
+            // Use ProductService to get products with filters
+            // TenantScope will automatically filter by tenant_id
+            $paginatedProducts = $this->productService->getProductsWithFilters($request, $perPage);
+
+            // Get items and add total_stock to each product
+            $products = collect($paginatedProducts->items())->map(function($product) {
+                $product->total_stock = $product->inventory ? $product->inventory->quantity : 0;
+                return $product;
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $products,
+                'recordsTotal' => $paginatedProducts->total(),
+                'recordsFiltered' => $paginatedProducts->total(),
+                'pagination' => [
+                    'total' => $paginatedProducts->total(),
+                    'per_page' => $paginatedProducts->perPage(),
+                    'current_page' => $paginatedProducts->currentPage(),
+                    'last_page' => $paginatedProducts->lastPage()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Products AJAX Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi tải dữ liệu sản phẩm: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Show product detail for AJAX (detail panel)
+     */
+    public function detail(Request $request)
+    {
+        try {
+            // Get productId from route parameters explicitly to avoid conflict with subdomain parameter
+            $productId = request()->route('productId');
+
+            $product = \App\Models\Product::with([
+                'category',
+                'inventory',
+                'variants',
+                'creator',
+                'updater'
+            ])
+            ->where('id', $productId)
+            ->firstOrFail();
+
+            // If it's an AJAX request, return partial view for row expansion
+            if (request()->ajax()) {
+                return view('admin.products.partials.detail_panel', compact('product'));
+            }
+
+            // Otherwise return full detail page
+            return view('admin.products.show', compact('product'));
+
+        } catch (\Exception $e) {
+            Log::error('Product Detail Error', ['error' => $e->getMessage(), 'product_id' => $productId ?? 'unknown']);
+
+            if (request()->ajax()) {
+                return response()->json(['error' => 'Sản phẩm không tồn tại'], 404);
+            }
+
+            return response()->json(['error' => 'Sản phẩm không tồn tại'], 404);
+        }
+    }
+
+    /**
+     * Show the form for creating a new product
+     */
+    public function create(Request $request)
+    {
+        $tenant = $request->attributes->get('tenant');
+        $categories = \App\Models\ProductCategory::all();
+
+        return view('admin.products.create', compact('categories', 'tenant'));
+    }
+
+    /**
+     * Store a newly created product
+     */
+    public function store(Request $request)
+    {
+        $tenant = $request->attributes->get('tenant');
+
+        $request->validate([
+            'product_name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:100|unique:products,sku',
+            'barcode' => 'nullable|string|max:100|unique:products,barcode',
+            'category_id' => 'nullable|exists:product_categories,id',
+            'brand' => 'nullable|string|max:255',
+            'cost_price' => 'nullable|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'product_description' => 'nullable|string',
+            'product_content' => 'nullable|string',
+            'product_thumbnail' => 'nullable|string',
+            'weight' => 'nullable|integer|min:0',
+            'reorder_point' => 'nullable|integer|min:0',
+            'max_stock' => 'nullable|integer|min:0',
+            'points' => 'nullable|integer|min:0',
+            'location' => 'nullable|string|max:255',
+            'initial_stock' => 'nullable|integer|min:0',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Handle main thumbnail upload (base64)
+            $thumbnailPath = null;
+            if ($request->filled('product_thumbnail')) {
+                $thumbnailPath = $this->saveBase64Image($request->product_thumbnail, 'products/thumbnails');
+            }
+
+            // Prepare product data
+            $productData = [
+                'tenant_id' => $tenant->id,
+                'product_name' => $request->product_name,
+                'product_slug' => \Illuminate\Support\Str::slug($request->product_name),
+                'sku' => $request->sku ?: $this->generateSKU($tenant->id),
+                'barcode' => $request->barcode,
+                'category_id' => $request->category_id,
+                'brand' => $request->input('brand_select') ?: $request->brand,
+                'cost_price' => $request->cost_price ?? 0,
+                'sale_price' => $request->sale_price ?? 0,
+                'product_description' => $request->product_description,
+                'product_content' => $request->product_content,
+                'product_thumbnail' => $thumbnailPath,
+                'weight' => $request->weight ?? 0,
+                'reorder_point' => $request->reorder_point ?? 0,
+                'points' => $request->enable_points ? ($request->points ?? 0) : 0,
+                'location' => $request->location,
+                'product_status' => 'publish',
+                'product_type' => 'simple',
+                'product_feature' => 0,
+                'language' => 'vi',
+                'created_by_user' => auth()->id(),
+            ];
+
+            $product = \App\Models\Product::create($productData);
+
+            // Handle additional images (base64)
+            if ($request->filled('product_images')) {
+                $images = $request->product_images;
+                foreach ($images as $index => $imageData) {
+                    if (!empty($imageData)) {
+                        $imagePath = $this->saveBase64Image($imageData, 'products/images');
+                        if ($imagePath) {
+                            \App\Models\ProductImage::create([
+                                'product_id' => $product->id,
+                                'tenant_id' => $tenant->id,
+                                'image_path' => $imagePath,
+                                'sort_order' => $index,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Create initial inventory record if stock quantity provided
+            if ($request->filled('initial_stock')) {
+                \App\Models\Inventory::create([
+                    'product_id' => $product->id,
+                    'branch_shop_id' => null,
+                    'quantity' => $request->initial_stock,
+                    'reserved_quantity' => 0,
+                    'tenant_id' => $tenant->id
+                ]);
+            }
+
+            DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sản phẩm đã được tạo thành công!',
+                    'product' => $product
+                ]);
+            }
+
+            return redirect()->route('admin.products.index')
+                           ->with('success', 'Sản phẩm đã được tạo thành công!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Product creation failed', [
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có lỗi xảy ra khi tạo sản phẩm: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Có lỗi xảy ra khi tạo sản phẩm!')
+                         ->withInput();
+        }
+    }
+
+    /**
+     * Update the specified product
+     */
+    public function update(Request $request, $id)
+    {
+        $tenant = $request->attributes->get('tenant');
+
+        // Manually query product with tenant scope
+        $product = \App\Models\Product::where('id', $id)
+                         ->where('tenant_id', $tenant->id)
+                         ->firstOrFail();
+
+        $request->validate([
+            'product_name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
+            'barcode' => 'nullable|string|max:100|unique:products,barcode,' . $product->id,
+            'category_id' => 'nullable|exists:product_categories,id',
+            'brand' => 'nullable|string|max:255',
+            'cost_price' => 'nullable|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'product_description' => 'nullable|string',
+            'product_content' => 'nullable|string',
+            'product_thumbnail' => 'nullable|string',
+            'weight' => 'nullable|integer|min:0',
+            'reorder_point' => 'nullable|integer|min:0',
+            'max_stock' => 'nullable|integer|min:0',
+            'points' => 'nullable|integer|min:0',
+            'location' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Handle main thumbnail upload (base64)
+            if ($request->filled('product_thumbnail')) {
+                // Check if it's a base64 image (starts with data:image)
+                if (str_starts_with($request->product_thumbnail, 'data:image')) {
+                    // Delete old thumbnail if exists
+                    if ($product->product_thumbnail) {
+                        \Storage::disk('public')->delete($product->product_thumbnail);
+                    }
+                    $thumbnailPath = $this->saveBase64Image($request->product_thumbnail, 'products/thumbnails');
+                } else {
+                    // It's already a path, keep it
+                    $thumbnailPath = $request->product_thumbnail;
+                }
+            } else {
+                $thumbnailPath = $product->product_thumbnail;
+            }
+
+            // Prepare update data
+            $productData = [
+                'product_name' => $request->product_name,
+                'product_slug' => \Illuminate\Support\Str::slug($request->product_name),
+                'sku' => $request->sku ?: $product->sku,
+                'barcode' => $request->barcode,
+                'category_id' => $request->category_id,
+                'brand' => $request->input('brand_select') ?: $request->brand,
+                'cost_price' => $request->cost_price ?? 0,
+                'sale_price' => $request->sale_price ?? 0,
+                'product_description' => $request->product_description,
+                'product_content' => $request->product_content,
+                'product_thumbnail' => $thumbnailPath,
+                'weight' => $request->weight ?? 0,
+                'reorder_point' => $request->reorder_point ?? 0,
+                'points' => $request->enable_points ? ($request->points ?? 0) : 0,
+                'location' => $request->location,
+            ];
+
+            $product->update($productData);
+
+            // Handle additional images - delete old ones first
+            $product->images()->each(function($image) {
+                \Storage::disk('public')->delete($image->image_path);
+                $image->delete();
+            });
+
+            // Save new additional images (base64)
+            if ($request->filled('product_images')) {
+                $images = $request->product_images;
+                foreach ($images as $index => $imageData) {
+                    if (!empty($imageData)) {
+                        // Check if it's base64
+                        if (str_starts_with($imageData, 'data:image')) {
+                            $imagePath = $this->saveBase64Image($imageData, 'products/images');
+                        } else {
+                            // It's already a path
+                            $imagePath = $imageData;
+                        }
+
+                        if ($imagePath) {
+                            \App\Models\ProductImage::create([
+                                'product_id' => $product->id,
+                                'tenant_id' => $product->tenant_id,
+                                'image_path' => $imagePath,
+                                'sort_order' => $index,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sản phẩm đã được cập nhật thành công!',
+                    'product' => $product
+                ]);
+            }
+
+            return redirect()->route('admin.products.index')
+                           ->with('success', 'Sản phẩm đã được cập nhật thành công!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Product update failed', [
+                'product_id' => $product->id,
+                'tenant_id' => $product->tenant_id,
+                'error' => $e->getMessage()
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có lỗi xảy ra khi cập nhật sản phẩm!'
+                ], 500);
+            }
+
+            return back()->with('error', 'Có lỗi xảy ra khi cập nhật sản phẩm!')
+                         ->withInput();
+        }
+    }
+
+    /**
+     * Remove the specified product
+     */
+    public function destroy(Request $request, $id)
+    {
+        $tenant = $request->attributes->get('tenant');
+
+        // Manually query product with tenant scope
+        $product = \App\Models\Product::where('id', $id)
+                         ->where('tenant_id', $tenant->id)
+                         ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            // Check if product has related records
+            if ($product->orderItems()->count() > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể xóa sản phẩm đã có đơn hàng!'
+                ], 400);
+            }
+
+            // Delete product image
+            if ($product->product_image) {
+                \Storage::disk('public')->delete($product->product_image);
+            }
+
+            $product->update(['deleted_by' => auth()->id()]);
+            $product->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sản phẩm đã được xóa thành công!'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Product deletion failed', [
+                'product_id' => $product->id,
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa sản phẩm!'
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate unique SKU for product
+     */
+    private function generateSKU($tenantId)
+    {
+        $prefix = 'PRD';
+        $timestamp = now()->format('ymd');
+        $random = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+
+        do {
+            $sku = "{$prefix}{$timestamp}{$random}";
+            $exists = \App\Models\Product::where('tenant_id', $tenantId)
+                           ->where('sku', $sku)
+                           ->exists();
+            if ($exists) {
+                $random = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            }
+        } while ($exists);
+
+        return $sku;
+    }
+
+    /**
+     * Save base64 image to storage
+     *
+     * @param string $base64Image Base64 encoded image data
+     * @param string $directory Directory to save image in
+     * @return string|null Path to saved image or null on failure
+     */
+    private function saveBase64Image($base64Image, $directory = 'products')
+    {
+        try {
+            // Check if it's a valid base64 image
+            if (!str_starts_with($base64Image, 'data:image')) {
+                return null;
+            }
+
+            // Extract image data
+            preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches);
+            if (!$matches) {
+                return null;
+            }
+
+            $extension = $matches[1];
+            $imageData = substr($base64Image, strpos($base64Image, ',') + 1);
+            $imageData = base64_decode($imageData);
+
+            if ($imageData === false) {
+                return null;
+            }
+
+            // Generate unique filename
+            $filename = uniqid() . '_' . time() . '.' . $extension;
+            $path = $directory . '/' . $filename;
+
+            // Save to storage
+            \Storage::disk('public')->put($path, $imageData);
+
+            return $path;
+        } catch (\Exception $e) {
+            Log::error('Failed to save base64 image', [
+                'error' => $e->getMessage(),
+                'directory' => $directory
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Save product units
+     * API endpoint for JavaScript
+     */
+    public function saveProductUnits(Request $request, $productId)
+    {
+        try {
+            $tenantId = $this->getCurrentTenantId();
+
+            // Verify product belongs to tenant
+            $product = Product::where('id', $productId)
+                ->where('tenant_id', $tenantId)
+                ->first();
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sản phẩm không tồn tại'
+                ], 404);
+            }
+
+            $unitsData = $request->input('units', []);
+
+            // Use ProductUnitService to save units
+            $result = $this->unitService->saveProductUnits($product, $unitsData);
+
+            return response()->json($result, $result['success'] ? 200 : 500);
+
+        } catch (Exception $e) {
+            Log::error('Error in saveProductUnits controller: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lưu đơn vị tính'
+            ], 500);
+        }
+    }
+
+    /**
+     * Save product variants
+     * API endpoint for JavaScript
+     */
+    public function saveProductVariants(Request $request, $productId)
+    {
+        DB::beginTransaction();
+        try {
+            $tenantId = $this->getCurrentTenantId();
+
+            // Verify product belongs to tenant
+            $product = Product::where('id', $productId)
+                ->where('tenant_id', $tenantId)
+                ->first();
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sản phẩm không tồn tại'
+                ], 404);
+            }
+
+            $variantsData = $request->input('variants', []);
+
+            // Delete existing variants
+            $product->variants()->delete();
+
+            $createdVariants = [];
+
+            // Create new variants
+            foreach ($variantsData as $variantData) {
+                // Create variant
+                $variant = $product->variants()->create([
+                    'tenant_id' => $tenantId,
+                    'variant_name' => $variantData['attributeValuesText'] ?? '',
+                    'sku' => $variantData['sku'] ?? '',
+                    'barcode' => $variantData['barcode'] ?? '',
+                    'cost_price' => $variantData['cost_price'] ?? 0,
+                    'sale_price' => $variantData['sale_price'] ?? 0,
+                    'regular_price' => $variantData['sale_price'] ?? 0,
+                    'points' => $variantData['points'] ?? 0,
+                    'is_active' => true,
+                ]);
+
+                // Create variant attributes (junction table)
+                if (isset($variantData['attributeValues']) && is_array($variantData['attributeValues'])) {
+                    foreach ($variantData['attributeValues'] as $attrValue) {
+                        ProductVariantAttribute::create([
+                            'variant_id' => $variant->id,
+                            'attribute_id' => $attrValue['attributeId'],
+                            'attribute_value_id' => $attrValue['valueId'],
+                        ]);
+                    }
+                }
+
+                // Create inventory for variant
+                Inventory::create([
+                    'tenant_id' => $tenantId,
+                    'product_id' => $product->id,
+                    'variant_id' => $variant->id,
+                    'quantity' => $variantData['stock'] ?? 0,
+                    'reserved_quantity' => 0,
+                ]);
+
+                $createdVariants[] = $variant;
+            }
+
+            // Update product to variable type
+            $product->update([
+                'product_type' => 'variable',
+                'has_variants' => true,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã lưu biến thể sản phẩm thành công',
+                'data' => $createdVariants
+            ]);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error in saveProductVariants: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lưu biến thể sản phẩm: ' . $e->getMessage()
             ], 500);
         }
     }

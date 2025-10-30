@@ -226,8 +226,11 @@ class Permission extends SpatiePermission
     /**
      * Generate permission name
      */
-    public static function generateName($module, $action)
+    public static function generateName($module, $action, $subModule = null)
     {
+        if ($subModule) {
+            return $module . '.' . $subModule . '.' . $action;
+        }
         return $module . '.' . $action;
     }
 

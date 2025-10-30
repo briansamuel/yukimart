@@ -371,16 +371,41 @@
                 <!--end::Tabs Content-->
 
                 <!--begin::Action Buttons-->
-                <div class="d-flex justify-content-end mt-6">
-                    <a href="/admin/products/{{ $product->id }}/edit" class="btn btn-primary btn-sm me-3">
-                        <i class="fas fa-edit me-2"></i>Chỉnh sửa sản phẩm
-                    </a>
-                    <button type="button" class="btn btn-light-primary btn-sm me-3" onclick="viewProductHistory({{ $product->id }})">
-                        <i class="fas fa-history me-2"></i>Xem lịch sử
-                    </button>
-                    <button type="button" class="btn btn-light-success btn-sm" onclick="manageStock({{ $product->id }})">
-                        <i class="fas fa-boxes me-2"></i>Quản lý tồn kho
-                    </button>
+                <div class="d-flex justify-content-between mt-6">
+                    <!--begin::Left buttons-->
+                    <div>
+                        <button type="button" class="btn btn-danger btn-sm me-2" onclick="deleteProduct({{ $product->id }})">
+                            <i class="fas fa-trash me-2"></i>Xóa
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm" onclick="duplicateProduct({{ $product->id }})">
+                            <i class="fas fa-copy me-2"></i>Sao chép
+                        </button>
+                    </div>
+                    <!--end::Left buttons-->
+
+                    <!--begin::Right buttons-->
+                    <div>
+                        <button type="button" class="btn btn-primary btn-sm me-2 edit-product-btn" data-product-id="{{ $product->id }}">
+                            <i class="fas fa-edit me-2"></i>Chỉnh sửa sản phẩm
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm me-2" onclick="printBarcode({{ $product->id }})">
+                            <i class="fas fa-print me-2"></i>In tem mã
+                        </button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="importStock({{ $product->id }}); return false;">
+                                    <i class="fas fa-box me-2"></i>Nhập hàng
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="stopSelling({{ $product->id }}); return false;">
+                                    <i class="fas fa-ban me-2"></i>Ngừng kinh doanh
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!--end::Right buttons-->
                 </div>
                 <!--end::Action Buttons-->
             </div>
