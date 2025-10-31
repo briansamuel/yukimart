@@ -1,4 +1,4 @@
-@extends('admin.main-content')
+@extends('admin.layouts.tenant-app')
 
 @section('title', __('branch_shop.branch_shop_management'))
 

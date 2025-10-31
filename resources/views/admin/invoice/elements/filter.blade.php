@@ -1,5 +1,5 @@
 <!--begin::Sidebar-->
-<div class="flex-column flex-lg-row-auto w-100 w-lg-300px order-1 order-lg-1 mb-10 mb-lg-0">
+<div id="invoices_filter_sidebar" class="filter-sidebar flex-column flex-lg-row-auto w-100 w-lg-300px order-1 order-lg-1 mb-10 mb-lg-0">
     <!--begin::Form-->
     <form id="kt_invoice_filter_form" class="filter-form">
         <!--begin::Time Filter Block-->

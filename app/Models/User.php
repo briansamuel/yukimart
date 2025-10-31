@@ -7,15 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Traits\HasRolesAndPermissions;
+use App\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Sanctum\HasApiTokens;
 use Carbon\Carbon;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use Notifiable, HasFactory, HasRolesAndPermissions, HasApiTokens;
+    use Notifiable, HasFactory, HasRoles, HasApiTokens, TenantScoped;
 
 
     /**
@@ -86,6 +89,15 @@ class User extends Authenticatable
         return new Attribute(
             get: fn($value,  $attributes) => Common::randomBackground(),
         );
+    }
+
+    /**
+     * Get the team ID for Spatie Permission package
+     * This is required for multi-tenant support
+     */
+    public function getPermissionsTeamId()
+    {
+        return $this->tenant_id;
     }
 
     /**
@@ -251,7 +263,7 @@ class User extends Authenticatable
     protected function pageEdit(): Attribute
     {
         return new Attribute(
-            get: fn ($value,  $attributes) => route('admin.user.edit', ['user_id' => $attributes['id']]),
+            get: fn ($value,  $attributes) => route('admin.users.edit', ['id' => $attributes['id']]),
         );
     }
 
@@ -264,7 +276,7 @@ class User extends Authenticatable
     protected function pageDelete(): Attribute
     {
         return new Attribute(
-            get: fn ($value,  $attributes) => route('admin.user.delete', ['user_id' => $attributes['id']]),
+            get: fn ($value,  $attributes) => route('admin.users.destroy', ['id' => $attributes['id']]),
         );
     }
 
@@ -277,30 +289,34 @@ class User extends Authenticatable
     protected function pageDetail(): Attribute
     {
         return new Attribute(
-            get: fn ($value,  $attributes) => route('admin.user.detail', ['user_id' => $attributes['id']]),
+            get: fn ($value,  $attributes) => route('admin.users.show', ['id' => $attributes['id']]),
         );
     }
     /**
-     * Get the user's created_at.
+     * Get the user's formatted created_at for display.
      *
      * @return \Illuminate\Database\Eloquent\Casts\Attribute
      */
-    protected function createdAt(): Attribute
+    protected function createdAtFormatted(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => Carbon::parse($value)->format('d/m/Y H:i:s')
+            get: fn ($value, $attributes) => isset($attributes['created_at'])
+                ? Carbon::parse($attributes['created_at'])->format('d/m/Y H:i:s')
+                : '-'
         );
     }
 
     /**
-     * Get the user's updated_at.
+     * Get the user's formatted updated_at for display.
      *
      * @return \Illuminate\Database\Eloquent\Casts\Attribute
      */
-    protected function updatedAt(): Attribute
+    protected function updatedAtFormatted(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) =>  Carbon::parse($value)->format('d/m/Y H:i:s'),
+            get: fn ($value, $attributes) => isset($attributes['updated_at'])
+                ? Carbon::parse($attributes['updated_at'])->format('d/m/Y H:i:s')
+                : '-'
         );
     }
 
@@ -342,5 +358,171 @@ class User extends Authenticatable
     public function createdPayments()
     {
         return $this->hasMany(\App\Models\Payment::class, 'created_by');
+    }
+
+    /**
+     * Tenant Relationships
+     */
+
+    /**
+     * Get the tenant this user belongs to (primary tenant)
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * Get all tenants this user has access to
+     */
+    public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(Tenant::class, 'tenant_users')
+                    ->withPivot([
+                        'role',
+                        'permissions',
+                        'restrictions',
+                        'is_active',
+                        'is_primary',
+                        'joined_at',
+                        'last_access_at',
+                        'access_expires_at',
+                        'invitation_status'
+                    ])
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get active tenants for this user
+     */
+    public function activeTenants(): BelongsToMany
+    {
+        return $this->tenants()->wherePivot('is_active', true);
+    }
+
+    /**
+     * Get primary tenant for this user
+     */
+    public function primaryTenant(): BelongsTo
+    {
+        $tenantUser = $this->tenants()->wherePivot('is_primary', true)->first();
+        return $tenantUser ? $tenantUser->tenant() : $this->tenant();
+    }
+
+    /**
+     * Get current tenant for this user (from session or primary)
+     */
+    public function getCurrentTenant(): ?Tenant
+    {
+        // Try to get from session first
+        if (session()->has('current_tenant_id')) {
+            $tenantId = session('current_tenant_id');
+            return $this->tenants()->where('tenants.id', $tenantId)->first();
+        }
+
+        // Fallback to primary tenant
+        return $this->primaryTenant;
+    }
+
+    /**
+     * Check if user belongs to specific tenant
+     */
+    public function belongsToTenant(int $tenantId): bool
+    {
+        return $this->tenants()->where('tenants.id', $tenantId)->exists();
+    }
+
+    /**
+     * Check if user has role in specific tenant
+     */
+    public function hasRoleInTenant(int $tenantId, string $role): bool
+    {
+        return $this->tenants()
+                    ->where('tenants.id', $tenantId)
+                    ->wherePivot('role', $role)
+                    ->exists();
+    }
+
+    /**
+     * Check if user is owner of specific tenant
+     */
+    public function isOwnerOfTenant(int $tenantId): bool
+    {
+        return $this->hasRoleInTenant($tenantId, TenantUser::ROLE_OWNER);
+    }
+
+    /**
+     * Check if user is admin of specific tenant
+     */
+    public function isAdminOfTenant(int $tenantId): bool
+    {
+        return $this->tenants()
+                    ->where('tenants.id', $tenantId)
+                    ->wherePivotIn('role', [TenantUser::ROLE_OWNER, TenantUser::ROLE_ADMIN])
+                    ->exists();
+    }
+
+    /**
+     * Get user's role in specific tenant
+     */
+    public function getRoleInTenant(int $tenantId): ?string
+    {
+        $tenantUser = $this->tenants()->where('tenants.id', $tenantId)->first();
+        return $tenantUser ? $tenantUser->pivot->role : null;
+    }
+
+    /**
+     * Switch to specific tenant
+     */
+    public function switchToTenant(int $tenantId): bool
+    {
+        if (!$this->belongsToTenant($tenantId)) {
+            return false;
+        }
+
+        session(['current_tenant_id' => $tenantId]);
+
+        // Update last access time
+        $this->tenants()->updateExistingPivot($tenantId, [
+            'last_access_at' => Carbon::now()
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Check if user is super admin (can access all tenants)
+     */
+    public function isSuperAdmin(): bool
+    {
+        // You can implement this based on your business logic
+        // For example, check if user has a specific role or permission
+        return $this->hasRole('super_admin') || $this->email === 'admin@yukimart.local';
+    }
+
+    /**
+     * Get tenant-specific settings
+     */
+    public function getTenantSetting(string $key, $default = null, ?int $tenantId = null)
+    {
+        $tenantId = $tenantId ?: $this->getCurrentTenant()?->id;
+
+        if (!$tenantId) {
+            return $default;
+        }
+
+        return TenantSetting::getForTenant($tenantId, $key, $default);
+    }
+
+    /**
+     * Set tenant-specific setting
+     */
+    public function setTenantSetting(string $key, $value, ?int $tenantId = null): void
+    {
+        $tenantId = $tenantId ?: $this->getCurrentTenant()?->id;
+
+        if ($tenantId) {
+            TenantSetting::setForTenant($tenantId, $key, $value);
+        }
     }
 }

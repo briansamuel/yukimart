@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin\CMS;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\BaseAdminController;
 use App\Models\Customer;
 use App\Models\CustomerPointTransaction;
 use App\Models\Order;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
-class CustomerController extends Controller
+class CustomerController extends BaseAdminController
 {
     /**
      * Display a listing of customers

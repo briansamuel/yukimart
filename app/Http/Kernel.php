@@ -21,6 +21,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\DetectPlatform::class,
     ];
 
     /**
@@ -54,6 +55,8 @@ class Kernel extends HttpKernel
      */
     protected $routeMiddleware = [
         'auth' => \App\Http\Middleware\Authenticate::class,
+        'auth.default' => \Illuminate\Auth\Middleware\Authenticate::class,
+        'auth.custom' => \App\Http\Middleware\Authenticate::class,
         'auth.api' => \App\Http\Middleware\ApiAuthenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
@@ -65,5 +68,23 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'api.token' => \App\Http\Middleware\ApiTokenAuth::class,
+
+        // Tenant middleware
+        'tenant.resolve' => \App\Http\Middleware\ResolveTenantMiddleware::class,
+        'tenant.auth' => \App\Http\Middleware\TenantAuthMiddleware::class,
+        'tenant.subdomain' => \App\Http\Middleware\SubdomainTenantMiddleware::class,
+
+        // Platform middleware
+        'platform.detect' => \App\Http\Middleware\DetectPlatform::class,
+        'platform.user' => \App\Http\Middleware\PlatformUserMiddleware::class,
+        'layout.mode' => \App\Http\Middleware\LayoutModeMiddleware::class,
+
+        // Permission middleware
+        'tenant.permission' => \App\Http\Middleware\CheckTenantPermissionMiddleware::class,
+
+        // Spatie Permission middleware
+        'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+        'permission' => \App\Http\Middleware\TenantPermissionMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
     ];
 }

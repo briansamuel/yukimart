@@ -3,11 +3,16 @@ namespace App\Services;
 
 use App\Repositories\Product\ProductRepositoryInterface;
 use App\Models\Product;
+use App\Traits\FilterableTrait;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class ProductService
 {
+    use FilterableTrait;
+
     protected $productRepo;
 
     public function __construct(ProductRepositoryInterface $productRepo)
@@ -981,5 +986,162 @@ class ProductService
         $reference = $transaction->reference ? " (Ref: {$transaction->reference})" : '';
 
         return "{$type} {$quantity} units{$reference}";
+    }
+
+    /**
+     * Get products with filters using FilterableTrait
+     *
+     * @param Request $request
+     * @param int $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    public function getProductsWithFilters(Request $request, $perPage = 25)
+    {
+        // Build query with optimized relationships
+        // TenantScope will automatically filter by tenant_id
+        $query = Product::with([
+            'category:id,name,parent_id',
+            'creator:id,full_name',
+            'inventory'
+        ]);
+
+        // Apply search
+        $searchTerm = $request->input('search_term') ?? $request->input('search.value') ?? $request->input('search') ?? '';
+        if (!empty($searchTerm)) {
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('product_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('sku', 'like', "%{$searchTerm}%")
+                  ->orWhere('barcode', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Apply common filters using FilterableTrait
+        $filterConfig = [
+            'searchColumns' => ['product_name', 'sku', 'barcode'],
+            'statusColumn' => 'product_status',
+            'userColumns' => [
+                'created_by' => 'creator_id'
+            ],
+            'dateRangeColumns' => ['created_at']
+        ];
+
+        $this->applyCommonFilters($query, $request, $filterConfig);
+
+        // Apply custom filters specific to products
+        $this->applyProductCustomFilters($query, $request);
+
+        // Apply ordering
+        $sortBy = $request->input('sort', 'created_at');
+        $sortOrder = $request->input('direction', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        return $query->paginate($perPage);
+    }
+
+    /**
+     * Apply custom filters specific to products
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param Request $request
+     * @return void
+     */
+    private function applyProductCustomFilters($query, Request $request)
+    {
+        // Category filter (multiple)
+        if ($request->filled('category_ids')) {
+            $categoryIds = $request->category_ids;
+            if (is_array($categoryIds)) {
+                $query->whereIn('category_id', $categoryIds);
+            } else {
+                // Handle comma-separated string
+                $ids = explode(',', $categoryIds);
+                $ids = array_filter(array_map('trim', $ids));
+                if (!empty($ids)) {
+                    $query->whereIn('category_id', $ids);
+                }
+            }
+        }
+
+        // Branch shop filter (multiple) - via warehouse
+        if ($request->filled('branch_shop_ids')) {
+            $branchShopIds = $request->branch_shop_ids;
+            if (!is_array($branchShopIds)) {
+                $branchShopIds = [$branchShopIds];
+            }
+
+            // Filter out empty values
+            $branchShopIds = array_filter($branchShopIds, function($id) {
+                return !empty($id) && $id !== '';
+            });
+
+            if (!empty($branchShopIds)) {
+                // Get warehouse_ids from selected branch_shops
+                $warehouseIds = \App\Models\BranchShop::whereIn('id', $branchShopIds)
+                    ->whereNotNull('warehouse_id')
+                    ->pluck('warehouse_id')
+                    ->toArray();
+
+                if (!empty($warehouseIds)) {
+                    $query->whereHas('inventory', function($q) use ($warehouseIds) {
+                        $q->whereIn('warehouse_id', $warehouseIds);
+                    });
+                }
+            }
+        }
+
+        // Stock status filter (multiple)
+        if ($request->filled('stock_status')) {
+            $stockStatuses = $request->stock_status;
+            if (!is_array($stockStatuses)) {
+                // Handle comma-separated string
+                $stockStatuses = explode(',', $stockStatuses);
+                $stockStatuses = array_map('trim', $stockStatuses);
+            }
+
+            // Filter out empty values
+            $stockStatuses = array_filter($stockStatuses, function($status) {
+                return !empty($status) && $status !== '';
+            });
+
+            if (!empty($stockStatuses)) {
+                $query->where(function($q) use ($stockStatuses) {
+                    foreach ($stockStatuses as $stockStatus) {
+                        if ($stockStatus === 'out_of_stock') {
+                            $q->orWhereHas('inventory', function($subQ) {
+                                $subQ->where('quantity', '=', 0);
+                            });
+                        } elseif ($stockStatus === 'low_stock') {
+                            $q->orWhereHas('inventory', function($subQ) {
+                                $subQ->where('quantity', '>', 0)
+                                    ->where('quantity', '<', 10);
+                            });
+                        } elseif ($stockStatus === 'in_stock') {
+                            $q->orWhereHas('inventory', function($subQ) {
+                                $subQ->where('quantity', '>=', 10);
+                            });
+                        }
+                    }
+                });
+            }
+        }
+
+        // Price range filter
+        if ($request->filled('price_from')) {
+            $query->where('price', '>=', $request->price_from);
+        }
+
+        if ($request->filled('price_to')) {
+            $query->where('price', '<=', $request->price_to);
+        }
+
+        // SKU filter
+        if ($request->filled('sku')) {
+            $query->where('sku', 'like', '%' . $request->sku . '%');
+        }
+
+        // Barcode filter
+        if ($request->filled('barcode')) {
+            $query->where('barcode', 'like', '%' . $request->barcode . '%');
+        }
     }
 }

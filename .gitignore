@@ -38,3 +38,9 @@ composer.lock
 *.old
 *.orig
 storage/firebase/
+Branch_Shops_Tenant_Filter_Implementation_Complete__2025-10-26T04-04-30.json
+Branch_Shops_Tenant_Filter_Implementation_Complete__2025-10-26T04-04-52.json
+
+# secrets
+storage/firebase/*.json
+.env.postman

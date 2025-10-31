@@ -88,6 +88,9 @@ class AppServiceProvider extends ServiceProvider
             \App\Repositories\Task\TaskRepository::class
         );
 
+        // Register tenant services
+        $this->app->singleton(\App\Services\TenantContextService::class);
+
     }
 
     /**

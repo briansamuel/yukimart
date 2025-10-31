@@ -83,7 +83,7 @@
                                 <!--begin:Menu items-->
                                 <div class="d-flex flex-column">
                                     <div class="menu-item">
-                                        <a class="menu-link py-3" href="{{ route('admin.products.list') }}">
+                                        <a class="menu-link py-3" href="{{ route('admin.products.index') }}">
                                             <span class="menu-icon">
                                                 <i class="ki-duotone ki-package fs-2">
                                                     <span class="path1"></span>
@@ -95,7 +95,7 @@
                                         </a>
                                     </div>
                                     <div class="menu-item">
-                                        <a class="menu-link py-3" href="{{ route('admin.products.add') }}">
+                                        <a class="menu-link py-3" href="{{ route('admin.products.create') }}">
                                             <span class="menu-icon">
                                                 <i class="ki-duotone ki-plus fs-2">
                                                     <span class="path1"></span>
@@ -266,7 +266,7 @@
                                         </a>
                                     </div>
                                     <div class="menu-item">
-                                        <a class="menu-link py-3" href="{{ route('admin.branch-shops.index') }}">
+                                        <a class="menu-link py-3" href="{{ route('admin.settings.branch-manager') }}">
                                             <span class="menu-icon">
                                                 <i class="ki-duotone ki-shop fs-2">
                                                     <span class="path1"></span>

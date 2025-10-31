@@ -11,10 +11,20 @@ use Illuminate\Support\Str;
 class BranchShopService
 {
     protected $branchShop;
+    protected $tenantContextService;
 
-    public function __construct(BranchShop $branchShop)
+    public function __construct(BranchShop $branchShop, TenantContextService $tenantContextService)
     {
         $this->branchShop = $branchShop;
+        $this->tenantContextService = $tenantContextService;
+    }
+
+    /**
+     * Get current tenant ID
+     */
+    protected function getCurrentTenantId(): ?int
+    {
+        return $this->tenantContextService->getCurrentTenantId();
     }
 
     /**
@@ -71,6 +81,12 @@ class BranchShopService
         }
 
         $query = $this->branchShop->with(['manager']);
+
+        // Filter by current tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
 
         // Apply keyword search
         if ($keyword) {
@@ -136,6 +152,12 @@ class BranchShopService
         try {
             DB::beginTransaction();
 
+            // Set tenant_id from current context
+            $tenantId = $this->getCurrentTenantId();
+            if ($tenantId) {
+                $data['tenant_id'] = $tenantId;
+            }
+
             // Generate unique code if not provided
             if (!isset($data['code']) || empty($data['code'])) {
                 $data['code'] = $this->generateUniqueCode($data['name']);
@@ -165,8 +187,16 @@ class BranchShopService
         try {
             DB::beginTransaction();
 
-            $branchShop = $this->branchShop->findOrFail($id);
-            
+            $query = $this->branchShop->where('id', $id);
+
+            // Filter by tenant
+            $tenantId = $this->getCurrentTenantId();
+            if ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            }
+
+            $branchShop = $query->firstOrFail();
+
             // Check if code is unique (excluding current record)
             if (isset($data['code']) && $data['code'] !== $branchShop->code) {
                 if ($this->codeExists($data['code'], $id)) {
@@ -193,8 +223,16 @@ class BranchShopService
         try {
             DB::beginTransaction();
 
-            $branchShop = $this->branchShop->findOrFail($id);
-            
+            $query = $this->branchShop->where('id', $id);
+
+            // Filter by tenant
+            $tenantId = $this->getCurrentTenantId();
+            if ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            }
+
+            $branchShop = $query->firstOrFail();
+
             // Check if branch shop has orders
             if ($branchShop->orders()->count() > 0) {
                 throw new \Exception('Không thể xóa chi nhánh có đơn hàng');
@@ -216,7 +254,15 @@ class BranchShopService
      */
     public function findById($id)
     {
-        return $this->branchShop->with(['manager', 'creator', 'updater'])->findOrFail($id);
+        $query = $this->branchShop->with(['manager', 'creator', 'updater'])->where('id', $id);
+
+        // Filter by tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->firstOrFail();
     }
 
     /**
@@ -224,8 +270,15 @@ class BranchShopService
      */
     public function getActiveForFilter()
     {
-        return $this->branchShop->active()
-            ->orderBy('sort_order')
+        $query = $this->branchShop->active();
+
+        // Filter by tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->orderBy('sort_order')
             ->orderBy('name')
             ->select('id', 'name')
             ->get();
@@ -236,8 +289,15 @@ class BranchShopService
      */
     public function getActiveForDropdown()
     {
-        return $this->branchShop->active()
-            ->orderBy('sort_order')
+        $query = $this->branchShop->active();
+
+        // Filter by tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->orderBy('sort_order')
             ->orderBy('name')
             ->select('id', 'code', 'name', 'address')
             ->get()
@@ -251,14 +311,48 @@ class BranchShopService
     }
 
     /**
+     * Get available branch shops for switcher
+     */
+    public function getAvailableForSwitcher()
+    {
+        $query = $this->branchShop->active();
+
+        // Filter by tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->orderBy('sort_order')
+            ->orderBy('name')
+            ->select('id', 'code', 'name', 'address', 'shop_type', 'status')
+            ->get()
+            ->map(function($shop) {
+                return [
+                    'id' => $shop->id,
+                    'code' => $shop->code,
+                    'name' => $shop->name,
+                    'address' => $shop->address,
+                    'shop_type' => $shop->shop_type,
+                    'status' => $shop->status
+                ];
+            });
+    }
+
+    /**
      * Get branch shops with delivery service
      */
     public function getWithDelivery()
     {
-        return $this->branchShop->active()
-            ->withDelivery()
-            ->orderBy('sort_order')
-            ->get();
+        $query = $this->branchShop->active()->withDelivery();
+
+        // Filter by tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->orderBy('sort_order')->get();
     }
 
     /**
@@ -292,6 +386,13 @@ class BranchShopService
     public function codeExists($code, $excludeId = null)
     {
         $query = $this->branchShop->where('code', $code);
+
+        // Filter by tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
+
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
@@ -303,10 +404,18 @@ class BranchShopService
      */
     public function getStatistics()
     {
-        $total = $this->branchShop->count();
-        $active = $this->branchShop->active()->count();
-        $withDelivery = $this->branchShop->withDelivery()->count();
-        
+        $query = $this->branchShop->newQuery();
+
+        // Filter by tenant
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        $total = $query->count();
+        $active = (clone $query)->where('status', 'active')->count();
+        $withDelivery = (clone $query)->where('has_delivery', true)->count();
+
         return [
             'total' => $total,
             'active' => $active,
@@ -341,7 +450,15 @@ class BranchShopService
         try {
             DB::beginTransaction();
 
-            $this->branchShop->whereIn('id', $ids)->update([
+            $query = $this->branchShop->whereIn('id', $ids);
+
+            // Filter by tenant
+            $tenantId = $this->getCurrentTenantId();
+            if ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            }
+
+            $query->update([
                 'status' => $status,
                 'updated_at' => now()
             ]);
@@ -363,16 +480,22 @@ class BranchShopService
         try {
             DB::beginTransaction();
 
+            $query = $this->branchShop->whereIn('id', $ids);
+
+            // Filter by tenant
+            $tenantId = $this->getCurrentTenantId();
+            if ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            }
+
             // Check if any branch shop has orders
-            $hasOrders = $this->branchShop->whereIn('id', $ids)
-                ->whereHas('orders')
-                ->exists();
+            $hasOrders = (clone $query)->whereHas('orders')->exists();
 
             if ($hasOrders) {
                 throw new \Exception('Không thể xóa chi nhánh có đơn hàng');
             }
 
-            $this->branchShop->whereIn('id', $ids)->delete();
+            $query->delete();
 
             DB::commit();
             return true;

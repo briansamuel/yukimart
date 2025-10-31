@@ -3,22 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Permission\Models\Permission as SpatiePermission;
 
-class Permission extends Model
+class Permission extends SpatiePermission
 {
     use HasFactory;
 
     protected $fillable = [
         'name',
+        'guard_name',
         'display_name',
         'module',
+        'sub_module',
         'action',
         'description',
         'is_active',
         'sort_order',
+        'tenant_id',
     ];
 
     protected $casts = [
@@ -98,22 +100,26 @@ class Permission extends Model
 
     /**
      * Relationship with roles
+     * NOTE: Commented out to use Spatie's roles() relationship
+     * which uses 'role_has_permissions' table instead of 'role_permissions'
      */
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class, 'role_permissions')
-            ->withTimestamps();
-    }
+    // public function roles(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Role::class, 'role_permissions')
+    //         ->withTimestamps();
+    // }
 
     /**
      * Relationship with users (direct permissions)
+     * NOTE: Commented out to use Spatie's users() relationship
+     * which uses 'model_has_permissions' table instead of 'user_permissions'
      */
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'user_permissions')
-            ->withPivot(['type', 'assigned_at', 'assigned_by', 'expires_at', 'is_active'])
-            ->withTimestamps();
-    }
+    // public function users(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(User::class, 'user_permissions')
+    //         ->withPivot(['type', 'assigned_at', 'assigned_by', 'expires_at', 'is_active'])
+    //         ->withTimestamps();
+    // }
 
     /**
      * Relationship with user permissions
@@ -220,8 +226,11 @@ class Permission extends Model
     /**
      * Generate permission name
      */
-    public static function generateName($module, $action)
+    public static function generateName($module, $action, $subModule = null)
     {
+        if ($subModule) {
+            return $module . '.' . $subModule . '.' . $action;
+        }
         return $module . '.' . $action;
     }
 

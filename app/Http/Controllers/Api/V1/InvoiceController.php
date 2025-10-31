@@ -4,13 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
-use App\Models\Customer;
-use App\Models\Product;
-use App\Models\BranchShop;
 use App\Http\Resources\V1\InvoiceResource;
 use App\Http\Resources\V1\InvoiceListResource;
-use App\Http\Resources\V1\CustomerResource;
-use App\Http\Resources\V1\ProductResource;
+use App\Http\Traits\ApiOptimizationTrait;
+use App\Http\Requests\Api\V1\Invoice\InvoiceListRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -18,74 +15,57 @@ use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
+    use ApiOptimizationTrait;
     /**
      * Display a listing of invoices with pagination and filters
      */
-    public function index(Request $request)
+    public function index(InvoiceListRequest $request)
     {
+        $startTime = microtime(true);
+
         try {
-            // Optimized eager loading for list API - load essential data with items details
-            $query = Invoice::with([
-                'branchShop:id,name',
-                'invoiceItems:id,invoice_id,product_id,product_name,product_sku,quantity,unit_price',
-                'invoiceItems.product:id,product_thumbnail',
-                'seller:id,username,full_name',
-                'creator:id,username,full_name',
-                'payments:id,reference_type,reference_id,payment_number,payment_method,amount,actual_amount,status,payment_date,created_by,created_at',
-                'payments.creator:id,username,full_name'
-            ]);
-            
-            // Apply filters
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
-            }
-            
-            if ($request->filled('payment_status')) {
-                $query->where('payment_status', $request->payment_status);
-            }
-            
-            if ($request->filled('customer_id')) {
-                $query->where('customer_id', $request->customer_id);
-            }
-            
-            if ($request->filled('branch_shop_id')) {
-                $query->where('branch_shop_id', $request->branch_shop_id);
+            // Generate cache key for this request
+            $cacheKey = $this->generateCacheKey($request, 'invoices_list');
+
+            // Try to get cached response
+            $cachedResponse = $this->cacheResponse($cacheKey, null, 2); // 2 minutes cache
+
+            if ($cachedResponse) {
+                $response = response()->json($cachedResponse);
+                return $this->addPerformanceHeaders($response, $startTime);
             }
 
-            if ($request->filled('sales_channel')) {
-                $query->where('sales_channel', $request->sales_channel);
+            // Parse include parameter for dynamic relationship loading
+            $includes = $this->parseIncludes($request->get('include', 'branchShop,seller,creator'));
+
+            // Base query with optimized eager loading
+            $query = Invoice::query();
+
+            // Apply dynamic includes
+            if (!empty($includes)) {
+                $query->with($includes);
             }
 
-            if ($request->filled('date_from')) {
-                $query->whereDate('invoice_date', '>=', $request->date_from);
-            }
-            
-            if ($request->filled('date_to')) {
-                $query->whereDate('invoice_date', '<=', $request->date_to);
-            }
-            
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('invoice_number', 'like', "%{$search}%")
-                      ->orWhere('customer_name', 'like', "%{$search}%")
-                      ->orWhere('reference_number', 'like', "%{$search}%");
-                });
-            }
-            
-            // Sorting
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
-            
-            // Pagination
-            $perPage = $request->get('per_page', 15);
-            $invoices = $query->paginate($perPage);
-            
-            return response()->json([
+            // Apply filters with optimization
+            $this->applyFilters($query, $request);
+
+            // Apply sorting
+            $this->applySorting($query, $request);
+
+            // Optimized pagination
+            $invoices = $this->optimizePagination($query, $request);
+
+            // Transform to resource collection
+            $resourceCollection = InvoiceListResource::collection($invoices);
+
+            // Parse fields for field selection
+            $fields = $this->parseFields($request->get('fields'));
+
+            // Prepare response data
+            $responseData = [
                 'status' => 'success',
                 'message' => 'Invoices retrieved successfully',
-                'data' => InvoiceListResource::collection($invoices),
+                'data' => $resourceCollection,
                 'meta' => [
                     'current_page' => $invoices->currentPage(),
                     'last_page' => $invoices->lastPage(),
@@ -93,8 +73,24 @@ class InvoiceController extends Controller
                     'total' => $invoices->total(),
                     'from' => $invoices->firstItem(),
                     'to' => $invoices->lastItem(),
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
                 ]
-            ], 200);
+            ];
+
+            // Apply field filtering if requested
+            if (!empty($fields)) {
+                $responseData = $this->filterFields($responseData, $fields);
+            }
+
+            // Cache the response
+            $this->cacheResponse($cacheKey, $responseData, 2);
+
+            // Create response with optimization headers
+            $response = response()->json($responseData, 200);
+            $response = $this->addPerformanceHeaders($response, $startTime);
+            $response = $this->addRateLimitHeaders($response);
+
+            return $response;
             
         } catch (\Exception $e) {
             Log::error('Invoice listing failed: ' . $e->getMessage());
@@ -426,6 +422,133 @@ class InvoiceController extends Controller
                 'message' => 'Failed to retrieve statistics',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Parse include parameter for dynamic relationship loading
+     */
+    private function parseIncludes($includeParam)
+    {
+        if (empty($includeParam)) {
+            return [];
+        }
+
+        $includes = [];
+        $availableIncludes = [
+            'branchShop' => 'branchShop:id,name',
+            'seller' => 'seller:id,username,full_name',
+            'creator' => 'creator:id,username,full_name',
+            'customer' => 'customer:id,customer_name,email,phone',
+            'items' => [
+                'invoiceItems:id,invoice_id,product_id,product_name,product_sku,quantity,unit_price',
+                'invoiceItems.product:id,product_thumbnail'
+            ],
+            'payments' => [
+                'payments:id,reference_type,reference_id,payment_number,payment_method,amount,actual_amount,status,payment_date,created_by,created_at',
+                'payments.creator:id,username,full_name'
+            ]
+        ];
+
+        $requestedIncludes = explode(',', $includeParam);
+
+        foreach ($requestedIncludes as $include) {
+            $include = trim($include);
+            if (isset($availableIncludes[$include])) {
+                if (is_array($availableIncludes[$include])) {
+                    $includes = array_merge($includes, $availableIncludes[$include]);
+                } else {
+                    $includes[] = $availableIncludes[$include];
+                }
+            }
+        }
+
+        return $includes;
+    }
+
+    /**
+     * Apply filters to query with optimization
+     */
+    private function applyFilters($query, $request)
+    {
+        // Status filter
+        if ($request->filled('status')) {
+            if (is_array($request->status)) {
+                $query->whereIn('status', $request->status);
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        // Date range filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('invoice_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('invoice_date', '<=', $request->date_to);
+        }
+
+        // Customer filter
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        // Customer phone filter
+        if ($request->filled('customer_phone')) {
+            $query->where('customer_phone', 'like', '%' . $request->customer_phone . '%');
+        }
+
+        // Branch shop filter
+        if ($request->filled('branch_shop_id')) {
+            $query->where('branch_shop_id', $request->branch_shop_id);
+        }
+
+        // Sales channel filter
+        if ($request->filled('sales_channel')) {
+            $query->where('sales_channel', $request->sales_channel);
+        }
+
+        // Seller filter
+        if ($request->filled('sold_by')) {
+            $query->where('sold_by', $request->sold_by);
+        }
+
+        // Creator filter
+        if ($request->filled('created_by')) {
+            $query->where('created_by', $request->created_by);
+        }
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%")
+                  ->orWhere('customer_phone', 'like', "%{$search}%")
+                  ->orWhere('reference_number', 'like', "%{$search}%")
+                  ->orWhere('notes', 'like', "%{$search}%");
+            });
+        }
+    }
+
+    /**
+     * Apply sorting to query
+     */
+    private function applySorting($query, $request)
+    {
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        // Validate sort fields
+        $allowedSortFields = [
+            'id', 'invoice_number', 'invoice_date', 'due_date',
+            'total_amount', 'status', 'created_at', 'updated_at'
+        ];
+
+        if (in_array($sortBy, $allowedSortFields)) {
+            $query->orderBy($sortBy, $sortOrder === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->orderBy('created_at', 'desc');
         }
     }
 }

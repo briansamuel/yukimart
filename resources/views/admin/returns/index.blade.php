@@ -1,4 +1,4 @@
-@extends('admin.main-content')
+@extends('admin.layouts.tenant-app')
 
 @section('title', 'Quản lý đơn trả hàng')
 
@@ -24,7 +24,7 @@
                 @include('admin.returns.elements.filter')
 
                 <!--begin::Content-->
-                <div class="flex-lg-row-fluid ms-lg-15 order-2 order-lg-2">
+                <div class="flex-lg-row-fluid ms-lg-10 order-2 order-lg-2">
                     <div class="d-flex flex-column gap-7 gap-lg-10">
 
                         <!--begin::Card-->
@@ -380,6 +380,10 @@
                     if (window.returnTableManager) {
                         window.returnTableManager.loadData();
                     }
+                }, {
+                    module: 'returns',
+                    approversFilter: true,  // Enable approvers filter for return orders
+                    branchShopsFilter: true  // Enable branch shops filter
                 });
             } else {
                 console.error('KTGlobalFilter not found');

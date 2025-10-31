@@ -7,6 +7,8 @@ use App\Models\Invoice;
 use App\Models\ReturnOrder;
 use App\Models\Order;
 use App\Models\BankAccount;
+use App\Traits\FilterableTrait;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +16,7 @@ use Exception;
 
 class PaymentService
 {
+    use FilterableTrait;
     /**
      * Create payment record.
      */
@@ -291,5 +294,112 @@ class PaymentService
             'receipt_count' => $query->clone()->where('payment_type', 'receipt')->count(),
             'payment_count' => $query->clone()->where('payment_type', 'payment')->count(),
         ];
+    }
+
+    /**
+     * Get payments with filters using FilterableTrait
+     *
+     * @param Request $request
+     * @param int $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    public function getPaymentsWithFilters(Request $request, $perPage = 10)
+    {
+        // Build query with optimized relationships
+        $query = Payment::with([
+            'customer',
+            'branchShop',
+            'creator',
+            'collector',
+            'bankAccount'
+        ]);
+
+        // Apply search
+        $searchTerm = $request->input('search') ?? '';
+        if (!empty($searchTerm)) {
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('payment_number', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('customer', function($customerQuery) use ($searchTerm) {
+                      $customerQuery->where('name', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        // Apply common filters using FilterableTrait
+        $filterConfig = [
+            'searchColumns' => ['payment_number', 'description'],
+            'statusColumn' => 'status',
+            'userColumns' => [
+                'created_by' => 'creator_id',
+                'collector_id' => 'staff_id'
+            ],
+            'dateRangeColumns' => ['payment_date']
+        ];
+
+        $this->applyCommonFilters($query, $request, $filterConfig);
+
+        // Apply custom filters specific to payments
+        $this->applyPaymentCustomFilters($query, $request);
+
+        // Apply ordering
+        $query->orderBy('created_at', 'desc');
+
+        return $query->paginate($perPage);
+    }
+
+    /**
+     * Apply custom filters specific to payments
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param Request $request
+     * @return void
+     */
+    private function applyPaymentCustomFilters($query, Request $request)
+    {
+        // Payment type filter (multiple)
+        if ($request->filled('payment_type')) {
+            $paymentTypes = $request->payment_type;
+            if (is_array($paymentTypes)) {
+                $query->whereIn('payment_type', $paymentTypes);
+            } else {
+                // Handle comma-separated string
+                $types = explode(',', $paymentTypes);
+                $types = array_filter(array_map('trim', $types));
+                if (!empty($types)) {
+                    $query->whereIn('payment_type', $types);
+                }
+            }
+        }
+
+        // Payment method filter (multiple)
+        if ($request->filled('payment_method')) {
+            $paymentMethods = $request->payment_method;
+            if (is_array($paymentMethods)) {
+                $query->whereIn('payment_method', $paymentMethods);
+            } else {
+                // Handle comma-separated string
+                $methods = explode(',', $paymentMethods);
+                $methods = array_filter(array_map('trim', $methods));
+                if (!empty($methods)) {
+                    $query->whereIn('payment_method', $methods);
+                }
+            }
+        }
+
+        // Branch shop filter (multiple)
+        if ($request->filled('branch_shop_id')) {
+            $branchShopIds = $request->branch_shop_id;
+            if (is_array($branchShopIds)) {
+                $query->whereIn('branch_shop_id', $branchShopIds);
+            } else {
+                // Handle comma-separated string
+                $ids = explode(',', $branchShopIds);
+                $ids = array_filter(array_map('trim', $ids));
+                if (!empty($ids)) {
+                    $query->whereIn('branch_shop_id', $ids);
+                }
+            }
+        }
     }
 }

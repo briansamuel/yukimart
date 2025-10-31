@@ -1,0 +1,291 @@
+{
+	"info": {
+		"_postman_id": "fcm-routes-yukimart-2025",
+		"name": "YukiMart FCM Routes Collection",
+		"description": "Auto-generated FCM API routes from Laravel application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "yukimart-fcm-routes",
+		"_updated_at": "2025-08-08T15:46:00.000Z",
+		"_synced_from_routes": true
+	},
+	"item": [
+		{
+			"name": "FCM API Endpoints",
+			"item": [
+				{
+					"name": "Register FCM Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{yukimart_api_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{test_fcm_token}}\",\n  \"device_type\": \"android\",\n  \"device_name\": \"Test Device\",\n  \"app_version\": \"1.0.0\"\n}"
+						},
+						"url": {
+							"raw": "{{yukimart_base_url}}/api/v1/fcm/register-token",
+							"host": [
+								"{{yukimart_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fcm",
+								"register-token"
+							]
+						},
+						"description": "Register a new FCM token for the authenticated user"
+					}
+				},
+				{
+					"name": "Unregister FCM Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{yukimart_api_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{test_fcm_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{yukimart_base_url}}/api/v1/fcm/unregister-token",
+							"host": [
+								"{{yukimart_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fcm",
+								"unregister-token"
+							]
+						},
+						"description": "Unregister an FCM token for the authenticated user"
+					}
+				},
+				{
+					"name": "Get FCM Tokens",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{yukimart_api_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{yukimart_base_url}}/api/v1/fcm/tokens",
+							"host": [
+								"{{yukimart_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fcm",
+								"tokens"
+							]
+						},
+						"description": "Get all FCM tokens for the authenticated user"
+					}
+				},
+				{
+					"name": "Send Test Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{yukimart_api_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"🧪 Test Notification\",\n  \"message\": \"This is a test notification from Postman\",\n  \"type\": \"test\",\n  \"data\": {\n    \"test_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{yukimart_base_url}}/api/v1/fcm/test-notification",
+							"host": [
+								"{{yukimart_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fcm",
+								"test-notification"
+							]
+						},
+						"description": "Send a test notification to the authenticated user"
+					}
+				},
+				{
+					"name": "Get FCM Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{yukimart_api_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{yukimart_base_url}}/api/v1/fcm/statistics",
+							"host": [
+								"{{yukimart_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fcm",
+								"statistics"
+							]
+						},
+						"description": "Get FCM statistics for the authenticated user"
+					}
+				},
+				{
+					"name": "Send Custom Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{yukimart_api_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"📢 Custom Notification\",\n  \"message\": \"Custom notification message\",\n  \"type\": \"custom\",\n  \"target_type\": \"user\",\n  \"target_ids\": [12],\n  \"data\": {\n    \"action\": \"open_screen\",\n    \"screen\": \"dashboard\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{yukimart_base_url}}/api/v1/fcm/send-notification",
+							"host": [
+								"{{yukimart_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fcm",
+								"send-notification"
+							]
+						},
+						"description": "Send a custom notification to specific users or roles"
+					}
+				},
+				{
+					"name": "Test FCM Configuration",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{yukimart_api_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{yukimart_base_url}}/api/v1/fcm/test-config",
+							"host": [
+								"{{yukimart_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fcm",
+								"test-config"
+							]
+						},
+						"description": "Test FCM configuration and service account connectivity"
+					}
+				}
+			],
+			"description": "FCM API endpoints from Laravel routes"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-generate timestamp for requests",
+					"pm.environment.set('timestamp', new Date().toISOString());"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "collection_version",
+			"value": "1.0.0",
+			"type": "string"
+		}
+	]
+}

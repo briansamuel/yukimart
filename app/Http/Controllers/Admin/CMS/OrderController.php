@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin\CMS;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\BaseAdminController;
 use App\Services\OrderService;
 use App\Services\ValidationService;
 use Illuminate\Http\Request;
@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\OrdersExport;
 
-class OrderController extends Controller
+class OrderController extends BaseAdminController
 {
     protected $request;
     protected $validator;
@@ -19,6 +19,7 @@ class OrderController extends Controller
 
     public function __construct(Request $request, ValidationService $validator, OrderService $orderService)
     {
+        parent::__construct();
         $this->request = $request;
         $this->validator = $validator;
         $this->orderService = $orderService;

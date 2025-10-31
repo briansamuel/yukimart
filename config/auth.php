@@ -45,6 +45,16 @@ return [
             'provider' => 'admin',
         ],
 
+        'tenant' => [
+            'driver' => 'session',
+            'provider' => 'tenant',
+        ],
+
+        'platform' => [
+            'driver' => 'session',
+            'provider' => 'platform',
+        ],
+
         'api' => [
             'driver' => 'sanctum',
             'provider' => 'users',
@@ -80,6 +90,16 @@ return [
             'model' => App\Models\User::class,
         ],
 
+        'tenant' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
+
+        'platform' => [
+            'driver' => 'platform',
+            'model' => App\Models\User::class,
+        ],
+
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
@@ -111,6 +131,12 @@ return [
 
         'admin' => [
             'provider' => 'admin',
+            'table' => 'password_resets',
+            'expire' => 60,
+        ],
+
+        'tenant' => [
+            'provider' => 'tenant',
             'table' => 'password_resets',
             'expire' => 60,
         ],

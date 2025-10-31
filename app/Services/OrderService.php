@@ -10,6 +10,7 @@ use App\Models\InventoryTransaction;
 use App\Services\InventoryService;
 use App\Services\BaseQuickOrderService;
 use App\Services\PrefixGeneratorService;
+use App\Traits\FilterableTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,7 @@ use App\Events\OrderCreated;
 
 class OrderService extends BaseQuickOrderService
 {
+    use FilterableTrait;
     protected $order;
     protected $orderItem;
     protected $customer;
@@ -209,12 +211,17 @@ class OrderService extends BaseQuickOrderService
          
             // Generate order code using PrefixGeneratorService
             $orderCode = PrefixGeneratorService::generateOrderCode();
-          
+
+            // Get current tenant ID
+            $tenantContextService = app(\App\Services\TenantContextService::class);
+            $currentTenantId = $tenantContextService->getCurrentTenantId();
+
             // Create order with notifications temporarily disabled
             $order = new \App\Models\Order([
                 'order_code' => $orderCode,
                 'customer_id' => $customerId,
                 'branch_shop_id' => $data['branch_shop_id'] ?? null,
+                'tenant_id' => $currentTenantId,
                 'created_by' => Auth::id(),
                 'sold_by' => $data['sold_by'] ?? Auth::id(),
                 'channel' => $data['channel'] ?? 'direct',

@@ -1,4 +1,4 @@
-@extends('admin.index')
+@extends('admin.layouts.tenant-app')
 @section('page-header', 'Suppliers')
 @section('page-sub_header', 'Quản lý nhà cung cấp')
 @section('style')

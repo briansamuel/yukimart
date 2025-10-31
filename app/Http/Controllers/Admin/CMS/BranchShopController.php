@@ -22,7 +22,7 @@ class BranchShopController extends Controller
      */
     public function index()
     {
-        return view('admin.branch-shops.index');
+        return view('admin.settings.branch-manager');
     }
 
     /**
@@ -128,9 +128,12 @@ class BranchShopController extends Controller
         try {
             $branchShop = $this->branchShopService->findById($id);
             return view('admin.branch-shops.show', compact('branchShop'));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.settings.branch-manager')
+                ->with('error', 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập');
         } catch (\Exception $e) {
-            return redirect()->route('admin.branch-shops.index')
-                ->with('error', 'Không tìm thấy chi nhánh');
+            return redirect()->route('admin.settings.branch-manager')
+                ->with('error', 'Lỗi khi tải chi nhánh: ' . $e->getMessage());
         }
     }
 
@@ -144,9 +147,12 @@ class BranchShopController extends Controller
             $managers = $this->branchShopService->getManagersForDropdown();
             $warehouses = \App\Models\Warehouse::where('status', 'active')->orderBy('name')->get();
             return view('admin.branch-shops.edit', compact('branchShop', 'managers', 'warehouses'));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.settings.branch-manager')
+                ->with('error', 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập');
         } catch (\Exception $e) {
-            return redirect()->route('admin.branch-shops.index')
-                ->with('error', 'Không tìm thấy chi nhánh');
+            return redirect()->route('admin.settings.branch-manager')
+                ->with('error', 'Lỗi khi tải chi nhánh: ' . $e->getMessage());
         }
     }
 
@@ -201,6 +207,11 @@ class BranchShopController extends Controller
                 'data' => $branchShop
             ]);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập'
+            ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -222,6 +233,11 @@ class BranchShopController extends Controller
                 'message' => 'Xóa chi nhánh thành công'
             ]);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy chi nhánh hoặc bạn không có quyền truy cập'
+            ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -268,6 +284,68 @@ class BranchShopController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Lỗi khi tải danh sách chi nhánh: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available branch shops for branch switcher
+     */
+    public function getAvailableBranchShops()
+    {
+        try {
+            $branchShops = $this->branchShopService->getAvailableForSwitcher();
+
+            return response()->json([
+                'success' => true,
+                'data' => $branchShops
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tải danh sách chi nhánh: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Switch to a specific branch shop
+     */
+    public function switchBranchShop(Request $request)
+    {
+        $request->validate([
+            'branch_shop_id' => 'required|integer|exists:branch_shops,id'
+        ]);
+
+        try {
+            $branchContextService = app(\App\Services\BranchContextService::class);
+
+            $success = $branchContextService->switchToBranchShop($request->branch_shop_id);
+
+            if ($success) {
+                $branchShop = $branchContextService->getCurrentBranchShop();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Đã chuyển sang chi nhánh: {$branchShop->name}",
+                    'data' => [
+                        'branch_shop_id' => $branchShop->id,
+                        'branch_shop_name' => $branchShop->name,
+                        'branch_shop_code' => $branchShop->code
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không có quyền truy cập chi nhánh này'
+                ], 403);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi chuyển chi nhánh: ' . $e->getMessage()
             ], 500);
         }
     }

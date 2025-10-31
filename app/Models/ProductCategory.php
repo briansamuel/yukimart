@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Traits\UserTimeStamp;
+use App\Traits\TenantScoped;
 use Illuminate\Support\Str;
 
 class ProductCategory extends Model
 {
-    use HasFactory, SoftDeletes, UserTimeStamp;
+    use HasFactory, SoftDeletes, UserTimeStamp, TenantScoped;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'slug',
         'description',

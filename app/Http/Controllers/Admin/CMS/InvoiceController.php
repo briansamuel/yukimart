@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin\CMS;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\BaseTenantController;
 use App\Models\Invoice;
 use App\Models\Customer;
 use App\Models\Product;
@@ -17,7 +17,7 @@ use App\Traits\HandlesApiErrors;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class InvoiceController extends Controller
+class InvoiceController extends BaseTenantController
 {
     use FilterableTrait, HandlesApiErrors;
 
@@ -999,10 +999,17 @@ class InvoiceController extends Controller
     /**
      * Get detail panel for invoice row expansion
      */
-    public function getDetailPanel($id)
+    public function getDetailPanel()
     {
         try {
-            Log::info('Loading invoice detail panel', ['invoice_id' => $id]);
+            // Get invoice ID from route parameter (not method parameter to avoid subdomain conflict)
+            $id = request()->route('id');
+
+            Log::info('Loading invoice detail panel', [
+                'invoice_id' => $id,
+                'request_url' => request()->fullUrl(),
+                'route_params' => request()->route()->parameters()
+            ]);
 
             $invoice = Invoice::with([
                 'customer',

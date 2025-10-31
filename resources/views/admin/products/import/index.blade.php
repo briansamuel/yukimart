@@ -19,7 +19,7 @@
                         <span class="bullet bg-gray-400 w-5px h-2px"></span>
                     </li>
                     <li class="breadcrumb-item text-muted">
-                        <a href="{{ route('admin.products.list') }}" class="text-muted text-hover-primary">{{ __('product.products') }}</a>
+                        <a href="{{ route('admin.products.index') }}" class="text-muted text-hover-primary">{{ __('product.products') }}</a>
                     </li>
                     <li class="breadcrumb-item">
                         <span class="bullet bg-gray-400 w-5px h-2px"></span>
@@ -35,7 +35,7 @@
                     </i>
                     {{ __('product.download_template') }}
                 </a>
-                <a href="{{ route('admin.products.list') }}" class="btn btn-sm btn-secondary">
+                <a href="{{ route('admin.products.index') }}" class="btn btn-sm btn-secondary">
                     <i class="ki-duotone ki-arrow-left fs-2">
                         <span class="path1"></span>
                         <span class="path2"></span>

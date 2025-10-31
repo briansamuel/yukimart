@@ -65,13 +65,13 @@ class BaseTableManager {
         this.initScrollIndicators();
         this.initResponsiveHandlers();
         this.initPagination();
+        this.initVirtualScrollbar();
         this.initSearch();
         this.initColumnVisibility();
         this.initSelectAll();
         this.initBulkActions();
         
         this.isInitialized = true;
-        console.log(`${this.config.module} Table Manager initialized successfully`);
     }
     
     // Scroll indicators for horizontal scroll
@@ -884,7 +884,593 @@ class BaseTableManager {
         };
         return badges[method] || '<span class="badge badge-light">N/A</span>';
     }
-    
+
+    // ===== VIRTUAL SCROLLBAR FUNCTIONALITY =====
+
+    /**
+     * Initialize virtual scrollbar for table container
+     */
+    initVirtualScrollbar(options = {}) {
+        if (!this.tableContainer) return;
+
+        console.log(`Initializing virtual scrollbar for ${this.config.module} table`);
+
+        // Default virtual scrollbar options with hardcoded excluded selectors
+        const defaultOptions = {
+            enabled: true,
+            excludedSelectors: [
+                '.filter-sidebar',
+                '#orders_filter_sidebar',
+                '.dropdown-menu',
+                '.modal',
+                '.popover',
+                '.tooltip'
+            ]
+        };
+
+        // Merge options: config options override defaults, parameter options override both
+        this.virtualScrollbarOptions = {
+            ...defaultOptions,
+            ...options
+        };
+
+        // If virtual scrollbar is disabled, skip initialization
+        if (!this.virtualScrollbarOptions.enabled) {
+            console.log('Virtual scrollbar disabled for', this.config.module);
+            return;
+        }
+
+        // Create virtual scrollbar container
+        this.createVirtualScrollbar();
+
+        // Setup scroll synchronization
+        this.setupScrollSync();
+
+        // Update on content changes
+        this.updateVirtualScrollbar();
+
+        // Add window resize listener
+        window.addEventListener('resize', () => {
+            this.updateVirtualScrollbar();
+        });
+    }
+
+    /**
+     * Create virtual scrollbar HTML and styles
+     */
+    createVirtualScrollbar() {
+        // Remove existing virtual scrollbars if any
+        const existingScrollbars = document.querySelectorAll('.virtual-scrollbar-container, .fixed-virtual-scrollbar');
+        existingScrollbars.forEach(el => el.remove());
+
+        // Remove existing styles
+        const existingStyles = document.querySelectorAll('style[data-fixed-scrollbar]');
+        existingStyles.forEach(el => el.remove());
+
+        console.log('Virtual scrollbar styles added');
+
+        // Calculate initial thumb height
+        const containerHeight = this.tableContainer.clientHeight;
+        const scrollHeight = this.tableContainer.scrollHeight;
+        const screenHeight = window.innerHeight;
+
+        const contentRatio = containerHeight / scrollHeight;
+        const minThumbHeight = 40;
+        const maxThumbHeight = screenHeight * 0.3;
+        let thumbHeight = contentRatio * screenHeight * 0.6;
+        thumbHeight = Math.max(minThumbHeight, Math.min(maxThumbHeight, thumbHeight));
+
+        // Add CSS styles for fixed virtual scrollbar with dynamic thumb height
+        const style = document.createElement('style');
+        style.setAttribute('data-fixed-scrollbar', 'true');
+        style.textContent = `
+            .fixed-virtual-scrollbar {
+                position: fixed !important;
+                right: 0 !important;
+                top: 0 !important;
+                width: 8px !important;
+                height: 100% !important;
+                background: rgba(0, 0, 0, 0.05) !important;
+                border-radius: 0 !important;
+                z-index: 9999 !important;
+                opacity: 0.6 !important;
+                transition: opacity 0.3s ease !important;
+                display: block !important;
+            }
+
+            .fixed-virtual-scrollbar:hover {
+                opacity: 1 !important;
+                background: rgba(0, 0, 0, 0.08) !important;
+            }
+
+            .fixed-virtual-thumb {
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: ${thumbHeight}px !important;
+                background: rgba(0, 0, 0, 0.3) !important;
+                border-radius: 4px !important;
+                cursor: pointer !important;
+                transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                min-height: 40px !important;
+                transform: translateZ(0) !important;
+            }
+
+            .fixed-virtual-thumb:hover {
+                background: rgba(0, 0, 0, 0.5) !important;
+            }
+
+            .fixed-virtual-thumb:active {
+                background: rgba(0, 0, 0, 0.7) !important;
+            }
+        `;
+
+        document.head.appendChild(style);
+
+        // Create fixed virtual scrollbar HTML
+        const scrollbarHtml = `
+            <div class="fixed-virtual-scrollbar">
+                <div class="fixed-virtual-thumb"></div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', scrollbarHtml);
+        console.log('Virtual scrollbar HTML created');
+    }
+
+    /**
+     * Setup scroll synchronization between table and virtual scrollbar
+     */
+    setupScrollSync() {
+        const fixedScrollbar = document.querySelector('.fixed-virtual-scrollbar');
+        const fixedThumb = document.querySelector('.fixed-virtual-thumb');
+
+        if (!fixedScrollbar || !fixedThumb) return;
+
+        // Calculate dimensions
+        const containerHeight = this.tableContainer.clientHeight;
+        const scrollHeight = this.tableContainer.scrollHeight;
+        const screenHeight = window.innerHeight;
+
+        const contentRatio = containerHeight / scrollHeight;
+        const minThumbHeight = 40;
+        const maxThumbHeight = screenHeight * 0.3;
+        let thumbHeight = contentRatio * screenHeight * 0.6;
+        thumbHeight = Math.max(minThumbHeight, Math.min(maxThumbHeight, thumbHeight));
+
+        fixedThumb.style.setProperty('height', thumbHeight + 'px', 'important');
+
+        // Update thumb position function - use class method for consistency
+        const updateThumbPosition = () => {
+            this.updateVirtualScrollbarPosition();
+        };
+
+        updateThumbPosition();
+
+        // Drag functionality
+        let isDragging = false;
+        let startY = 0;
+        let startScrollTop = 0;
+
+        fixedThumb.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            startScrollTop = this.tableContainer.scrollTop;
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+            e.preventDefault();
+        });
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+
+            const deltaY = e.clientY - startY;
+            const scrollbarHeight = screenHeight - thumbHeight;
+            const scrollRatio = deltaY / scrollbarHeight;
+            const maxScrollTop = scrollHeight - containerHeight;
+            const newScrollTop = startScrollTop + (scrollRatio * maxScrollTop);
+
+            this.tableContainer.scrollTop = Math.max(0, Math.min(maxScrollTop, newScrollTop));
+        };
+
+        const onMouseUp = () => {
+            isDragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        // Improved wheel scroll functionality
+        fixedScrollbar.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const delta = e.deltaY;
+
+            // Dynamic scroll sensitivity
+            let scrollAmount;
+            if (Math.abs(delta) > 120) {
+                scrollAmount = 120; // Very fast
+            } else if (Math.abs(delta) > 80) {
+                scrollAmount = 80; // Fast
+            } else if (Math.abs(delta) > 40) {
+                scrollAmount = 50; // Medium
+            } else {
+                scrollAmount = 25; // Slow
+            }
+
+            const currentScrollTop = this.tableContainer.scrollTop;
+            const maxScrollTop = scrollHeight - containerHeight;
+            const newScrollTop = currentScrollTop + (delta > 0 ? scrollAmount : -scrollAmount);
+
+            this.tableContainer.scrollTop = Math.max(0, Math.min(maxScrollTop, newScrollTop));
+        }, { passive: false });
+
+        // Listen to table scroll
+        this.tableContainer.addEventListener('scroll', updateThumbPosition);
+
+        // Global wheel event listener for scrolling anywhere on screen (except excluded elements)
+        const rawGlobalWheelHandler = (e) => {
+            console.log('Global wheel handler triggered, target:', e.target);
+            console.log('this context:', this);
+            console.log('this.isElementExcluded:', typeof this.isElementExcluded);
+
+            // Check if the event target is within any excluded elements
+            if (this.isElementExcluded && this.isElementExcluded(e.target)) {
+                console.log('Event excluded by isElementExcluded');
+                return; // Don't handle scroll events from excluded elements
+            }
+
+            // Allow wheel events on the table container itself, but exclude specific child elements
+            // that should handle their own scroll (like .table-responsive when it has its own scrollbar)
+            if (this.tableContainer.contains(e.target) && e.target !== this.tableContainer) {
+                // Check if target is a scrollable element that should handle its own scroll
+                const scrollableChild = e.target.closest('.table-responsive');
+                if (scrollableChild && scrollableChild !== this.tableContainer) {
+                    // Only exclude if the scrollable child actually has overflow
+                    const computedStyle = window.getComputedStyle(scrollableChild);
+                    const hasHorizontalScroll = computedStyle.overflowX === 'auto' || computedStyle.overflowX === 'scroll';
+                    const hasVerticalScroll = computedStyle.overflowY === 'auto' || computedStyle.overflowY === 'scroll';
+
+                    if (hasHorizontalScroll || hasVerticalScroll) {
+                        console.log('Event excluded - target is within scrollable child element');
+                        return; // Let the scrollable child handle its own scroll events
+                    }
+                }
+            }
+
+            // Prevent default scroll behavior on body/document
+            e.preventDefault();
+            e.stopPropagation();
+
+            const delta = e.deltaY;
+
+            // Dynamic scroll sensitivity (same as virtual scrollbar)
+            let scrollAmount;
+            if (Math.abs(delta) > 120) {
+                scrollAmount = 120; // Very fast
+            } else if (Math.abs(delta) > 80) {
+                scrollAmount = 80; // Fast
+            } else if (Math.abs(delta) > 40) {
+                scrollAmount = 50; // Medium
+            } else {
+                scrollAmount = 25; // Slow
+            }
+
+            // Get current scroll dimensions
+            const currentScrollTop = this.tableContainer.scrollTop;
+            const currentScrollHeight = this.tableContainer.scrollHeight;
+            const currentContainerHeight = this.tableContainer.clientHeight;
+            const maxScrollTop = currentScrollHeight - currentContainerHeight;
+            const newScrollTop = currentScrollTop + (delta > 0 ? scrollAmount : -scrollAmount);
+
+            // Smooth scroll the table container
+            const targetScrollTop = Math.max(0, Math.min(maxScrollTop, newScrollTop));
+            this.smoothScrollTo(targetScrollTop);
+
+            console.log('Global wheel scroll:', {
+                delta,
+                scrollAmount,
+                direction: delta > 0 ? 'down' : 'up',
+                newScrollTop: this.tableContainer.scrollTop,
+                maxScrollTop
+            });
+        };
+
+        // Throttle wheel events for smoother scrolling
+        let wheelTimeout = null;
+        const globalWheelHandler = (e) => {
+            // Clear existing timeout
+            if (wheelTimeout) {
+                clearTimeout(wheelTimeout);
+            }
+
+            // Immediate response for better UX
+            rawGlobalWheelHandler(e);
+
+            // Throttle subsequent events
+            wheelTimeout = setTimeout(() => {
+                wheelTimeout = null;
+            }, 16); // ~60fps
+        };
+
+        // Add global wheel event listener to document
+        document.addEventListener('wheel', globalWheelHandler, { passive: false });
+
+        // Store reference for cleanup
+        this.globalWheelHandler = globalWheelHandler;
+
+        // Add wheel event listeners to excluded elements to prevent virtual scrollbar
+        this.setupExcludedElementListeners();
+    }
+
+    /**
+     * Check if element is excluded from virtual scrollbar wheel events
+     * @param {Element} target - The target element to check
+     * @returns {boolean} - True if element should be excluded
+     */
+    isElementExcluded(target) {
+        if (!this.virtualScrollbarOptions || !this.virtualScrollbarOptions.excludedSelectors) {
+            console.log('No excluded selectors configured');
+            return false;
+        }
+
+        console.log('Checking excluded selectors for target:', target);
+        console.log('Excluded selectors:', this.virtualScrollbarOptions.excludedSelectors);
+
+        // Check each excluded selector
+        for (const selector of this.virtualScrollbarOptions.excludedSelectors) {
+            try {
+                const excludedElement = document.querySelector(selector);
+                console.log(`Checking selector "${selector}":`, excludedElement);
+                if (excludedElement && excludedElement.contains(target)) {
+                    console.log(`Target is excluded by selector: ${selector}`);
+                    return true;
+                }
+            } catch (error) {
+                console.warn(`Invalid selector in excludedSelectors: ${selector}`, error);
+            }
+        }
+
+        console.log('Target is not excluded');
+        return false;
+    }
+
+    /**
+     * Auto-detect filter sidebar selectors on the page
+     * @returns {Array} Array of detected selectors
+     */
+    detectFilterSidebarSelectors() {
+        const detectedSelectors = [];
+
+        // Common filter sidebar selectors to check
+        const possibleSelectors = [
+            '.filter-sidebar',
+            '.app-aside',
+            `#${this.config.module}_filter_sidebar`,
+            '.sidebar-filter',
+            '.filter-panel'
+        ];
+
+        possibleSelectors.forEach(selector => {
+            try {
+                const element = document.querySelector(selector);
+                if (element) {
+                    detectedSelectors.push(selector);
+                    console.log(`Detected filter sidebar: ${selector}`);
+                }
+            } catch (error) {
+                console.warn(`Failed to check selector: ${selector}`, error);
+            }
+        });
+
+        return detectedSelectors;
+    }
+
+    /**
+     * Setup wheel event listeners on excluded elements to prevent virtual scrollbar
+     */
+    setupExcludedElementListeners() {
+        console.log('setupExcludedElementListeners called');
+        console.log('virtualScrollbarOptions:', this.virtualScrollbarOptions);
+
+        if (!this.virtualScrollbarOptions || !this.virtualScrollbarOptions.excludedSelectors) {
+            console.log('No excluded selectors found, returning early');
+            return;
+        }
+
+        console.log('Setting up excluded element listeners for:', this.virtualScrollbarOptions.excludedSelectors);
+        this.excludedElementListeners = [];
+
+        // Add wheel event listeners to each excluded element
+        this.virtualScrollbarOptions.excludedSelectors.forEach(selector => {
+            try {
+                const element = document.querySelector(selector);
+                if (element) {
+                    const wheelHandler = (e) => {
+                        // Stop the event from bubbling to prevent virtual scrollbar
+                        e.stopPropagation();
+                        console.log(`Wheel event stopped for excluded element: ${selector}`);
+                    };
+
+                    element.addEventListener('wheel', wheelHandler, { passive: false });
+
+                    // Store reference for cleanup
+                    this.excludedElementListeners.push({
+                        element: element,
+                        handler: wheelHandler,
+                        selector: selector
+                    });
+
+                    console.log(`Added wheel listener to excluded element: ${selector}`);
+                }
+            } catch (error) {
+                console.warn(`Failed to add wheel listener to selector: ${selector}`, error);
+            }
+        });
+    }
+
+    /**
+     * Add excluded selectors to virtual scrollbar options
+     * @param {string|Array} selectors - Selector(s) to exclude from wheel events
+     */
+    addExcludedSelectors(selectors) {
+        if (!this.virtualScrollbarOptions) {
+            this.virtualScrollbarOptions = { excludedSelectors: [] };
+        }
+
+        if (!this.virtualScrollbarOptions.excludedSelectors) {
+            this.virtualScrollbarOptions.excludedSelectors = [];
+        }
+
+        const selectorsArray = Array.isArray(selectors) ? selectors : [selectors];
+        this.virtualScrollbarOptions.excludedSelectors.push(...selectorsArray);
+    }
+
+    /**
+     * Remove excluded selectors from virtual scrollbar options
+     * @param {string|Array} selectors - Selector(s) to remove from exclusion
+     */
+    removeExcludedSelectors(selectors) {
+        if (!this.virtualScrollbarOptions || !this.virtualScrollbarOptions.excludedSelectors) {
+            return;
+        }
+
+        const selectorsArray = Array.isArray(selectors) ? selectors : [selectors];
+        selectorsArray.forEach(selector => {
+            const index = this.virtualScrollbarOptions.excludedSelectors.indexOf(selector);
+            if (index > -1) {
+                this.virtualScrollbarOptions.excludedSelectors.splice(index, 1);
+            }
+        });
+    }
+
+    /**
+     * Update virtual scrollbar position based on table scroll
+     */
+    updateVirtualScrollbarPosition() {
+        const fixedThumb = document.querySelector('.fixed-virtual-thumb');
+
+        if (!this.tableContainer || !fixedThumb) return;
+
+        const containerHeight = this.tableContainer.clientHeight;
+        const scrollHeight = this.tableContainer.scrollHeight;
+        const screenHeight = window.innerHeight;
+
+        if (scrollHeight <= containerHeight) return;
+
+        const scrollTop = this.tableContainer.scrollTop;
+        const maxScrollTop = scrollHeight - containerHeight;
+        const scrollPercentage = maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
+
+        // Get thumb height from computed style, not inline style
+        const thumbHeight = parseFloat(getComputedStyle(fixedThumb).height) || 332;
+        const maxThumbTop = screenHeight - thumbHeight;
+        const thumbTop = scrollPercentage * maxThumbTop;
+
+        fixedThumb.style.setProperty('top', thumbTop + 'px', 'important');
+
+        console.log('Thumb position updated:', {
+            scrollTop: scrollTop,
+            scrollPercentage: (scrollPercentage * 100).toFixed(2) + '%',
+            thumbTop: thumbTop + 'px',
+            thumbHeight: thumbHeight + 'px'
+        });
+    }
+
+    /**
+     * Update virtual scrollbar dimensions and visibility
+     */
+    updateVirtualScrollbar() {
+        const fixedScrollbar = document.querySelector('.fixed-virtual-scrollbar');
+        const fixedThumb = document.querySelector('.fixed-virtual-thumb');
+
+        if (!this.tableContainer || !fixedScrollbar || !fixedThumb) return;
+
+        const containerHeight = this.tableContainer.clientHeight;
+        const scrollHeight = this.tableContainer.scrollHeight;
+        const needsScrollbar = scrollHeight > containerHeight;
+
+        if (needsScrollbar) {
+            // Show virtual scrollbar
+            fixedScrollbar.style.setProperty('display', 'block', 'important');
+
+            // Calculate thumb height proportional to visible content
+            const screenHeight = window.innerHeight;
+            const contentRatio = containerHeight / scrollHeight;
+            const minThumbHeight = 40;
+            const maxThumbHeight = screenHeight * 0.3;
+            let thumbHeight = contentRatio * screenHeight * 0.6;
+            thumbHeight = Math.max(minThumbHeight, Math.min(maxThumbHeight, thumbHeight));
+
+            fixedThumb.style.setProperty('height', thumbHeight + 'px', 'important');
+
+            console.log('Virtual scrollbar updated - needs scrollbar:', needsScrollbar);
+        } else {
+            // Hide virtual scrollbar
+            fixedScrollbar.style.setProperty('display', 'none', 'important');
+        }
+
+        // Update thumb position
+        this.updateVirtualScrollbarPosition();
+    }
+
+    /**
+     * Smooth scroll to target position
+     * @param {number} targetScrollTop - Target scroll position
+     */
+    smoothScrollTo(targetScrollTop) {
+        // Cancel any existing animation
+        if (this.scrollAnimation) {
+            cancelAnimationFrame(this.scrollAnimation);
+        }
+
+        const startScrollTop = this.tableContainer.scrollTop;
+        const distance = targetScrollTop - startScrollTop;
+        const duration = 150; // 150ms for smooth but responsive scrolling
+        const startTime = performance.now();
+
+        const easeOutCubic = (t) => {
+            return 1 - Math.pow(1 - t, 3);
+        };
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutCubic(progress);
+
+            const currentScrollTop = startScrollTop + (distance * easedProgress);
+            this.tableContainer.scrollTop = currentScrollTop;
+
+            if (progress < 1) {
+                this.scrollAnimation = requestAnimationFrame(animate);
+            } else {
+                this.scrollAnimation = null;
+            }
+        };
+
+        this.scrollAnimation = requestAnimationFrame(animate);
+    }
+
+    /**
+     * Cleanup virtual scrollbar event listeners
+     */
+    cleanupVirtualScrollbar() {
+        if (this.globalWheelHandler) {
+            document.removeEventListener('wheel', this.globalWheelHandler);
+            this.globalWheelHandler = null;
+        }
+
+        // Clean up excluded element listeners
+        if (this.excludedElementListeners) {
+            this.excludedElementListeners.forEach(({ element, handler, selector }) => {
+                element.removeEventListener('wheel', handler);
+                console.log(`Removed wheel listener from excluded element: ${selector}`);
+            });
+            this.excludedElementListeners = null;
+        }
+    }
+
 }
 
 // Export for use in other files

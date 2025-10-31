@@ -2,20 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Tenant\BaseTenantController;
 use App\Services\DashboardService;
-use App\Services\UserService;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 
-class DashboardController extends Controller
+class DashboardController extends BaseTenantController
 {
     
 
     public function __construct()
     {
-        
-        
+        parent::__construct();
     }
 
     /** 
@@ -64,25 +62,31 @@ class DashboardController extends Controller
             $periodStats = $this->getPeriodStats($dateRange);
 
             // Calculate invoice and return order totals for the period
-            $totalInvoiceAmount = \App\Models\Invoice::whereIn('status', ['paid', 'completed'])
+            $tenantId = $this->getCurrentTenantId();
+
+            $totalInvoiceAmount = \App\Models\Invoice::where('tenant_id', $tenantId)
+                ->whereIn('status', ['paid', 'completed'])
                 ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
                 ->sum('total_amount');
 
-            $totalReturnAmount = \App\Models\ReturnOrder::whereIn('status', ['approved', 'completed'])
+            $totalReturnAmount = \App\Models\ReturnOrder::where('tenant_id', $tenantId)
+                ->whereIn('status', ['approved', 'completed'])
                 ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
                 ->sum('total_amount');
 
             $stats = [
                 // Overall totals (not filtered by period)
                 'total_orders' => DashboardService::totalOrders(),
-                'total_invoices' => \App\Models\Invoice::count(),
+                'total_invoices' => \App\Models\Invoice::where('tenant_id', $tenantId)->count(),
                 'total_products' => DashboardService::totalProducts(),
                 'total_customers' => DashboardService::totalCustomers(),
                 'total_users' => DashboardService::totalUsers(),
                 'active_users' => DashboardService::activeUsers(),
-                'low_stock_products' => \App\Models\Product::where('reorder_point', '>', 0)
-                    ->whereHas('inventory', function($query) {
-                        $query->whereRaw('quantity <= reorder_point');
+                'low_stock_products' => \App\Models\Product::where('tenant_id', $tenantId)
+                    ->where('reorder_point', '>', 0)
+                    ->whereHas('inventory', function($query) use ($tenantId) {
+                        $query->where('tenant_id', $tenantId)
+                              ->whereRaw('quantity <= reorder_point');
                     })->count(),
 
                 // Period-specific statistics
@@ -169,7 +173,10 @@ class DashboardController extends Controller
     public function getRecentOrders()
     {
         try {
-            $orders = \App\Models\Order::with(['customer'])
+            $tenantId = $this->getCurrentTenantId();
+
+            $orders = \App\Models\Order::where('tenant_id', $tenantId)
+                ->with(['customer'])
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
                 ->get()
@@ -202,13 +209,17 @@ class DashboardController extends Controller
     public function getTopProducts()
     {
         try {
+            $tenantId = $this->getCurrentTenantId();
+
             $products = \App\Models\Product::select('products.*')
                 ->selectRaw('COALESCE(SUM(order_items.quantity), 0) as sold_quantity')
                 ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-                ->leftJoin('orders', function($join) {
+                ->leftJoin('orders', function($join) use ($tenantId) {
                     $join->on('order_items.order_id', '=', 'orders.id')
-                         ->where('orders.status', '=', 'completed');
+                         ->where('orders.status', '=', 'completed')
+                         ->where('orders.tenant_id', '=', $tenantId);
                 })
+                ->where('products.tenant_id', $tenantId)
                 ->groupBy('products.id')
                 ->orderBy('sold_quantity', 'desc')
                 ->limit(10)
@@ -331,8 +342,11 @@ class DashboardController extends Controller
      */
     private function getPeriodStats($dateRange)
     {
+        $tenantId = $this->getCurrentTenantId();
+
         // Get orders for the period
-        $orders = \App\Models\Order::whereIn('status', ['processing', 'completed'])
+        $orders = \App\Models\Order::where('tenant_id', $tenantId)
+            ->whereIn('status', ['processing', 'completed'])
             ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
             ->get();
 
@@ -354,6 +368,7 @@ class DashboardController extends Controller
      */
     private function generateRevenueChartData($dateRange, $period)
     {
+        $tenantId = $this->getCurrentTenantId();
         $categories = [];
         $data = [];
         $seriesName = '';
@@ -370,7 +385,8 @@ class DashboardController extends Controller
                     $hourStart = $dateRange['start']->copy()->addHours($hour);
                     $hourEnd = $dateRange['start']->copy()->addHours($hour + 3);
 
-                    $revenue = \App\Models\Order::whereIn('status', ['processing', 'completed'])
+                    $revenue = \App\Models\Order::where('tenant_id', $tenantId)
+                        ->whereIn('status', ['processing', 'completed'])
                         ->whereBetween('created_at', [$hourStart, $hourEnd])
                         ->sum('final_amount');
 
@@ -392,7 +408,8 @@ class DashboardController extends Controller
                     $dayStart = $startDate->copy()->startOfDay();
                     $dayEnd = $startDate->copy()->endOfDay();
 
-                    $revenue = \App\Models\Order::whereIn('status', ['processing', 'completed'])
+                    $revenue = \App\Models\Order::where('tenant_id', $tenantId)
+                        ->whereIn('status', ['processing', 'completed'])
                         ->whereBetween('created_at', [$dayStart, $dayEnd])
                         ->sum('final_amount');
 
@@ -412,7 +429,8 @@ class DashboardController extends Controller
                     $monthStart = Carbon::create($dateRange['start']->year, $month, 1)->startOfMonth();
                     $monthEnd = Carbon::create($dateRange['start']->year, $month, 1)->endOfMonth();
 
-                    $revenue = \App\Models\Order::whereIn('status', ['processing', 'completed'])
+                    $revenue = \App\Models\Order::where('tenant_id', $tenantId)
+                        ->whereIn('status', ['processing', 'completed'])
                         ->whereBetween('created_at', [$monthStart, $monthEnd])
                         ->sum('final_amount');
 

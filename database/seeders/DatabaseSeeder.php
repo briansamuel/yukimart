@@ -14,8 +14,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        $this->command->info('🚀 Starting YukiMart Database Seeding...');
+
         $this->call([
+            // Core system seeders
             RolesAndPermissionsSeeder::class,
+
+            // Platform users (superadmin, admin, dev, manager, support)
+            PlatformUsersSeeder::class,
+
+            // Original seeders
             UsersTableSeeder::class,
             PageSeeder::class,
             BranchShopSeeder::class,
@@ -31,6 +39,23 @@ class DatabaseSeeder extends Seeder
             BankAccountSeeder::class,
             PaymentSeeder::class,
             TestDataSeeder::class,
+
+            // Tenant test data (includes tenant users)
+            TenantTestDataSeeder::class,
+
+            // Update all user passwords to 123456
+            UpdateTenantUsersPasswordSeeder::class,
         ]);
+
+        $this->command->info('🎉 YukiMart Database Seeding Completed!');
+        $this->command->info('');
+        $this->command->info('🔐 Default Login Credentials:');
+        $this->command->info('   Platform Users: superadmin@yukimart.local / 123456');
+        $this->command->info('   Tenant Users: All passwords set to 123456');
+        $this->command->info('');
+        $this->command->info('🌐 Access URLs:');
+        $this->command->info('   Platform: http://yukimart.local/admin/login');
+        $this->command->info('   TechMart: http://tenant1.yukimart.local/admin/login');
+        $this->command->info('   Fashion:  http://tenant2.yukimart.local/admin/login');
     }
 }

@@ -17,7 +17,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const HOME = '/home';
+    public const HOME = '/admin/dashboard';
 
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
@@ -28,17 +28,50 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
 
+        // Register explicit route model bindings to avoid conflicts with {tenant} subdomain parameter
+        $this->registerModelBindings();
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));
+
+            // Load platform routes FIRST to avoid subdomain conflicts
+            Route::middleware('web')
+                ->group(base_path('routes/platform.php'));
+
+            // Load tenant routes (handles subdomain routing) with web middleware
+            Route::middleware('web')
+                ->group(base_path('routes/tenant.php'));
+
+            // Load analytics routes
+            Route::middleware('web')
+                ->group(base_path('routes/analytics.php'));
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
 
             Route::middleware('web')->namespace('Admin')
                 ->group(base_path('routes/admin.php'));
+
+            Route::middleware('web')
+                ->group(base_path('routes/business.php'));
         });
+    }
+
+    /**
+     * Register explicit route model bindings.
+     *
+     * NOTE: Route model binding is NOT used for tenant-scoped models like Product
+     * because binding happens BEFORE middleware execution, so tenant context is not available yet.
+     * Instead, we manually query products in controller methods using tenant scope.
+     *
+     * @return void
+     */
+    protected function registerModelBindings()
+    {
+        // No bindings for tenant-scoped models
+        // Products are manually queried in controllers after tenant middleware runs
     }
 
     /**

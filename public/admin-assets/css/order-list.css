@@ -274,3 +274,29 @@
         min-width: 100px !important;
     }
 }
+
+/* ===== HORIZONTAL SCROLL FOR TABLE CONTAINER ===== */
+/* .kt_table_responsive_container {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+} */
+
+/* Style for horizontal scrollbar */
+/* .kt_table_responsive_container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.kt_table_responsive_container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.kt_table_responsive_container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.kt_table_responsive_container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+} */

@@ -29,6 +29,9 @@ class ReturnTableManager extends BaseTableManager {
     init() {
         console.log('Initializing ReturnTableManager...');
 
+        // Load saved filter state before initializing
+        this.loadSavedFilterState();
+
         // Call parent init first to get all base functionality
         super.init();
 
@@ -36,7 +39,72 @@ class ReturnTableManager extends BaseTableManager {
         this.bindRowEvents();
         this.bindGlobalFunctions();
 
+        // Create border spans for detail panel visual separation
+        this.createBorderSpans();
+
         console.log('ReturnTableManager initialized successfully');
+    }
+
+    /**
+     * Load saved filter state from localStorage
+     */
+    loadSavedFilterState() {
+        if (typeof window.KTGlobalFilter !== 'undefined') {
+            const savedState = window.KTGlobalFilter.loadFilterState('returns');
+            if (savedState) {
+                // Merge saved state with current filters
+                this.currentFilters = { ...this.currentFilters, ...savedState };
+                console.log('Loaded saved filter state:', this.currentFilters);
+            }
+        }
+    }
+
+    /**
+     * Save current filter state to localStorage
+     */
+    saveFilterState() {
+        if (typeof window.KTGlobalFilter !== 'undefined') {
+            window.KTGlobalFilter.saveFilterState('returns', this.currentFilters);
+        }
+    }
+
+    /**
+     * Create border spans for detail panel visual separation
+     */
+    createBorderSpans() {
+        const tableContainer = document.getElementById('kt_returns_table_container');
+        if (!tableContainer) return;
+
+        // Create top border span
+        const topBorderSpan = document.createElement('div');
+        topBorderSpan.className = 'detail-panel-border-top';
+        topBorderSpan.style.cssText = `
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e4e6ea;
+            z-index: 5;
+            display: none;
+        `;
+
+        // Create bottom border span
+        const bottomBorderSpan = document.createElement('div');
+        bottomBorderSpan.className = 'detail-panel-border-bottom';
+        bottomBorderSpan.style.cssText = `
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e4e6ea;
+            z-index: 5;
+            display: none;
+        `;
+
+        tableContainer.appendChild(topBorderSpan);
+        tableContainer.appendChild(bottomBorderSpan);
+
+        console.log('Border spans created for detail panels');
     }
 
     // Bind action functions to global scope for onclick handlers
@@ -73,6 +141,9 @@ class ReturnTableManager extends BaseTableManager {
 
         const filterData = this.getFilterData();
         console.log('Loading returns with filters:', filterData);
+
+        // Save current filter state
+        this.saveFilterState();
 
         // Show loading states
         this.showLoading('table', 'Đang tải dữ liệu...');
@@ -158,6 +229,11 @@ class ReturnTableManager extends BaseTableManager {
                 const name = $input.attr('name') || $input.attr('id');
 
                 if (name) {
+                    // Skip time_filter_display radio buttons - we'll use hidden #time_filter instead
+                    if (name === 'time_filter_display') {
+                        return; // Skip this input
+                    }
+
                     if ($input.is(':checkbox')) {
                         if (name === 'status[]') {
                             // Handle status checkboxes - collect into status array
@@ -181,7 +257,7 @@ class ReturnTableManager extends BaseTableManager {
                         if ($input.is(':checked')) {
                             data[name] = $input.val();
                         }
-                    } else if ($input.is('select, input[type="text"], input[type="date"], input[type="datetime-local"]')) {
+                    } else if ($input.is('select, input[type="text"], input[type="date"], input[type="datetime-local"], input[type="hidden"]')) {
                         const value = $input.val();
                         if (value && typeof value === 'string' && value.trim() !== '') {
                             data[name] = value.trim();
@@ -200,10 +276,10 @@ class ReturnTableManager extends BaseTableManager {
             // Fallback to manual filter collection if form not found
             console.log('Filter form not found, using fallback method');
 
-            // Time filter
-            const timeFilter = document.querySelector('input[name="time_filter"]:checked');
-            if (timeFilter) {
-                data.time_filter = timeFilter.value;
+            // Time filter - use hidden input #time_filter
+            const timeFilterInput = document.getElementById('time_filter');
+            if (timeFilterInput && timeFilterInput.value) {
+                data.time_filter = timeFilterInput.value;
             }
 
             // Status filter
@@ -234,8 +310,13 @@ class ReturnTableManager extends BaseTableManager {
 
         const rows = returns.map(returnOrder => this.renderReturnRow(returnOrder)).join('');
         tbody.innerHTML = rows;
-        
+
         this.bindRowEvents();
+
+        // Update virtual scrollbar after data is rendered
+        setTimeout(() => {
+            this.updateVirtualScrollbar();
+        }, 100);
     }
 
     // Render single return row
@@ -501,6 +582,10 @@ class ReturnTableManager extends BaseTableManager {
         const $existingDetailRow = $row.next('.return-detail-row');
         if ($existingDetailRow.length) {
             console.log('Detail row exists, collapsing...');
+
+            // Clean up border elements before collapsing
+            this.cleanupBorderElements();
+
             $existingDetailRow.slideUp(300, () => {
                 $existingDetailRow.remove();
             });
@@ -564,13 +649,16 @@ class ReturnTableManager extends BaseTableManager {
             url: `/admin/returns/${returnId}/detail-panel`,
             type: 'GET',
             success: (response) => {
-                console.log('Return detail loaded successfully');
+                console.log('Return detail loaded successfully', response);
 
-                // Cache the response
-                this.setCachedData(cacheKey, response);
+                // Extract HTML from response (controller returns JSON with html property)
+                const html = response.html || response;
 
-                // Replace loading placeholder with actual content (similar to invoice-manager.js)
-                $detailRow.find('.loading-placeholder').replaceWith(response);
+                // Cache the HTML content
+                this.setCachedData(cacheKey, html);
+
+                // Replace loading placeholder with actual content
+                $detailRow.find('.loading-placeholder').replaceWith(html);
 
                 // Initialize any JavaScript components in the detail panel
                 this.initDetailPanelComponents($detailRow);
@@ -670,6 +758,28 @@ class ReturnTableManager extends BaseTableManager {
         if (firstTabId) {
             this.lazyLoadedTabs.add(firstTabId);
         }
+
+        // Initialize border elements for detail panel
+        setTimeout(() => {
+            // Find border elements in detail row
+            const $borderLeft = $detailRow.find('.detail-border-left');
+            const $borderRight = $detailRow.find('.detail-border-right');
+
+            if ($borderLeft.length && $borderRight.length) {
+                // Store references to active border elements
+                this.$activeBorderLeft = $borderLeft;
+                this.$activeBorderRight = $borderRight;
+                this.$activeDetailRow = $detailRow;
+
+                // Initial positioning
+                this.updateBorderElementsPosition();
+
+                // Setup horizontal scroll listener for table container
+                this.setupBorderScrollListener();
+
+                console.log('Border elements initialized and scroll listener setup');
+            }
+        }, 100);
     }
 
     // Lazy load tab content
@@ -693,6 +803,88 @@ class ReturnTableManager extends BaseTableManager {
             this.lazyLoadedTabs.add(tabKey);
             console.log('Tab content loaded for:', tabKey);
         }, 500);
+    }
+
+    /**
+     * Update border elements position based on current scroll and active row
+     */
+    updateBorderElementsPosition() {
+        if (!this.$activeBorderLeft || !this.$activeBorderRight || !this.$activeDetailRow) {
+            return;
+        }
+
+        // Find the active return row with expanded class
+        const $activeRow = $('.return-row.expanded.kt-table-row-active');
+        if ($activeRow.length === 0) {
+            return;
+        }
+
+        // Get active row height
+        const activeRowHeight = $activeRow.outerHeight();
+
+        // Set top position to negative height of active row
+        const topPosition = -activeRowHeight;
+
+        // Get return detail panel height
+        const $detailPanel = this.$activeDetailRow.find('.kt-table-detail-container');
+        const detailPanelHeight = $detailPanel.outerHeight();
+        const totalHeight = activeRowHeight + detailPanelHeight;
+
+        // Get table container scroll position
+        const $tableContainer = $('#kt_returns_table_container');
+        const scrollLeft = $tableContainer.scrollLeft();
+
+        // Update left border position
+        this.$activeBorderLeft.css({
+            'top': topPosition + 'px',
+            'height': totalHeight + 'px',
+            'left': -scrollLeft + 'px'
+        });
+
+        // Update right border position
+        this.$activeBorderRight.css({
+            'top': topPosition + 'px',
+            'height': totalHeight + 'px',
+            'right': scrollLeft + 'px'
+        });
+
+        console.log('Border elements position updated', {
+            topPosition,
+            totalHeight,
+            scrollLeft
+        });
+    }
+
+    /**
+     * Setup scroll listener for horizontal table scroll
+     */
+    setupBorderScrollListener() {
+        const $tableContainer = $('#kt_returns_table_container');
+
+        // Remove existing listener to prevent duplicates
+        $tableContainer.off('scroll.borderUpdate');
+
+        // Add scroll listener
+        $tableContainer.on('scroll.borderUpdate', () => {
+            this.updateBorderElementsPosition();
+        });
+
+        console.log('Border scroll listener setup for table container');
+    }
+
+    /**
+     * Clean up border elements and listeners when row is collapsed
+     */
+    cleanupBorderElements() {
+        // Remove scroll listener
+        $('#kt_returns_table_container').off('scroll.borderUpdate');
+
+        // Clear stored elements
+        this.$activeBorderLeft = null;
+        this.$activeBorderRight = null;
+        this.$activeDetailRow = null;
+
+        console.log('Border elements cleaned up');
     }
 
     // Memory cleanup and performance optimization methods

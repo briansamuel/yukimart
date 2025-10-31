@@ -100,6 +100,61 @@ class Kernel extends ConsoleKernel
             ->onFailure(function () {
                 Log::error('Scheduled backup task failed');
             });
+
+        // Analytics - Populate summary tables daily at 01:00 AM
+        $schedule->command('analytics:populate-sales-summary')
+            ->daily()
+            ->at('01:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics sales summary population failed');
+            });
+
+        $schedule->command('analytics:populate-customer-stats')
+            ->daily()
+            ->at('01:15')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics customer stats population failed');
+            });
+
+        $schedule->command('analytics:populate-inventory-stats')
+            ->daily()
+            ->at('01:30')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics inventory stats population failed');
+            });
+
+        $schedule->command('analytics:populate-staff-performance')
+            ->daily()
+            ->at('01:45')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics staff performance population failed');
+            });
+
+        $schedule->command('analytics:populate-slow-moving')
+            ->daily()
+            ->at('02:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics slow moving inventory population failed');
+            });
+
+        $schedule->command('analytics:populate-accounts-receivable')
+            ->daily()
+            ->at('02:15')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics accounts receivable population failed');
+            });
     }
 
     /**

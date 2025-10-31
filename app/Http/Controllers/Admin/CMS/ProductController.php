@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin\CMS;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\BaseAdminController;
 use App\Services\ValidationService;
 use App\Services\ProductService;
 use App\Services\ProductVariantService;
@@ -18,7 +18,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class ProductController extends Controller
+class ProductController extends BaseAdminController
 {
     protected $request;
     protected $validator;
@@ -28,6 +28,7 @@ class ProductController extends Controller
 
     function __construct(Request $request, ValidationService $validator, ProductService $productService, ProductVariantService $variantService)
     {
+        parent::__construct();
         $this->request = $request;
         $this->validator = $validator;
         $this->productService = $productService;
@@ -46,6 +47,11 @@ class ProductController extends Controller
      */
     public function index()
     {
+        // Check permission
+        if (!$this->userCan('products.view')) {
+            abort(403, 'Không có quyền truy cập trang này.');
+        }
+
         return view('admin.products.index');
     }
 
@@ -71,7 +77,7 @@ class ProductController extends Controller
     {
         $categories = \App\Models\ProductCategory::getTreeOptions();
         $attributes = ProductAttribute::getVariationOptions();
-        return view('admin.products.add', compact('categories', 'attributes'));
+        return view('admin.products.create', compact('categories', 'attributes'));
     }
 
     /**
@@ -136,7 +142,7 @@ class ProductController extends Controller
                 LogsUserService::add($log);
 
                 $data['success'] = true;
-                $data['message'] = __('admin.products.add_product_success');
+                $data['message'] = __('admin.products.create_product_success');
                 $data['product_id'] = $add;
                 $data['redirect_url'] = route('products.list');
             } else {
@@ -252,6 +258,11 @@ class ProductController extends Controller
      */
     public function edit($id = 0)
     {
+        // Check permission
+        if (!$this->userCan('products.edit')) {
+            abort(403, 'Không có quyền chỉnh sửa sản phẩm.');
+        }
+
         if (!$id) {
             abort(404);
         }
@@ -276,6 +287,14 @@ class ProductController extends Controller
      */
     public function editAction($id = 0)
     {
+        // Check permission
+        if (!$this->userCan('products.edit')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có quyền chỉnh sửa sản phẩm.'
+            ], 403);
+        }
+
         DB::beginTransaction();
         if (!$id) {
             return response()->json([

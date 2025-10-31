@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\UserTimeStamp;
 use App\Traits\HasNotifications;
+use App\Traits\TenantScoped;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, UserTimeStamp, HasNotifications;
+    use HasFactory, SoftDeletes, UserTimeStamp, HasNotifications, TenantScoped;
 
     /**
      * The attributes that aren't mass assignable.
@@ -113,7 +114,7 @@ class Product extends Model
     protected function productEditUrl(): Attribute
     {
         return new Attribute(
-            get: fn($value, $attributes) => route('admin.products.edit', ['id' => $attributes['id']]),
+            get: fn($value, $attributes) => route('admin.products.edit', ['product' => $attributes['id']]),
         );
     }
 
@@ -157,6 +158,30 @@ class Product extends Model
     public function inventory()
     {
         return $this->hasOne(Inventory::class);
+    }
+
+    /**
+     * Get all additional images for this product (excluding main thumbnail)
+     */
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Get all units for this product
+     */
+    public function units()
+    {
+        return $this->hasMany(ProductUnit::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Get the base unit for this product
+     */
+    public function baseUnit()
+    {
+        return $this->hasOne(ProductUnit::class)->where('is_base_unit', true);
     }
 
     /**
@@ -228,6 +253,8 @@ class Product extends Model
             ->where('status', MarketplaceProductLink::STATUS_ACTIVE)
             ->first();
     }
+
+
 
     /**
      * Scope a query to only include published products

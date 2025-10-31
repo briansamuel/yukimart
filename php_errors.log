@@ -26,3 +26,31 @@ Stack trace:
 [01-Aug-2025 08:17:22 UTC] PHP Parse error:  syntax error, unexpected token "=", expecting end of file in Command line code on line 3
 [01-Aug-2025 10:29:02 UTC] PHP Parse error:  syntax error, unexpected token "=", expecting end of file in Command line code on line 3
 [01-Aug-2025 10:31:55 UTC] PHP Parse error:  syntax error, unexpected token "=", expecting end of file in Command line code on line 3
+[09-Aug-2025 06:19:11 UTC] PHP Fatal error:  Uncaught Error: Call to a member function connection() on null in /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1815
+Stack trace:
+#0 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1781): Illuminate\Database\Eloquent\Model::resolveConnection()
+#1 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1573): Illuminate\Database\Eloquent\Model->getConnection()
+#2 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1492): Illuminate\Database\Eloquent\Model->newBaseQueryBuilder()
+#3 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1528): Illuminate\Database\Eloquent\Model->newModelQuery()
+#4 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1481): Illuminate\Database\Eloquent\Model->newQueryWithoutScopes()
+#5 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1471): Illuminate\Database\Eloquent\Model->newQuery()
+#6 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(686): Illuminate\Database\Eloquent\Model::query()
+#7 /var/www/html/yukimart/app/Http/Controllers/Api/V1/ProductCategoryController.php(21): Illuminate\Database\Eloquent\Model::with()
+#8 /var/www/html/yukimart/test-category-api.php(15): App\Http\Controllers\Api\V1\ProductCategoryController->index()
+#9 {main}
+  thrown in /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php on line 1815
+[09-Aug-2025 14:21:27 UTC] PHP Fatal error:  Uncaught Error: Call to a member function connection() on null in /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php:1815
+Stack trace:
+#0 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1781): Illuminate\Database\Eloquent\Model::resolveConnection()
+#1 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1573): Illuminate\Database\Eloquent\Model->getConnection()
+#2 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1492): Illuminate\Database\Eloquent\Model->newBaseQueryBuilder()
+#3 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1528): Illuminate\Database\Eloquent\Model->newModelQuery()
+#4 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1481): Illuminate\Database\Eloquent\Model->newQueryWithoutScopes()
+#5 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(1471): Illuminate\Database\Eloquent\Model->newQuery()
+#6 /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php(686): Illuminate\Database\Eloquent\Model::query()
+#7 /var/www/html/yukimart/test-api-invoice.php(13): Illuminate\Database\Eloquent\Model::with()
+#8 {main}
+  thrown in /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php on line 1815
+[10-Aug-2025 22:39:21 Asia/Ho_Chi_Minh] PHP Fatal error:  Declaration of Illuminate\Database\PDO\Concerns\ConnectsToDatabase::connect(array $params, $username = null, $password = null, array $driverOptions = []) must be compatible with Doctrine\DBAL\Driver::connect(array $params): Doctrine\DBAL\Driver\Connection in /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/PDO/Concerns/ConnectsToDatabase.php on line 22
+[28-Oct-2025 10:37:26 Asia/Ho_Chi_Minh] PHP Fatal error:  Declaration of Illuminate\Database\PDO\Concerns\ConnectsToDatabase::connect(array $params, $username = null, $password = null, array $driverOptions = []) must be compatible with Doctrine\DBAL\Driver::connect(array $params): Doctrine\DBAL\Driver\Connection in /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/PDO/Concerns/ConnectsToDatabase.php on line 22
+[28-Oct-2025 17:16:41 Asia/Ho_Chi_Minh] PHP Fatal error:  Declaration of Illuminate\Database\PDO\Concerns\ConnectsToDatabase::connect(array $params, $username = null, $password = null, array $driverOptions = []) must be compatible with Doctrine\DBAL\Driver::connect(array $params): Doctrine\DBAL\Driver\Connection in /var/www/html/yukimart/vendor/laravel/framework/src/Illuminate/Database/PDO/Concerns/ConnectsToDatabase.php on line 22

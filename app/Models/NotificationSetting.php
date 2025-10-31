@@ -598,4 +598,63 @@ class NotificationSetting extends Model
             self::insert($createData);
         }
     }
+
+    /**
+     * Get notification configs (alias for getAvailableTypes).
+     */
+    public static function getNotificationConfigs()
+    {
+        return self::getAvailableTypes();
+    }
+
+    /**
+     * Get user settings in simplified flat structure.
+     */
+    public static function getUserSettingsSimplified($userId)
+    {
+        $configs = self::getNotificationConfigs();
+        $userSettings = self::where('user_id', $userId)
+            ->get()
+            ->keyBy('notification_type');
+
+        $settings = [];
+
+        foreach ($configs as $type => $config) {
+            $userSetting = $userSettings->get($type);
+            $isEnabled = $userSetting ? $userSetting->is_enabled : $config['default_enabled'];
+            $channels = $userSetting ? $userSetting->channels : $config['default_channels'];
+
+            $settings[] = [
+                'type' => $type,
+                'name' => $config['name'],
+                'description' => $config['description'],
+                'category' => $config['category'],
+                'category_name' => self::getCategories()[$config['category']] ?? $config['category'],
+                'is_enabled' => $isEnabled,
+                'channels' => $channels,
+                'available_channels' => array_keys(self::getAvailableChannels()),
+                'supports_summary' => $config['supports_summary'] ?? false,
+            ];
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Get user settings summary.
+     */
+    public static function getUserSettingsSummary($userId)
+    {
+        $totalTypes = count(self::getNotificationConfigs());
+        $enabledCount = self::where('user_id', $userId)
+            ->where('is_enabled', true)
+            ->count();
+
+        return [
+            'total_types' => $totalTypes,
+            'enabled_types' => $enabledCount,
+            'disabled_types' => $totalTypes - $enabledCount,
+            'enabled_percentage' => $totalTypes > 0 ? round(($enabledCount / $totalTypes) * 100) : 0,
+        ];
+    }
 }

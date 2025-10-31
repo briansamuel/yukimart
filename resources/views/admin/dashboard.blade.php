@@ -1,4 +1,4 @@
-@extends('admin.main-content')
+@extends('admin.layouts.tenant-app')
 
 @section('title', 'Trang chủ')
 
@@ -13,7 +13,7 @@
                 </h1>
                 <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1">
                     <li class="breadcrumb-item text-muted">
-                        <a href="{{ route('admin.dashboard') }}" class="text-muted text-hover-primary">Trang chủ</a>
+                        <a href="#" class="text-muted text-hover-primary">Trang chủ</a>
                     </li>
                 </ul>
             </div>
@@ -150,28 +150,28 @@
                         <div class="card-body pt-6">
                             <div class="row g-5">
                                 <div class="col-md-6 col-lg-4 col-xl-3">
-                                    <a href="{{ route('admin.orders.quick') }}" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column">
+                                    <a href="#" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column" onclick="alert('Tính năng đang phát triển')"
                                         <i class="fas fa-plus-circle fs-2x text-primary mb-3"></i>
                                         <span class="fs-4 fw-semibold text-gray-800 mb-2">Tạo đơn hàng</span>
                                         <span class="fs-7 text-gray-400">Tạo đơn hàng nhanh</span>
                                     </a>
                                 </div>
                                 <div class="col-md-6 col-lg-4 col-xl-3">
-                                    <a href="{{ route('admin.products.index') }}" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column">
+                                    <a href="{{ url('/admin/products') }}" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column">
                                         <i class="fas fa-box fs-2x text-success mb-3"></i>
                                         <span class="fs-4 fw-semibold text-gray-800 mb-2">Quản lý sản phẩm</span>
                                         <span class="fs-7 text-gray-400">Thêm, sửa sản phẩm</span>
                                     </a>
                                 </div>
                                 <div class="col-md-6 col-lg-4 col-xl-3">
-                                    <a href="{{ route('admin.customers.index') }}" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column">
+                                    <a href="#" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column" onclick="alert('Tính năng đang phát triển')"
                                         <i class="fas fa-users fs-2x text-warning mb-3"></i>
                                         <span class="fs-4 fw-semibold text-gray-800 mb-2">Khách hàng</span>
                                         <span class="fs-7 text-gray-400">Quản lý khách hàng</span>
                                     </a>
                                 </div>
                                 <div class="col-md-6 col-lg-4 col-xl-3">
-                                    <a href="{{ route('admin.backup.index') }}" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column">
+                                    <a href="#" class="btn btn-flex btn-outline btn-color-gray-700 btn-active-color-primary bg-body h-150px flex-column" onclick="alert('Tính năng đang phát triển')"
                                         <i class="fas fa-database fs-2x text-info mb-3"></i>
                                         <span class="fs-4 fw-semibold text-gray-800 mb-2">Sao lưu dữ liệu</span>
                                         <span class="fs-7 text-gray-400">Backup & restore</span>
@@ -193,7 +193,7 @@
                                 <span class="text-gray-400 mt-1 fw-semibold fs-6">10 đơn hàng mới nhất</span>
                             </h3>
                             <div class="card-toolbar">
-                                <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-light">Xem tất cả</a>
+                                <a href="#" class="btn btn-sm btn-light" onclick="alert('Tính năng đang phát triển')">Xem tất cả</a>
                             </div>
                         </div>
                         <div class="card-body pt-6">
@@ -215,7 +215,7 @@
                                 <span class="text-gray-400 mt-1 fw-semibold fs-6">Top 10 sản phẩm</span>
                             </h3>
                             <div class="card-toolbar">
-                                <a href="{{ route('admin.products.index') }}" class="btn btn-sm btn-light">Xem tất cả</a>
+                                <a href="{{ url('/admin/products') }}" class="btn btn-sm btn-light">Xem tất cả</a>
                             </div>
                         </div>
                         <div class="card-body pt-6">

@@ -362,7 +362,7 @@ $(document).ready(function() {
 
     $('#linkProductsBtn').click(function() {
         // Navigate to product linking page
-        window.location.href = '{{ route("admin.products.list") }}';
+        window.location.href = '{{ route("admin.products.index") }}';
     });
 
     function loadSyncStatus() {

@@ -100,7 +100,7 @@ tr.shown td {
     overflow: visible !important;
     overflow-x: visible !important;
     overflow-y: visible !important;
-    position: static !important;
+    position: relative !important;
     background: white !important;
     box-sizing: border-box;
     z-index: 1 !important;
@@ -174,7 +174,7 @@ tr.shown td {
 .kt-table-detail-border-left,
 .kt-table-detail-border-right {
     position: absolute !important;
-    top: 0;
+   
     width: 2px !important;
     height: 0;
     background-color: var(--kt-primary) !important;
@@ -184,11 +184,13 @@ tr.shown td {
 }
 
 .kt-table-detail-border-left {
-    left: 2.25rem !important;
+    /* left: 2.25rem !important; */
+    left: 0px;
 }
 
 .kt-table-detail-border-right {
-    right: 2.25rem !important;
+    /* right: 2.25rem !important; */
+    right: 0px;
 }
 
 /* Details expansion container */

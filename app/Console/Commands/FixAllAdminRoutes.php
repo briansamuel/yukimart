@@ -127,7 +127,7 @@ class FixAllAdminRoutes extends Command
             'project.list' => 'admin.project.list',
             'project.add' => 'admin.project.add',
             'products.list' => 'admin.products.list',
-            'products.add' => 'admin.products.add',
+            'products.add' => 'admin.products.create',
             'comment.list' => 'admin.comment.list',
             'inventory.dashboard' => 'admin.inventory.dashboard',
             'inventory.transactions' => 'admin.inventory.transactions',

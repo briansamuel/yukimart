@@ -19,13 +19,13 @@ var KTColumnVisibility = function() {
      */
     var initColumnVisibility = function(config) {
         console.log('Initializing column visibility with config:', config);
-        
+
         // Validate required config
         if (!config.storageKey || !config.defaultVisibility) {
             console.error('Column visibility config missing required properties');
             return;
         }
-        
+
         // Set default selectors if not provided
         var settings = {
             triggerSelector: config.triggerSelector || '#column_visibility_trigger',
@@ -35,19 +35,22 @@ var KTColumnVisibility = function() {
             onToggle: config.onToggle || function() {},
             ...config
         };
-        
+
         // Load column visibility state
         var columnVisibility = loadColumnVisibility(settings.storageKey, settings.defaultVisibility);
-        
+
         // Initialize panel toggle
         initPanelToggle(settings, columnVisibility);
-        
+
         // Initialize checkboxes
         initCheckboxes(settings, columnVisibility);
-        
+
+        // Bind toggle events immediately (not just when panel is opened)
+        bindToggleEvents(settings, columnVisibility);
+
         // Apply initial visibility
         applyColumnVisibility(settings, columnVisibility);
-        
+
         // Return visibility state for external use
         return columnVisibility;
     };
@@ -108,7 +111,7 @@ var KTColumnVisibility = function() {
             e.preventDefault();
             e.stopPropagation();
             console.log('Column visibility trigger clicked');
-            
+
             if (panel.hasClass('show')) {
                 panel.removeClass('show');
                 trigger.removeClass('active');
@@ -117,9 +120,8 @@ var KTColumnVisibility = function() {
                 panel.addClass('show');
                 trigger.addClass('active');
                 console.log('Panel shown');
-                
-                // Bind toggle events when panel is shown
-                bindToggleEvents(settings, columnVisibility);
+
+                // Events are already bound in initColumnVisibility, no need to bind again
             }
         });
         

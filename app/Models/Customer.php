@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Traits\TenantScoped;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, TenantScoped;
 
     protected $fillable = [
         'customer_code',
@@ -28,6 +29,7 @@ class Customer extends Model
         'birthday',
         'points',
         'branch_shop_id',
+        'tenant_id',
         'created_by',
         'updated_by'
     ];

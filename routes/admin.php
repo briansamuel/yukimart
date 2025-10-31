@@ -3,8 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\App;
-use App\Http\Controllers\Admin\LoginController;
-use App\Http\Controllers\Admin\DashboardController;
 
 use App\Http\Controllers\Admin\CMS\MyProfileController;
 use App\Http\Controllers\Admin\CMS\PageController;
@@ -18,49 +16,23 @@ use App\Http\Controllers\Admin\CMS\ImageController;
 use App\Http\Controllers\Admin\CMS\BrandsController;
 use App\Http\Controllers\Admin\CMS\CommentController;
 use App\Http\Controllers\Admin\CMS\CategoryController;
-use App\Http\Controllers\Admin\CMS\ProductController;
-use App\Http\Controllers\Admin\CMS\InventoryController;
-use App\Http\Controllers\Admin\CMS\SupplierController;
-use App\Http\Controllers\Admin\CMS\OrderController;
-use App\Http\Controllers\Admin\CMS\OrderFilterController;
-use App\Http\Controllers\Admin\CMS\UsersController;
+use App\Http\Controllers\Admin\CMS\ProductController; // Still used for legacy file manager route
 use App\Http\Controllers\Admin\CMS\RoleController;
 use App\Http\Controllers\Admin\CMS\PermissionController;
-
 use App\Http\Controllers\Admin\CMS\LogsUserController;
-
 use App\Http\Controllers\Admin\CMS\ThemeOptionsController;
 use App\Http\Controllers\Admin\CMS\CustomCssController;
 use App\Http\Controllers\Admin\CMS\TemplateController;
 use App\Http\Controllers\Admin\CMS\ContactController;
 use App\Http\Controllers\Admin\CMS\SettingController;
 use App\Http\Controllers\Admin\CMS\GalleryController;
-use App\Http\Controllers\Admin\CMS\CustomerController;
-
-
-use App\Http\Controllers\Admin\CMS\InvoiceController;
-
-use App\Http\Controllers\Admin\CMS\ReturnController;
-use App\Http\Controllers\Admin\CMS\PaymentController;
 use App\Http\Controllers\Admin\CMS\AuditLogController;
-use App\Http\Controllers\Admin\CMS\InventoryImportExportController;
 use App\Http\Controllers\Admin\CMS\ReportsController;
-use App\Http\Controllers\Admin\CMS\NotificationController;
 use App\Http\Controllers\Admin\NotificationSettingController;
-use App\Http\Controllers\Admin\FilterController;
-use App\Http\Controllers\Admin\CMS\BranchShopController;
-use App\Http\Controllers\Admin\CMS\WarehouseController;
-
-use App\Http\Controllers\Admin\CMS\ProductCategoryController;
 use App\Http\Controllers\Admin\BackupController;
-
-// Shopee Controllers
 use App\Http\Controllers\Admin\Shopee\ShopeeOAuthController;
 use App\Http\Controllers\Admin\Shopee\ShopeeProductController;
 use App\Http\Controllers\Admin\Shopee\ShopeeSyncController;
-use App\Http\Controllers\Admin\QuickOrderController;
-use App\Http\Controllers\Admin\QuickInvoiceController;
-use App\Http\Controllers\Admin\ProductImportController;
 
 
 if (!defined('FM_USE_ACCESS_KEYS')) {
@@ -77,7 +49,26 @@ if (!defined('FM_DEBUG_ERROR_MESSAGE')) {
 Route::get('denied-permission', function () {
     return view('admin.pages.permission_denied');
 });
-// login
+/*
+// COMMENTED OUT - Old tenant auth routes (moved to web.php with subdomain routing)
+// Tenant Auth Routes (with subdomain middleware)
+Route::middleware(['subdomain.tenant'])->group(function () {
+    // Tenant login routes (renamed to avoid conflict with platform)
+    Route::get('/admin/login', [AuthController::class, 'showLoginForm'])->name('tenant.admin.login');
+    Route::post('/admin/login', [AuthController::class, 'login'])->name('tenant.admin.login.action');
+    Route::post('/admin/logout', [AuthController::class, 'logout'])->name('tenant.admin.logout');
+    Route::get('/admin/auth/check', [AuthController::class, 'checkAuth'])->name('admin.auth.check');
+    // Admin dashboard (protected)
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/admin/dashboard', [AuthController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/admin', [AuthController::class, 'dashboard'])->name('admin.home');
+    });
+});
+*/
+
+/*
+// COMMENTED OUT - Legacy login routes (moved to domain-specific routing)
+// Legacy login routes (for main domain)
 Route::get('/login', [LoginController::class, 'login'])->name('login');
 Route::post('/login', [LoginController::class, 'loginAction'])->name('login.action');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -85,16 +76,21 @@ Route::get('/reset_password', [LoginController::class, 'resetPassword'])->name('
 Route::get('/active-user', [LoginController::class, 'activeUser'])->name('activeUser');
 Route::get('/active-agent', [LoginController::class, 'activeAgent'])->name('activeAgent');
 Route::get('/kich-hoat-tai-khoan', [LoginController::class, 'activeGuest'])->name('activeGuest');
-Route::get('/admin', [DashboardController::class, 'index'])->middleware(['auth'])->name('admin.home');
-Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+*/
+// Wrap admin routes in domain constraint to avoid conflicts with tenant routes
+Route::domain('yukimart.local')->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
 
-    
+
+        // TODO: Create DashboardController
+    /*
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/revenue-data', [DashboardController::class, 'getRevenueData'])->name('dashboard.revenue-data');
     Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
     Route::get('/dashboard/revenue-chart', [DashboardController::class, 'getRevenueChart'])->name('dashboard.revenue-chart');
     Route::get('/dashboard/top-products', [\App\Http\Controllers\Api\V1\DashboardController::class, 'getTopProducts'])->name('dashboard.top-products');
     Route::get('/dashboard/top-products-data', [DashboardController::class, 'getTopProductsData'])->name('dashboard.top-products-data');
+    */
     
    
 
@@ -198,313 +194,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('/brand/delete', [BrandsController::class, 'deletemany'])->name('brand.delete.many');
         Route::get('/brand/ajax/get-list', [BrandsController::class, 'ajaxGetList'])->name('brand.ajax.getList');
 
-        // Products
-        Route::get('/products', [ProductController::class, 'index'])->name('products.list');
-        Route::get('/products/add', [ProductController::class, 'add'])->name('products.add');
-        Route::post('/products/add', [ProductController::class, 'addAction'])->name('products.add.action');
+        // Products - MOVED TO tenant.php
 
-        // Product Import Routes (must be before {id} routes)
-        Route::prefix('products/import')->name('products.import.')->group(function () {
-            Route::get('/', [ProductImportController::class, 'index'])->name('index');
-            Route::post('/upload', [ProductImportController::class, 'upload'])->name('upload');
-            Route::post('/test-upload', [ProductImportController::class, 'testUpload'])->name('test-upload');
-            Route::get('/fields', [ProductImportController::class, 'getFields'])->name('fields');
-            Route::get('/preview', [ProductImportController::class, 'preview'])->name('preview');
-            Route::get('/stats', [ProductImportController::class, 'getFileStats'])->name('stats');
-            Route::post('/validate', [ProductImportController::class, 'validateImport'])->name('validate');
-            Route::post('/process', [ProductImportController::class, 'process'])->name('process');
-            Route::get('/template', [ProductImportController::class, 'downloadTemplate'])->name('template');
-            Route::get('/history', [ProductImportController::class, 'history'])->name('history');
-            Route::delete('/clear-session', [ProductImportController::class, 'clearSession'])->name('clear-session');
-        });
-
-        // Product Attribute Routes (MUST be before routes with {id} parameter)
-        Route::get('/products/attributes', [ProductController::class, 'getAttributes'])->name('products.attributes');
-        Route::post('/products/attributes', [ProductController::class, 'storeAttribute'])->name('products.attributes.store');
-        Route::get('/products/attributes/{attributeId}/values', [ProductController::class, 'getAttributeValues'])->name('products.attributes.values.get');
-        Route::post('/products/attributes/{attributeId}/values', [ProductController::class, 'storeAttributeValue'])->name('products.attributes.values.store');
-
-        // Product AJAX Routes (specific paths before {id})
-        Route::get('/products/ajax/get-list', [ProductController::class, 'ajaxGetList'])->name('products.ajax.getList');
-
-        // Product Routes with {id} parameter (MUST be after specific paths)
-        Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
-        Route::get('/products/edit/{id}', [ProductController::class, 'edit'])->name('products.edit');
-        Route::post('/products/edit/{id}', [ProductController::class, 'editAction'])->name('products.edit.action');
-        Route::post('/products/edit', [ProductController::class, 'editManyAction'])->name('products.edit.many.action');
-        Route::get('/products/delete/{id}', [ProductController::class, 'delete'])->name('products.delete');
-        Route::post('/products/delete', [ProductController::class, 'deleteMany'])->name('products.delete.many');
-
-        // Product Action Menu Routes
-        Route::post('/products/{id}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
-        Route::patch('/products/{id}/status', [ProductController::class, 'changeStatus'])->name('products.change.status');
-        Route::get('/products/{id}/history', [ProductController::class, 'getHistory'])->name('products.history');
-        Route::post('/products/{id}/quick-edit', [ProductController::class, 'quickEdit'])->name('products.quick.edit');
-        Route::post('/products/{id}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust.stock');
-
-        // Product Variant Routes
-        Route::post('/products/{id}/variants', [ProductController::class, 'createVariants'])->name('products.variants.create');
-        Route::post('/products/{id}/variants/from-form', [ProductController::class, 'createVariantsFromForm'])->name('products.variants.create.form');
-        Route::get('/products/{id}/variants', [ProductController::class, 'getVariants'])->name('products.variants.get');
-        Route::put('/products/{productId}/variants/{variantId}', [ProductController::class, 'updateVariant'])->name('products.variants.update');
-        Route::delete('/products/{productId}/variants/{variantId}', [ProductController::class, 'deleteVariant'])->name('products.variants.delete');
-        Route::post('/products/{id}/variants/bulk-update-prices', [ProductController::class, 'bulkUpdateVariantPrices'])->name('products.variants.bulk.update.prices');
+        // Inventory Management - MOVED TO tenant.php
 
 
 
-        // Image upload route (legacy)
-        Route::post('/upload-image', [ProductController::class, 'uploadImage'])->name('upload.image');
-
-        // Inventory Management
-        Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.dashboard');
-
-        // Import/Export Routes
-        Route::get('/inventory/import', [InventoryController::class, 'import'])->name('inventory.import');
-        Route::post('/inventory/import', [InventoryController::class, 'processImport'])->name('inventory.process-import');
-        Route::get('/inventory/export', [InventoryController::class, 'export'])->name('inventory.export');
-        Route::post('/inventory/export', [InventoryController::class, 'processExport'])->name('inventory.process-export');
-
-        // Adjustment Routes
-        Route::get('/inventory/adjustment', [InventoryController::class, 'adjustment'])->name('inventory.adjustment');
-        Route::post('/inventory/adjustment', [InventoryController::class, 'processAdjustment'])->name('inventory.process-adjustment');
-
-        // Transaction Routes
-        Route::get('/inventory/transactions', [InventoryController::class, 'transactions'])->name('inventory.transactions');
-        Route::get('/inventory/transactions/ajax', [InventoryController::class, 'getTransactionsAjax'])->name('inventory.transactions.ajax');
-        Route::get('/inventory/transactions/statistics', [InventoryController::class, 'getTransactionStatistics'])->name('inventory.transactions.statistics');
-        Route::get('/inventory/transactions/{id}', [InventoryController::class, 'getTransactionDetail'])->name('inventory.transaction.detail');
-
-        // Report Routes
-        Route::get('/inventory/report', [InventoryController::class, 'report'])->name('inventory.report');
-        Route::get('/inventory/export-transactions', [InventoryController::class, 'exportTransactions'])->name('inventory.export-transactions');
-
-        // Stock Check Routes
-        Route::get('/inventory/stock-check', [InventoryController::class, 'stockCheck'])->name('inventory.stock-check');
-
-        // Suppliers
-        Route::get('/supplier', [SupplierController::class, 'index'])->name('supplier.list');
-        Route::get('/supplier/ajax', [SupplierController::class, 'ajaxGetList'])->name('supplier.ajax');
-        Route::get('/supplier/add', [SupplierController::class, 'add'])->name('supplier.add');
-        Route::post('/supplier/add', [SupplierController::class, 'addAction'])->name('supplier.add.action');
-        Route::get('/supplier/edit/{supplier_id}', [SupplierController::class, 'edit'])->name('supplier.edit');
-        Route::post('/supplier/edit/{supplier_id}', [SupplierController::class, 'editAction'])->name('supplier.edit.action');
-        Route::get('/supplier/detail/{supplier_id}', [SupplierController::class, 'detail'])->name('supplier.detail');
-        Route::delete('/supplier/delete/{supplier_id}', [SupplierController::class, 'delete'])->name('supplier.delete');
-        Route::post('/supplier/delete', [SupplierController::class, 'deleteMany'])->name('supplier.delete.many');
-        Route::get('/supplier/active', [SupplierController::class, 'getActiveSuppliers'])->name('supplier.active');
-        Route::post('/supplier/check-code', [SupplierController::class, 'checkCodeUnique'])->name('supplier.check.code');
-        Route::get('/supplier/statistics', [SupplierController::class, 'getStatistics'])->name('supplier.statistics');
 
 
-        // Order routes - API routes first to avoid conflicts
-        Route::get('/orders', [OrderController::class, 'index'])->name('order.list');
-        Route::get('/orders/add', [OrderController::class, 'add'])->name('order.add');
-        Route::post('/orders/add', [OrderController::class, 'addAction'])->name('order.add.action');
-        Route::get('/orders/ajax', [OrderController::class, 'ajaxGetOrders'])->name('order.ajax');
-        Route::get('/orders/customers', [OrderController::class, 'getCustomers'])->name('order.customers');
-        Route::get('/orders/products', [OrderController::class, 'getProducts'])->name('order.products');
-        Route::get('/orders/initial-data', [OrderController::class, 'getInitialData'])->name('order.initial.data');
-        Route::get('/orders/check-phone', [OrderController::class, 'checkPhoneExists'])->name('order.check.phone');
-        Route::get('/orders/statistics', [OrderController::class, 'getStatistics'])->name('order.statistics');
-        Route::get('/orders/product-details/{product_id}', [OrderController::class, 'getProductDetails'])->name('order.product.details');
-        Route::post('/orders/create-customer', [OrderController::class, 'createNewCustomer'])->name('order.create.customer');
-        Route::post('/orders/update-status/{order_id}', [OrderController::class, 'updateStatus'])->name('order.update.status');
-        Route::post('/orders/delete-many', [OrderController::class, 'deleteMany'])->name('order.delete.many');
-        Route::post('/orders/bulk-export', [OrderController::class, 'bulkExport'])->name('order.bulk.export');
-        Route::post('/orders/bulk-status-update', [OrderController::class, 'bulkStatusUpdate'])->name('order.bulk.status.update');
-        Route::get('/orders/test-export', [OrderController::class, 'testExport'])->name('order.test.export');
-        Route::get('/orders/create-test-data', [OrderController::class, 'createTestData'])->name('order.create.test.data');
-        Route::get('/orders/test-bulk-status-update', [OrderController::class, 'testBulkStatusUpdate'])->name('order.test.bulk.status.update');
-        Route::get('/orders/debug-orders', [OrderController::class, 'debugOrders'])->name('order.debug.orders');
 
-        // Order CRUD routes with parameters - these should come after API routes
-        Route::get('/orders/{id}', [OrderController::class, 'show'])->name('order.show');
-        Route::get('/orders/edit/{order_id}', [OrderController::class, 'edit'])->name('order.edit');
-        Route::post('/orders/edit/{order_id}', [OrderController::class, 'editAction'])->name('order.edit.action');
-        Route::get('/orders/detail/{order_id}', [OrderController::class, 'detail'])->name('order.detail');
-        Route::delete('/orders/delete/{order_id}', [OrderController::class, 'delete'])->name('order.delete');
 
-        // Order detail actions
-        Route::post('/orders/{id}/record-payment', [OrderController::class, 'recordPayment'])->name('order.record.payment');
-        Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder'])->name('order.cancel');
-        Route::get('/orders/{id}/print/{type}', [OrderController::class, 'printOrder'])->name('order.print');
-        Route::get('/orders/{id}/export/{type}', [OrderController::class, 'exportOrder'])->name('order.export');
 
-        // Test route for new customer feature
-        Route::get('/orders/test-new-customer', function() {
-            return view('admin.orders.test-new-customer');
-        })->name('order.test.new.customer');
-        Route::post('/orders/quick-update/{order_id}', [OrderController::class, 'quickUpdate'])->name('order.quick.update');
-        Route::get('/orders/{order_id}/get', [OrderController::class, 'getOrder'])->name('order.get');
-        Route::get('/orders/{order_id}/detail-modal', [OrderController::class, 'getOrderDetail'])->name('order.detail.modal');
-        Route::get('/orders/{order_id}/invoices', [OrderController::class, 'getOrderInvoices'])->name('order.invoices');
-        Route::post('/orders/bulk-delete', [OrderController::class, 'bulkDelete'])->name('order.bulk.delete');
-        Route::get('/orders/print/{order_id}', [OrderController::class, 'print'])->name('order.print.simple');
 
-        // Order Filter Options Routes
-        Route::prefix('orders/filter-options')->name('order.filter.')->group(function () {
-            Route::get('/statuses', [OrderFilterController::class, 'getStatusOptions'])->name('statuses');
-            Route::get('/payment-statuses', [OrderFilterController::class, 'getPaymentStatusOptions'])->name('payment.statuses');
-            Route::get('/payment-methods', [OrderFilterController::class, 'getPaymentMethodOptions'])->name('payment.methods');
-            Route::get('/creators', [OrderFilterController::class, 'getCreatorOptions'])->name('creators');
-            Route::get('/sellers', [OrderFilterController::class, 'getSellerOptions'])->name('sellers');
-            Route::get('/branches', [OrderFilterController::class, 'getBranchOptions'])->name('branches');
-            Route::get('/delivery-statuses', [OrderFilterController::class, 'getDeliveryStatusOptions'])->name('delivery.statuses');
-            Route::get('/channels', [OrderFilterController::class, 'getChannelOptions'])->name('channels');
-            Route::get('/customer-types', [OrderFilterController::class, 'getCustomerTypeOptions'])->name('customer.types');
-            Route::get('/all', [OrderFilterController::class, 'getAllFilterOptions'])->name('all');
-        });
-        Route::get('/order/export/{order_id}', [OrderController::class, 'exportOrder'])->name('order.export.single');
 
-        // Icon showcase route
-        Route::get('/icons-showcase', function () {
-            return view('admin.icons-showcase');
-        })->name('icons.showcase');
+        // Warehouses Management - MOVED TO tenant.php
 
-        // Demo order detail route
-        Route::get('/demo-order-detail', function () {
-            return view('admin.orders.demo-detail');
-        })->name('demo.order.detail');
-
-        // Test order detail route
-        Route::get('/test-order-detail', function () {
-            return view('admin.orders.test-detail');
-        })->name('test.order.detail');
-
-        // Debug routes (remove in production)
-        if (config('app.debug')) {
-            Route::get('/debug-order-routes', function () {
-                $routes = [];
-                $allRoutes = \Illuminate\Support\Facades\Route::getRoutes();
-
-                foreach ($allRoutes as $route) {
-                    $uri = $route->uri();
-                    if (strpos($uri, 'admin/order') !== false) {
-                        $routes[] = [
-                            'uri' => $uri,
-                            'name' => $route->getName(),
-                            'methods' => implode('|', $route->methods()),
-                            'action' => $route->getActionName()
-                        ];
-                    }
-                }
-
-                usort($routes, function($a, $b) {
-                    return strcmp($a['uri'], $b['uri']);
-                });
-
-                return response()->json([
-                    'total_routes' => count($routes),
-                    'routes' => $routes
-                ]);
-            })->name('debug.order.routes');
-        }
-
-        // Test direct API calls
-        Route::get('/test-order-api', function () {
-            try {
-                $orderService = app(\App\Services\OrderService::class);
-
-                $results = [
-                    'customers' => [],
-                    'products' => [],
-                    'errors' => []
-                ];
-
-                // Test customers
-                try {
-                    $customers = $orderService->getCustomersForDropdown();
-                    $results['customers'] = [
-                        'count' => count($customers),
-                        'sample' => array_slice($customers, 0, 3)
-                    ];
-                } catch (\Exception $e) {
-                    $results['errors']['customers'] = $e->getMessage();
-                }
-
-                // Test products
-                try {
-                    $products = $orderService->getProductsForOrder();
-                    $results['products'] = [
-                        'count' => count($products),
-                        'sample' => array_slice($products, 0, 3)
-                    ];
-                } catch (\Exception $e) {
-                    $results['errors']['products'] = $e->getMessage();
-                }
-
-                return response()->json($results);
-
-            } catch (\Exception $e) {
-                return response()->json([
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ], 500);
-            }
-        })->name('test.order.api');
-
-        // Debug and demo routes (only in debug mode)
-        if (config('app.debug')) {
-            Route::get('/debug-order-page', function () {
-                return view('admin.debug.order-routes');
-            })->name('debug.order.page');
-
-            Route::get('/stock-status-demo', function () {
-                return view('admin.examples.stock-status-demo');
-            })->name('stock.status.demo');
-        }
-
-        // Branch Shops Management
-        Route::prefix('branch-shops')->name('branch-shops.')->group(function () {
-            Route::get('/', [BranchShopController::class, 'index'])->name('index');
-            Route::get('/data', [BranchShopController::class, 'getData'])->name('data');
-            Route::get('/create', [BranchShopController::class, 'create'])->name('create');
-            Route::post('/', [BranchShopController::class, 'store'])->name('store');
-            Route::get('/active', [BranchShopController::class, 'getActiveBranchShops'])->name('active');
-            Route::get('/dropdown/active', [BranchShopController::class, 'getActiveForDropdown'])->name('dropdown.active');
-            Route::get('/dropdown/managers', [BranchShopController::class, 'getManagersForDropdown'])->name('dropdown.managers');
-            Route::get('/{id}', [BranchShopController::class, 'show'])->name('show');
-            Route::get('/{id}/edit', [BranchShopController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [BranchShopController::class, 'update'])->name('update');
-            Route::delete('/{id}', [BranchShopController::class, 'destroy'])->name('destroy');
-            Route::post('/bulk-action', [BranchShopController::class, 'bulkAction'])->name('bulk-action');
-            Route::get('/statistics/summary', [BranchShopController::class, 'getStatistics'])->name('statistics');
-
-            // User management for branch shops
-            Route::get('/{branchShop}/users/data', [BranchShopController::class, 'getUsersData'])->name('users.data');
-            Route::post('/{branchShop}/users', [BranchShopController::class, 'addUser'])->name('users.add');
-            Route::delete('/{branchShop}/users/{user}', [BranchShopController::class, 'removeUser'])->name('users.remove');
-            Route::put('/{branchShop}/users/{user}', [BranchShopController::class, 'updateUser'])->name('users.update');
-        });
-
-        // Warehouses Management
-        Route::prefix('warehouses')->name('warehouses.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'index'])->name('index');
-            Route::get('/create', [WarehouseController::class, 'create'])->name('create');
-            Route::post('/', [WarehouseController::class, 'store'])->name('store');
-            Route::get('/dropdown', [WarehouseController::class, 'getForDropdown'])->name('dropdown');
-            Route::get('/{id}', [WarehouseController::class, 'show'])->name('show');
-            Route::get('/{id}/edit', [WarehouseController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [WarehouseController::class, 'update'])->name('update');
-            Route::delete('/{id}', [WarehouseController::class, 'destroy'])->name('destroy');
-        });
-
-        // Notifications Management
-        Route::prefix('notifications')->name('notifications.')->group(function () {
-            Route::get('/', [NotificationController::class, 'index'])->name('index');
-            Route::get('/data', [NotificationController::class, 'getData'])->name('data');
-            Route::get('/recent', [NotificationController::class, 'getRecent'])->name('recent');
-            Route::get('/count', [NotificationController::class, 'getCount'])->name('count');
-            Route::get('/unread-count', [NotificationController::class, 'getUnreadCount'])->name('unread-count');
-            Route::get('/types', [NotificationController::class, 'getTypes'])->name('types');
-            Route::get('/statistics', [NotificationController::class, 'getStatistics'])->name('statistics');
-            Route::post('/', [NotificationController::class, 'store'])->name('store');
-            Route::put('/{id}/read', [NotificationController::class, 'markAsRead'])->name('mark-read');
-            Route::put('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
-            Route::delete('/{id}', [NotificationController::class, 'destroy'])->name('destroy');
-            Route::delete('/cleanup/expired', [NotificationController::class, 'cleanupExpired'])->name('cleanup-expired');
-            Route::delete('/cleanup/old', [NotificationController::class, 'cleanupOld'])->name('cleanup-old');
-        });
+        // Notifications Management - MOVED TO tenant.php
 
         // Notification Settings
         Route::prefix('notification-settings')->name('notification-settings.')->group(function () {
@@ -515,18 +220,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::post('/test', [NotificationSettingController::class, 'test'])->name('test');
         });
 
-        // Inventory Import/Export
-        Route::prefix('inventory/import-export')->name('inventory.import-export.')->group(function () {
-            Route::get('/', [InventoryImportExportController::class, 'index'])->name('index');
-            Route::post('/export', [InventoryImportExportController::class, 'export'])->name('export');
-            Route::post('/import', [InventoryImportExportController::class, 'import'])->name('import');
-            Route::get('/template', [InventoryImportExportController::class, 'downloadTemplate'])->name('template');
-            Route::get('/history', [InventoryImportExportController::class, 'getHistory'])->name('history');
-            Route::get('/summary', [InventoryImportExportController::class, 'getSummary'])->name('summary');
-            Route::post('/validate', [InventoryImportExportController::class, 'validateImportFile'])->name('validate');
-            Route::get('/warehouses', [InventoryImportExportController::class, 'getWarehouses'])->name('warehouses');
-            Route::get('/categories', [InventoryImportExportController::class, 'getProductCategories'])->name('categories');
-        });
+        // Inventory Import/Export - MOVED TO tenant.php
 
         // Reports and Analytics
         Route::prefix('reports')->name('reports.')->group(function () {
@@ -541,19 +235,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::get('/filters', [ReportsController::class, 'getFilters'])->name('filters');
         });
 
-        // Product Categories
-        Route::prefix('product-categories')->name('product-categories.')->group(function () {
-            Route::get('/', [ProductCategoryController::class, 'index'])->name('index');
-            Route::get('/data', [ProductCategoryController::class, 'getData'])->name('data');
-            Route::get('/create', [ProductCategoryController::class, 'create'])->name('create');
-            Route::post('/', [ProductCategoryController::class, 'store'])->name('store');
-            Route::get('/{productCategory}', [ProductCategoryController::class, 'show'])->name('show');
-            Route::get('/{productCategory}/edit', [ProductCategoryController::class, 'edit'])->name('edit');
-            Route::put('/{productCategory}', [ProductCategoryController::class, 'update'])->name('update');
-            Route::delete('/{productCategory}', [ProductCategoryController::class, 'destroy'])->name('destroy');
-            Route::get('/parent/list', [ProductCategoryController::class, 'getParentCategories'])->name('parent-list');
-            Route::post('/sort-order', [ProductCategoryController::class, 'updateSortOrder'])->name('sort-order');
-        });
+        // Product Categories - MOVED TO tenant.php
 
         // Backup and Restore
         Route::prefix('backup')->name('backup.')->group(function () {
@@ -603,174 +285,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::get('/filters/list', [AuditLogController::class, 'getFilters'])->name('filters');
         });
 
-        // Customers
-        Route::prefix('customers')->name('customers.')->group(function () {
-            Route::get('/', [CustomerController::class, 'index'])->name('index');
-            Route::get('/data', [CustomerController::class, 'getData'])->name('data');
-            Route::get('/statistics', [CustomerController::class, 'getStatistics'])->name('statistics');
-            Route::get('/active/list', [CustomerController::class, 'getActiveCustomers'])->name('active-list');
-            Route::get('/create', [CustomerController::class, 'create'])->name('create');
-            Route::post('/', [CustomerController::class, 'store'])->name('store');
-            Route::get('/{customer}/info', [CustomerController::class, 'getCustomerInfo'])->name('info');
-            Route::get('/{customer}/order-history', [CustomerController::class, 'orderHistory'])->name('order-history');
-            Route::get('/{customer}/point-history', [CustomerController::class, 'pointHistory'])->name('point-history');
-            Route::get('/{customer}/statistics', [CustomerController::class, 'statistics'])->name('statistics.detail');
-            Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
-            Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
-            Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
-            Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
-            Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
-        });
-
-        // Invoice routes
-        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoice.list');
-        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoice.list'); // Backward compatibility
-
-        Route::get('/invoices/ajax', [InvoiceController::class, 'getInvoicesAjax'])->name('invoice.ajax');
-        Route::get('/invoices/api/list', [InvoiceController::class, 'getInvoicesForReturn'])->name('invoice.api.list');
-        Route::get('/invoices/{id}/details', [InvoiceController::class, 'getInvoiceDetails'])->name('invoice.details');
-        Route::get('/invoices/{id}/items', [InvoiceController::class, 'getInvoiceItems'])->name('invoice.items');
-        Route::get('/invoices/filter-users', [InvoiceController::class, 'getFilterUsers'])->name('invoice.filter-users');
-        Route::get('/invoices/{id}/detail-panel', [InvoiceController::class, 'getDetailPanel'])->name('invoice.detail-panel');
-        Route::get('/invoices/test-detail/{id}', function($id) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Test endpoint working',
-                'invoice_id' => $id,
-                'html' => '<div class="alert alert-success">Test detail panel for invoice ' . $id . '</div>'
-            ]);
-        })->name('invoice.test-detail');
-        Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoice.create');
-        Route::post('/invoices/create', [InvoiceController::class, 'store'])->name('invoice.store');
-        Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
-        Route::get('/invoices/{id}/payment-history', [InvoiceController::class, 'getPaymentHistory'])->name('invoice.payment-history');
-        Route::get('/invoices/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
-        Route::put('/invoices/{id}', [InvoiceController::class, 'update'])->name('invoice.update');
-        Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])->name('invoice.delete');
-        Route::post('/invoices/{id}/payment', [InvoiceController::class, 'recordPayment'])->name('invoice.payment');
-        Route::post('/invoices/{id}/send', [InvoiceController::class, 'sendInvoice'])->name('invoice.send');
-        Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancelInvoice'])->name('invoice.cancel');
-        Route::post('/invoices/bulk-cancel', [InvoiceController::class, 'bulkCancel'])->name('invoice.bulk-cancel');
-        Route::get('/invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoice.print');
-        Route::get('/invoices/statistics', [InvoiceController::class, 'getStatistics'])->name('invoice.statistics');
-        Route::post('/invoices/from-order/{order_id}', [InvoiceController::class, 'createFromOrder'])->name('invoice.from-order');
-        Route::get('/invoices/export/excel', [InvoiceController::class, 'exportExcel'])->name('invoice.export.excel');
-        Route::get('/invoices/export/pdf', [InvoiceController::class, 'exportPdf'])->name('invoice.export.pdf');
-
-        // Note: Main invoice routes are defined above (lines 657-686)
-        Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoice.create');
-        Route::post('/invoices/create', [InvoiceController::class, 'store'])->name('invoice.store');
-        Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->name('invoice.show');
-        Route::get('/invoices/{id}/payment-history', [InvoiceController::class, 'getPaymentHistory'])->name('invoice.payment-history');
-        Route::get('/invoices/{id}/edit', [InvoiceController::class, 'edit'])->name('invoice.edit');
-        Route::put('/invoices/{id}', [InvoiceController::class, 'update'])->name('invoice.update');
-        Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])->name('invoice.delete');
-        Route::post('/invoices/{id}/payment', [InvoiceController::class, 'recordPayment'])->name('invoice.payment');
-        Route::post('/invoices/{id}/send', [InvoiceController::class, 'sendInvoice'])->name('invoice.send');
-        Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancelInvoice'])->name('invoice.cancel');
-        Route::post('/invoices/bulk-cancel', [InvoiceController::class, 'bulkCancel'])->name('invoice.bulk-cancel');
-        Route::get('/invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoice.print');
-        Route::get('/invoices/statistics', [InvoiceController::class, 'getStatistics'])->name('invoice.statistics');
-        Route::post('/invoices/from-order/{order_id}', [InvoiceController::class, 'createFromOrder'])->name('invoice.from-order');
-
-        // Returns routes - Active
-        Route::get('/returns', [ReturnController::class, 'index'])->name('return.list');
-        Route::get('/returns/ajax', [ReturnController::class, 'getReturnsAjax'])->name('return.ajax');
-        Route::get('/returns/filter-users', [ReturnController::class, 'getFilterUsers'])->name('return.filter-users');
-        Route::get('/returns/{id}/detail-panel', [ReturnController::class, 'getDetailPanel'])->name('return.detail-panel');
-        Route::get('/returns/create', [ReturnController::class, 'create'])->name('return.create');
-        Route::post('/returns/create', [ReturnController::class, 'store'])->name('return.store');
-        Route::get('/returns/{id}', [ReturnController::class, 'show'])->name('return.show');
-
-        // Return export routes
-        Route::get('/returns/export/excel', [ReturnController::class, 'exportExcel'])->name('return.export.excel');
-        Route::get('/returns/{id}/export/pdf', [ReturnController::class, 'exportPdf'])->name('return.export.pdf');
-
-        // Return additional routes (consistent naming)
-        Route::get('/returns/{id}/payment-history', [ReturnController::class, 'getPaymentHistory'])->name('return.payment-history');
-        Route::get('/returns/{id}/edit', [ReturnController::class, 'edit'])->name('return.edit');
-        Route::put('/returns/{id}', [ReturnController::class, 'update'])->name('return.update');
-        Route::delete('/returns/{id}', [ReturnController::class, 'destroy'])->name('return.delete');
-        Route::post('/returns/{id}/payment', [ReturnController::class, 'recordPayment'])->name('return.payment');
-        Route::post('/returns/{id}/send', [ReturnController::class, 'sendReturn'])->name('return.send');
-        Route::post('/returns/{id}/cancel', [ReturnController::class, 'cancelReturn'])->name('return.cancel');
-        Route::get('/returns/{id}/print', [ReturnController::class, 'print'])->name('return.print');
-        Route::get('/returns/statistics', [ReturnController::class, 'getStatistics'])->name('return.statistics');
-        Route::post('/returns/from-invoice/{invoice_id}', [ReturnController::class, 'createFromInvoice'])->name('return.from-invoice');
-
-        // Return bulk actions
-        Route::post('/returns/bulk/update-status', [ReturnController::class, 'bulkUpdateStatus'])->name('return.bulk.update-status');
-        Route::post('/returns/bulk/cancel', [ReturnController::class, 'bulkCancel'])->name('return.bulk.cancel');
-        Route::post('/returns/bulk/delete', [ReturnController::class, 'bulkDelete'])->name('return.bulk.delete');
-
-        // Note: Export routes are defined above (lines 669-670)
+        // Customers - MOVED TO tenant.php
 
 
 
-        // Payment routes
-        Route::prefix('payments')->name('payment.')->group(function () {
-            Route::get('/', [PaymentController::class, 'index'])->name('list');
-            Route::get('/test', function() { return view('admin.payment.test'); })->name('test');
-            Route::get('/test-summary-page', function() { return view('admin.payment.test-summary'); })->name('test-summary-page');
-            Route::get('/test-summary', function() {
-                try {
-                    $payments = \App\Models\Payment::take(5)->get();
-                    $totalIncome = \App\Models\Payment::where('payment_type', 'receipt')->sum('amount');
-                    $totalExpense = \App\Models\Payment::where('payment_type', 'payment')->sum('amount');
 
-                    $summary = [
-                        'total_payments' => \App\Models\Payment::count(),
-                        'total_income' => $totalIncome,
-                        'total_expense' => $totalExpense,
-                        'opening_balance' => 0,
-                        'closing_balance' => $totalIncome - $totalExpense,
-                        'sample_payments' => $payments->map(function($p) {
-                            return [
-                                'id' => $p->id,
-                                'payment_number' => $p->payment_number,
-                                'amount' => $p->amount,
-                                'payment_type' => $p->payment_type,
-                                'creator' => $p->creator ? $p->creator->full_name : 'N/A',
-                                'collector' => $p->collector ? $p->collector->full_name : 'N/A'
-                            ];
-                        })
-                    ];
-                    return response()->json(['success' => true, 'data' => $summary]);
-                } catch (\Exception $e) {
-                    return response()->json(['success' => false, 'error' => $e->getMessage()]);
-                }
-            })->name('test-summary');
-            Route::get('/ajax', [PaymentController::class, 'getPaymentsAjax'])->name('ajax');
-            Route::get('/summary', [PaymentController::class, 'getSummary'])->name('summary');
-            Route::get('/statistics/summary', [PaymentController::class, 'getStatistics'])->name('statistics');
-            Route::get('/create', [PaymentController::class, 'create'])->name('create');
-            Route::post('/', [PaymentController::class, 'store'])->name('store');
-            Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
-            Route::get('/{payment}/edit', [PaymentController::class, 'edit'])->name('edit');
-            Route::put('/{payment}', [PaymentController::class, 'update'])->name('update');
-            Route::post('/{payment}/approve', [PaymentController::class, 'approve'])->name('approve');
-            Route::post('/{payment}/cancel', [PaymentController::class, 'cancel'])->name('cancel');
-            Route::get('/{payment}/details', [PaymentController::class, 'getDetails'])->name('details');
-            Route::get('/{payment}/test-print', [PaymentController::class, 'testPrint'])->name('test-print');
-            Route::get('/{payment}/print', [PaymentController::class, 'print'])->name('print');
-            Route::post('/invoices/{invoice}/payment', [PaymentController::class, 'createInvoicePayment'])->name('invoice-payment');
-        });
 
-        // Custom File Manager Routes
-        Route::prefix('filemanager')->name('filemanager.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\FileManagerController::class, 'index'])->name('index');
-            Route::get('/contents', [\App\Http\Controllers\Admin\FileManagerController::class, 'getContents'])->name('contents');
-            Route::post('/upload', [\App\Http\Controllers\Admin\FileManagerController::class, 'upload'])->name('upload');
-            Route::post('/upload-single', [\App\Http\Controllers\Admin\FileManagerController::class, 'uploadSingle'])->name('upload.single');
-            Route::delete('/delete', [\App\Http\Controllers\Admin\FileManagerController::class, 'delete'])->name('delete');
-            Route::delete('/delete-multiple', [\App\Http\Controllers\Admin\FileManagerController::class, 'deleteMultiple'])->name('delete.multiple');
-            Route::put('/rename', [\App\Http\Controllers\Admin\FileManagerController::class, 'rename'])->name('rename');
-            Route::post('/create-folder', [\App\Http\Controllers\Admin\FileManagerController::class, 'createFolder'])->name('create.folder');
-            Route::put('/move', [\App\Http\Controllers\Admin\FileManagerController::class, 'move'])->name('move');
-            Route::put('/copy', [\App\Http\Controllers\Admin\FileManagerController::class, 'copy'])->name('copy');
-            Route::get('/file-info', [\App\Http\Controllers\Admin\FileManagerController::class, 'getFileInfo'])->name('file.info');
-            Route::get('/search', [\App\Http\Controllers\Admin\FileManagerController::class, 'search'])->name('search');
-        });
+
+
+
+
+        // Custom File Manager Routes - MOVED TO tenant.php
 
         // Legacy file manager route (for backward compatibility)
         Route::get('/file-manager', [ProductController::class, 'fileManager'])->name('file.manager');
@@ -797,37 +322,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('/category/delete', [CategoryController::class, 'deleteMany'])->name('category.deleteMany');
         Route::post('/category', [CategoryController::class, 'ajaxGetList'])->name('category.ajax.getList');
 
-        // Users Management
-        Route::prefix('users')->name('users.')->group(function () {
-            Route::get('/', [UsersController::class, 'index'])->name('index');
-            Route::get('/create', [UsersController::class, 'add'])->name('create');
-            Route::post('/', [UsersController::class, 'addAction'])->name('store');
-            Route::get('/{id}', [UsersController::class, 'detail'])->name('show');
-            Route::get('/{id}/edit', [UsersController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [UsersController::class, 'update'])->name('update');
-            Route::delete('/{id}', [UsersController::class, 'delete'])->name('destroy');
-            Route::post('/bulk-delete', [UsersController::class, 'deleteMany'])->name('bulk-delete');
-            Route::get('/ajax/get-list', [UsersController::class, 'ajaxGetList'])->name('ajax.getList');
-            Route::get('/dropdown/available', [UsersController::class, 'getAvailableForDropdown'])->name('dropdown.available');
-            Route::get('/dropdown/list', [UsersController::class, 'listForDropdown'])->name('dropdown.list');
-
-            // Branch Shop Management for Users
-            Route::post('/{userId}/assign-branch-shop', [UsersController::class, 'assignBranchShop'])->name('assign-branch-shop');
-            Route::put('/{userId}/branch-shops/{branchShopId}', [UsersController::class, 'updateBranchShop'])->name('update-branch-shop');
-            Route::delete('/{userId}/branch-shops/{branchShopId}', [UsersController::class, 'removeBranchShop'])->name('remove-branch-shop');
-        });
-
-        // Legacy routes for backward compatibility
-        Route::get('/user', [UsersController::class, 'index'])->name('user.list');
-        Route::get('/user/add', [UsersController::class, 'add'])->name('user.add');
-        Route::post('/user/add', [UsersController::class, 'addAction'])->name('user.add.action');
-        Route::get('/user/detail/{user_id}', [UsersController::class, 'detail'])->name('user.detail');
-        Route::get('/user/edit/{user_id}', [UsersController::class, 'edit'])->name('user.edit');
-        Route::post('/user/edit', [UsersController::class, 'editManyAction'])->name('user.edit.many.action');
-        Route::post('/user/edit/{user_id}', [UsersController::class, 'editAction'])->name('user.edit.action');
-        Route::get('/user/delete', [UsersController::class, 'deleteMany'])->name('user.delete.many');
-        Route::get('/user/delete/{user_id}', [UsersController::class, 'delete'])->name('user.delete');
-        Route::get('/user/ajax/get-list', [UsersController::class, 'ajaxGetList'])->name('user.ajax.getList');
+        // Users Management - MOVED TO tenant.php
 
         // // Agent
         // Route::get('/agent', [AgentsController::class, 'index'])->name('agent.list');
@@ -857,16 +352,26 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
         // Roles Management
         Route::prefix('roles')->name('roles.')->group(function () {
-            Route::get('/', [RoleController::class, 'index'])->name('index');
-            Route::get('/create', [RoleController::class, 'create'])->name('create');
-            Route::post('/', [RoleController::class, 'store'])->name('store');
-            Route::get('/{id}', [RoleController::class, 'show'])->name('show');
-            Route::get('/{id}/edit', [RoleController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [RoleController::class, 'update'])->name('update');
-            Route::delete('/{id}', [RoleController::class, 'destroy'])->name('destroy');
-            Route::post('/{id}/toggle-status', [RoleController::class, 'toggleStatus'])->name('toggle-status');
-            Route::get('/{id}/permissions', [RoleController::class, 'getPermissions'])->name('permissions');
-            Route::post('/bulk-delete', [RoleController::class, 'bulkDelete'])->name('bulk-delete');
+            Route::get('/', [RoleController::class, 'index'])->name('index')
+                ->middleware('permission:settings.roles.read');
+            Route::get('/create', [RoleController::class, 'create'])->name('create')
+                ->middleware('permission:settings.roles.create');
+            Route::post('/', [RoleController::class, 'store'])->name('store')
+                ->middleware('permission:settings.roles.create');
+            Route::get('/{id}', [RoleController::class, 'show'])->name('show')
+                ->middleware('permission:settings.roles.read');
+            Route::get('/{id}/edit', [RoleController::class, 'edit'])->name('edit')
+                ->middleware('permission:settings.roles.update');
+            Route::put('/{id}', [RoleController::class, 'update'])->name('update')
+                ->middleware('permission:settings.roles.update');
+            Route::delete('/{id}', [RoleController::class, 'destroy'])->name('destroy')
+                ->middleware('permission:settings.roles.delete');
+            Route::post('/{id}/toggle-status', [RoleController::class, 'toggleStatus'])->name('toggle-status')
+                ->middleware('permission:settings.roles.update');
+            Route::get('/{id}/permissions', [RoleController::class, 'getPermissions'])->name('permissions')
+                ->middleware('permission:settings.roles.read');
+            Route::post('/bulk-delete', [RoleController::class, 'bulkDelete'])->name('bulk-delete')
+                ->middleware('permission:settings.roles.delete');
         });
 
         // Permissions Management
@@ -942,39 +447,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::post('/language/update', [\App\Http\Controllers\Admin\UserSettingController::class, 'updateLanguage'])->name('language.update');
         });
 
-        // Quick Order Routes
-        Route::prefix('quick-order')->name('quick-order.')->group(function () {
-            Route::get('/', [QuickOrderController::class, 'index'])->name('index');
-            Route::post('/', [QuickOrderController::class, 'store'])->name('store');
-            Route::get('/session', [QuickOrderController::class, 'getSession'])->name('session.get');
-            Route::post('/session', [QuickOrderController::class, 'saveSession'])->name('session.save');
-            Route::delete('/session', [QuickOrderController::class, 'clearSession'])->name('session.clear');
-            Route::get('/statistics', [QuickOrderController::class, 'getStatistics'])->name('statistics');
-            Route::post('/validate', [QuickOrderController::class, 'validateOrder'])->name('validate');
-            Route::post('/search-product', [QuickOrderController::class, 'searchProduct'])->name('search-product');
-            Route::get('/invoices-for-return', [QuickOrderController::class, 'getInvoicesForReturn'])->name('invoices-for-return');
-            Route::get('/invoice-items/{invoiceId}', [QuickOrderController::class, 'getInvoiceItems'])->name('invoice-items');
-            Route::post('/return-orders', [QuickOrderController::class, 'storeReturnOrder'])->name('return-orders.store');
-            Route::get('/sellers-by-branch', [QuickOrderController::class, 'getSellersByBranch'])->name('sellers-by-branch');
-        });
 
-        // Test route để kiểm tra thumbnail
-        Route::get('/test-thumbnail', function() {
-            // Update iPhone product với thumbnail
-            $product = \App\Models\Product::where('sku', 'PHONE001')->first();
-            if ($product) {
-                $product->update([
-                    'product_thumbnail' => 'https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-thumbnew-600x600.jpg'
-                ]);
-                return "Updated iPhone with thumbnail: " . $product->product_thumbnail;
-            }
-            return "iPhone product not found";
-        });
-
-        // Quick Invoice Routes (same interface, different backend)
-        Route::prefix('quick-invoice')->name('quick-invoice.')->group(function () {
-            Route::post('/', [QuickInvoiceController::class, 'store'])->name('store');
-        });
 
 
 
@@ -1015,23 +488,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         });
     });
 
-    // Global Filter API Routes
-    Route::prefix('filters')->name('filters.')->group(function () {
-        Route::get('/creators', [FilterController::class, 'getCreators'])->name('creators');
-        Route::get('/sellers', [FilterController::class, 'getSellers'])->name('sellers');
-        Route::get('/channels', [FilterController::class, 'getChannels'])->name('channels');
-        Route::get('/payment-methods', [FilterController::class, 'getPaymentMethods'])->name('payment-methods');
-        Route::get('/all', [FilterController::class, 'getAllFilters'])->name('all');
-    });
+    // Global Filter API Routes - MOVED TO tenant.php
 
     // Route::namespace('General')->group(function () {
     //     Route::post('/upload-image', [UpLoadImageController::class, 'uploadImage'])->name('uploadImage');
     //     Route::post('/destroy-image', [UpLoadImageController::class, 'imageDestroy'])->name('imageDestroy');
     //     Route::get('/language', [MultiLanguageController::class, 'index'])->name('language.index');
     // });
-});
+    });
+}); // End of domain constraint group
 
-// Public Shopee OAuth Routes (outside auth middleware)
+// Public Shopee OAuth Routes (outside auth middleware and domain constraint)
 Route::prefix('shopee')->name('shopee.')->group(function () {
     Route::get('/connect', [ShopeeOAuthController::class, 'connect'])->name('public.connect');
     Route::get('/callback', [ShopeeOAuthController::class, 'callback'])->name('public.callback');
