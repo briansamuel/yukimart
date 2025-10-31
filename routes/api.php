@@ -181,6 +181,23 @@ Route::prefix('public')->group(function () {
     // Add public API routes here if needed
 });
 
+// Analytics API Routes (Protected)
+Route::prefix('v1/analytics')->middleware(['api.token', 'tenant.resolve'])->group(function () {
+    Route::get('/business/overview', [\App\Http\Controllers\Api\Tenant\AnalyticsApiController::class, 'businessOverview'])
+        ->name('api.v1.analytics.business.overview');
 
+    Route::get('/customer/overview', [\App\Http\Controllers\Api\Tenant\AnalyticsApiController::class, 'customerOverview'])
+        ->name('api.v1.analytics.customer.overview');
 
+    Route::get('/inventory/overview', [\App\Http\Controllers\Api\Tenant\AnalyticsApiController::class, 'inventoryOverview'])
+        ->name('api.v1.analytics.inventory.overview');
 
+    Route::get('/staff/performance', [\App\Http\Controllers\Api\Tenant\AnalyticsApiController::class, 'staffPerformance'])
+        ->name('api.v1.analytics.staff.performance');
+
+    Route::get('/accounts-receivable', [\App\Http\Controllers\Api\Tenant\AnalyticsApiController::class, 'accountsReceivable'])
+        ->name('api.v1.analytics.accounts-receivable');
+
+    Route::get('/slow-moving-inventory', [\App\Http\Controllers\Api\Tenant\AnalyticsApiController::class, 'slowMovingInventory'])
+        ->name('api.v1.analytics.slow-moving-inventory');
+});

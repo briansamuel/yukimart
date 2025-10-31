@@ -137,6 +137,24 @@ class Kernel extends ConsoleKernel
             ->onFailure(function () {
                 Log::error('Analytics staff performance population failed');
             });
+
+        $schedule->command('analytics:populate-slow-moving')
+            ->daily()
+            ->at('02:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics slow moving inventory population failed');
+            });
+
+        $schedule->command('analytics:populate-accounts-receivable')
+            ->daily()
+            ->at('02:15')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                Log::error('Analytics accounts receivable population failed');
+            });
     }
 
     /**
