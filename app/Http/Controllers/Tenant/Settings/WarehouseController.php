@@ -87,14 +87,14 @@ class BranchShopController extends Controller
             'status.required' => 'Trạng thái l? bắt buộc',
             'shop_type.required' => 'Loại cửa h?ng l? bắt buộc',
             'email.email' => 'Email không ?úng ?ịnh dạng',
-            'phone.max' => 'S�??iện thoại không ?ược quá 20 ký t�?,
+            'phone.max' => 'Số điện thoại không ?ược quá 20 ký tự',
             'code.unique' => 'Mã chi nhánh ?ã tồn tại',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -190,7 +190,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -357,19 +357,19 @@ class BranchShopController extends Controller
     {
         try {
             // Get users who can be managers (have manager role or admin role)
-            $managers = \App\Models\User::whereHas('roles', function($query) {
+            $managers = \App\Models\User::whereHas('roles', function ($query) {
                 $query->whereIn('name', ['manager', 'admin', 'super-admin']);
             })
-            ->where('status', 'active')
-            ->select('id', 'full_name', 'email')
-            ->orderBy('full_name')
-            ->get()
-            ->map(function($user) {
-                return [
-                    'id' => $user->id,
-                    'text' => ($user->full_name ?: $user->username) . ' (' . $user->email . ')'
-                ];
-            });
+                ->where('status', 'active')
+                ->select('id', 'full_name', 'email')
+                ->orderBy('full_name')
+                ->get()
+                ->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'text' => ($user->full_name ?: $user->username) . ' (' . $user->email . ')'
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
@@ -398,7 +398,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -507,7 +507,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -567,7 +567,7 @@ class BranchShopController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'D�?liệu không hợp l�?,
+                'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $validator->errors()
             ], 422);
         }
